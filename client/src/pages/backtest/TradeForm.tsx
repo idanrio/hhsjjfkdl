@@ -113,7 +113,13 @@ export default function TradeForm() {
     mutationFn: (data: TradeFormValues) => {
       const endpoint = isEditMode ? `/api/trades/${tradeId}` : '/api/trades';
       const method = isEditMode ? "PATCH" : "POST";
-      return apiRequest(endpoint, { method, data });
+      return apiRequest(endpoint, {
+        method,
+        body: JSON.stringify(data),
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/trades'] });

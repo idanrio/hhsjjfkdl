@@ -1,6 +1,12 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { useToast } from '@/hooks/use-toast';
+import { apiRequest } from '@/lib/queryClient';
+import { useQueryClient } from '@tanstack/react-query';
+import { useLocation } from 'wouter';
 
 interface BacktestLoginProps {
   onLogin: (email: string, password: string) => void;
@@ -10,10 +16,72 @@ const BacktestLogin: React.FC<BacktestLoginProps> = ({ onLogin }) => {
   const { t } = useTranslation();
   const { i18n } = useTranslation();
   const isRtl = i18n.language === 'he';
+  const [username, setUsername] = useState('');
+  const [password, setPassword] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+  const [_, setLocation] = useLocation();
 
-  // Simplified login with just demo access
-  const handleLogin = () => {
-    onLogin('demo@capitulre.com', 'demo123');
+  // Quick access buttons for demo and admin
+  const loginAsDemo = () => {
+    setUsername('demo');
+    setPassword('demo123');
+  };
+
+  const loginAsAdmin = () => {
+    setUsername('admin');
+    setPassword('admin123');
+  };
+
+  // Handle login with proper API request
+  const handleLogin = async () => {
+    if (!username || !password) {
+      toast({
+        title: t('auth.errorTitle'),
+        description: t('auth.errorAllFields'),
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    setIsLoading(true);
+    try {
+      const response = await apiRequest('/api/auth/login', {
+        method: 'POST',
+        body: JSON.stringify({ username, password }),
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+
+      // Invalidate the user query to refresh the data
+      queryClient.invalidateQueries({ queryKey: ['/api/auth/me'] });
+      
+      toast({
+        title: t('auth.loginSuccess'),
+        description: t('auth.welcomeBack', { name: response.username }),
+      });
+      
+      // Redirect to appropriate dashboard
+      if (response.isAdmin) {
+        setLocation('/backtest/admin');
+      } else {
+        setLocation('/backtest/dashboard');
+      }
+      
+      // Close the modal through callback
+      onLogin(username, password);
+    } catch (error) {
+      console.error('Login error:', error);
+      toast({
+        title: t('auth.loginFailed'),
+        description: t('auth.invalidCredentials'),
+        variant: 'destructive',
+      });
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -42,6 +110,48 @@ const BacktestLogin: React.FC<BacktestLoginProps> = ({ onLogin }) => {
       <div className="relative z-10 p-6 backdrop-blur-sm">
         <div className="text-xl font-bold mb-4 text-center">{t('backtest.loginTitle')}</div>
         
+        <div className="grid gap-4 py-2">
+          <div className="grid gap-2">
+            <Label htmlFor="username">{t('auth.usernameLabel')}</Label>
+            <Input
+              id="username"
+              value={username}
+              onChange={(e) => setUsername(e.target.value)}
+              placeholder={t('auth.usernamePlaceholder')}
+            />
+          </div>
+          
+          <div className="grid gap-2">
+            <Label htmlFor="password">{t('auth.passwordLabel')}</Label>
+            <Input
+              id="password"
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              placeholder={t('auth.passwordPlaceholder')}
+            />
+          </div>
+          
+          <div className="flex flex-wrap gap-2 mt-2">
+            <Button 
+              variant="outline" 
+              size="sm"
+              onClick={loginAsDemo}
+              className="text-xs"
+            >
+              {t('backtest.loginAsDemo')}
+            </Button>
+            <Button 
+              variant="outline" 
+              size="sm"
+              onClick={loginAsAdmin}
+              className="text-xs"
+            >
+              {t('backtest.loginAsAdmin')}
+            </Button>
+          </div>
+        </div>
+        
         <div className={`flex ${isRtl ? 'flex-row-reverse' : ''} justify-between mt-6 gap-4`}>
           <Button 
             variant="outline" 
@@ -53,8 +163,9 @@ const BacktestLogin: React.FC<BacktestLoginProps> = ({ onLogin }) => {
           <Button 
             onClick={handleLogin}
             className="flex-1 bg-brand-primary hover:bg-brand-primary/90"
+            disabled={isLoading}
           >
-            {t('backtest.loginButton')}
+            {isLoading ? t('auth.loggingIn') : t('backtest.loginButton')}
           </Button>
         </div>
       </div>

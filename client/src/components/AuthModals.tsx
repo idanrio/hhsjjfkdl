@@ -1,11 +1,14 @@
 import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { useQueryClient } from '@tanstack/react-query';
+import { useLocation } from 'wouter';
 import { Dialog, DialogContent, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { useToast } from '@/hooks/use-toast';
+import { apiRequest } from '@/lib/queryClient';
 import BacktestLogin from './BacktestLogin';
 
 interface AuthModalProps {
@@ -17,64 +20,126 @@ const AuthModals: React.FC<AuthModalProps> = ({ initialView = 'login' }) => {
   const { toast } = useToast();
   const [open, setOpen] = useState(false);
   const [view, setView] = useState<'login' | 'signup' | 'thankyou' | 'backtest'>(initialView);
+  const [username, setUsername] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [name, setName] = useState('');
   const [rememberMe, setRememberMe] = useState(false);
   const [acceptTerms, setAcceptTerms] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const queryClient = useQueryClient();
+  const [_, setLocation] = useLocation();
 
-  const handleSubmit = () => {
-    if (view === 'login') {
-      // Check if all fields are filled
-      if (!email || !password) {
-        toast({
-          title: 'Error',
-          description: 'Please fill in all required fields',
-          variant: 'destructive',
-        });
-        return;
-      }
+  const handleLogin = async () => {
+    // Check if all fields are filled
+    if (!username || !password) {
+      toast({
+        title: t('auth.errorTitle'),
+        description: t('auth.errorAllFields'),
+        variant: 'destructive',
+      });
+      return;
+    }
+    
+    setIsLoading(true);
+    try {
+      const response = await apiRequest('/api/auth/login', {
+        method: 'POST',
+        body: JSON.stringify({ username, password }),
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+
+      // Refresh user data
+      queryClient.invalidateQueries({ queryKey: ['/api/auth/me'] });
       
-      // Login logic would go here
-      console.log('Login attempt:', { email, password, rememberMe });
+      toast({
+        title: t('auth.loginSuccess'),
+        description: t('auth.welcomeBack', { name: response.username }),
+      });
       
-      // For demo purposes, just close the modal
       setOpen(false);
-    } else if (view === 'signup') {
-      // Check if all fields are filled
-      if (!name || !email || !password) {
-        toast({
-          title: 'Error',
-          description: t('auth.errorAllFields'),
-          variant: 'destructive',
-        });
-        return;
+      
+      // Redirect to appropriate dashboard based on admin status
+      if (response.isAdmin) {
+        setLocation('/backtest/admin');
+      } else {
+        setLocation('/backtest/dashboard');
       }
-      
-      // Check if terms are accepted
-      if (!acceptTerms) {
-        toast({
-          title: 'Error',
-          description: t('auth.errorTerms'),
-          variant: 'destructive',
-        });
-        return;
-      }
-      
-      // Signup logic would go here
-      console.log('Signup attempt:', { name, email, password, acceptTerms });
-      
-      // Show thank you screen
-      setView('thankyou');
+    } catch (error) {
+      console.error('Login error:', error);
+      toast({
+        title: t('auth.loginFailed'),
+        description: t('auth.invalidCredentials'),
+        variant: 'destructive',
+      });
+    } finally {
+      setIsLoading(false);
     }
   };
 
-  const handleBacktestLogin = (email: string, password: string) => {
-    // Handle backtesting system login
-    console.log('Backtest login:', { email, password });
+  const handleSignup = async () => {
+    // Check if all fields are filled
+    if (!username || !email || !password) {
+      toast({
+        title: t('auth.errorTitle'),
+        description: t('auth.errorAllFields'),
+        variant: 'destructive',
+      });
+      return;
+    }
     
-    // For demo purposes, just close the modal
+    // Check if terms are accepted
+    if (!acceptTerms) {
+      toast({
+        title: t('auth.errorTitle'),
+        description: t('auth.errorTerms'),
+        variant: 'destructive',
+      });
+      return;
+    }
+    
+    setIsLoading(true);
+    try {
+      await apiRequest('/api/auth/register', {
+        method: 'POST',
+        body: JSON.stringify({ username, password, email }),
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+      
+      // Show thank you screen
+      setView('thankyou');
+      
+      // Auto login after successful registration
+      await handleLogin();
+    } catch (error) {
+      console.error('Signup error:', error);
+      toast({
+        title: t('auth.signupFailed'),
+        description: t('auth.usernameExists'),
+        variant: 'destructive',
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleBacktestLogin = (username: string, password: string) => {
+    // Close the modal
     setOpen(false);
+  };
+  
+  // Quick login buttons for demo accounts
+  const loginAsDemo = () => {
+    setUsername('demo');
+    setPassword('demo123');
+  };
+
+  const loginAsAdmin = () => {
+    setUsername('admin');
+    setPassword('admin123');
   };
 
   return (
@@ -82,6 +147,10 @@ const AuthModals: React.FC<AuthModalProps> = ({ initialView = 'login' }) => {
       <Button
         onClick={() => {
           setView(initialView);
+          setUsername('');
+          setPassword('');
+          setEmail('');
+          setAcceptTerms(false);
           setOpen(true);
         }}
         variant={initialView === 'login' ? 'outline' : 'default'}
@@ -97,13 +166,12 @@ const AuthModals: React.FC<AuthModalProps> = ({ initialView = 'login' }) => {
               <DialogTitle>{t('auth.loginTitle')}</DialogTitle>
               <div className="grid gap-4 py-4">
                 <div className="grid gap-2">
-                  <Label htmlFor="email">{t('auth.emailLabel')}</Label>
+                  <Label htmlFor="username">{t('auth.usernameLabel')}</Label>
                   <Input
-                    id="email"
-                    type="email"
-                    placeholder={t('auth.emailPlaceholder')}
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
+                    id="username"
+                    placeholder={t('auth.usernamePlaceholder')}
+                    value={username}
+                    onChange={(e) => setUsername(e.target.value)}
                   />
                 </div>
                 <div className="grid gap-2">
@@ -127,14 +195,33 @@ const AuthModals: React.FC<AuthModalProps> = ({ initialView = 'login' }) => {
                       {t('auth.rememberMe')}
                     </Label>
                   </div>
-                  <Button variant="link" className="p-0 h-auto">
-                    {t('auth.forgotPassword')}
+                </div>
+                <div className="flex flex-wrap gap-2 mt-2">
+                  <Button 
+                    variant="outline" 
+                    size="sm"
+                    onClick={loginAsDemo}
+                    className="text-xs"
+                  >
+                    {t('backtest.loginAsDemo')}
+                  </Button>
+                  <Button 
+                    variant="outline" 
+                    size="sm"
+                    onClick={loginAsAdmin}
+                    className="text-xs"
+                  >
+                    {t('backtest.loginAsAdmin')}
                   </Button>
                 </div>
               </div>
               <DialogFooter className="flex flex-col space-y-4">
-                <Button onClick={handleSubmit} className="w-full">
-                  {t('auth.loginButton')}
+                <Button 
+                  onClick={handleLogin} 
+                  className="w-full"
+                  disabled={isLoading}
+                >
+                  {isLoading ? t('auth.loggingIn') : t('auth.loginButton')}
                 </Button>
                 <div className="text-center text-sm">
                   {t('auth.noAccount')}{' '}
@@ -156,12 +243,12 @@ const AuthModals: React.FC<AuthModalProps> = ({ initialView = 'login' }) => {
               <DialogTitle>{t('auth.signupTitle')}</DialogTitle>
               <div className="grid gap-4 py-4">
                 <div className="grid gap-2">
-                  <Label htmlFor="name">{t('auth.nameLabel')}</Label>
+                  <Label htmlFor="username">{t('auth.usernameLabel')}</Label>
                   <Input
-                    id="name"
-                    placeholder={t('auth.namePlaceholder')}
-                    value={name}
-                    onChange={(e) => setName(e.target.value)}
+                    id="username"
+                    placeholder={t('auth.usernamePlaceholder')}
+                    value={username}
+                    onChange={(e) => setUsername(e.target.value)}
                   />
                 </div>
                 <div className="grid gap-2">
@@ -203,8 +290,12 @@ const AuthModals: React.FC<AuthModalProps> = ({ initialView = 'login' }) => {
                 </div>
               </div>
               <DialogFooter className="flex flex-col space-y-4">
-                <Button onClick={handleSubmit} className="w-full">
-                  {t('auth.signupButton')}
+                <Button 
+                  onClick={handleSignup} 
+                  className="w-full"
+                  disabled={isLoading}
+                >
+                  {isLoading ? t('auth.signingUp') : t('auth.signupButton')}
                 </Button>
                 <div className="text-center text-sm">
                   {t('auth.haveAccount')}{' '}

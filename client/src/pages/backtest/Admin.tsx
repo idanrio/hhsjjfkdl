@@ -83,7 +83,12 @@ export default function AdminDashboard() {
   // Mutations
   const deleteTradingPairMutation = useMutation({
     mutationFn: (id: number) => 
-      apiRequest(`/api/trading-pairs/${id}`, { method: "DELETE" }),
+      apiRequest(`/api/trading-pairs/${id}`, {
+        method: "DELETE",
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/trading-pairs'] });
       toast({
@@ -102,7 +107,13 @@ export default function AdminDashboard() {
 
   const addTradingPairMutation = useMutation({
     mutationFn: (pairData: { pair: string }) => 
-      apiRequest('/api/trading-pairs', { method: "POST", data: pairData }),
+      apiRequest('/api/trading-pairs', {
+        method: "POST",
+        body: JSON.stringify(pairData),
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/trading-pairs'] });
       setNewTradingPair("");
@@ -122,7 +133,12 @@ export default function AdminDashboard() {
 
   const deleteStrategyTypeMutation = useMutation({
     mutationFn: (id: number) => 
-      apiRequest(`/api/strategy-types/${id}`, { method: "DELETE" }),
+      apiRequest(`/api/strategy-types/${id}`, {
+        method: "DELETE",
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/strategy-types'] });
       toast({
@@ -141,7 +157,13 @@ export default function AdminDashboard() {
 
   const addStrategyTypeMutation = useMutation({
     mutationFn: (strategyData: { name: string }) => 
-      apiRequest('/api/strategy-types', { method: "POST", data: strategyData }),
+      apiRequest('/api/strategy-types', {
+        method: "POST",
+        body: JSON.stringify(strategyData),
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/strategy-types'] });
       setNewStrategyType("");
@@ -161,7 +183,12 @@ export default function AdminDashboard() {
 
   const deleteUserMutation = useMutation({
     mutationFn: (userId: number) => 
-      apiRequest(`/api/admin/users/${userId}`, { method: "DELETE" }),
+      apiRequest(`/api/admin/users/${userId}`, {
+        method: "DELETE",
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/admin/users'] });
       setShowDeleteConfirm(false);
@@ -182,7 +209,12 @@ export default function AdminDashboard() {
 
   const updateUserLevelMutation = useMutation({
     mutationFn: (userId: number) => 
-      apiRequest(`/api/admin/users/${userId}/level-up`, { method: "POST" }),
+      apiRequest(`/api/admin/users/${userId}/level-up`, {
+        method: "POST",
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/admin/users'] });
       toast({
