@@ -47,6 +47,7 @@
   
   body {
     @apply font-sans antialiased bg-background text-foreground;
+    text-align: start; /* Use logical properties instead of left/right */
   }
   
   /* Chart animation background */
@@ -64,7 +65,7 @@
     100% { transform: scaleY(1); }
   }
   
-  /* Navigation animation */
+  /* Navigation animation - RTL friendly */
   .nav-link::after {
     @apply content-[''] absolute bottom-[-5px] left-0 w-0 h-[2px] bg-primary transition-all duration-300;
   }
@@ -88,5 +89,19 @@
   
   .chart-area-negative {
     @apply fill-danger/20;
+  }
+  
+  /* RTL Support */
+  [dir="rtl"] .language-switcher {
+    @apply space-x-reverse;
+  }
+  
+  [dir="rtl"] .nav-link::after {
+    @apply right-0 left-auto;
+  }
+  
+  /* Language specific font settings */
+  :lang(he) {
+    font-family: "Open Sans Hebrew", "Segoe UI", Arial, sans-serif;
   }
 }

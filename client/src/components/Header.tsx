@@ -1,10 +1,18 @@
 import React, { useState } from 'react';
+import { useTranslation } from 'react-i18next';
+import { useLanguage } from '../App';
 
 const Header: React.FC = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const { t } = useTranslation();
+  const { language, setLanguage } = useLanguage();
 
   const toggleMenu = () => {
     setIsMenuOpen(!isMenuOpen);
+  };
+
+  const toggleLanguage = () => {
+    setLanguage(language === 'en' ? 'he' : 'en');
   };
 
   return (
@@ -22,30 +30,48 @@ const Header: React.FC = () => {
         <nav className="hidden md:block">
           <ul className="flex">
             <li className="ml-10 first:ml-0">
-              <a href="#" className="font-medium relative nav-link hover:text-primary-light">Home</a>
+              <a href="#" className="font-medium relative nav-link hover:text-primary-light">
+                {t('navigation.home')}
+              </a>
             </li>
             <li className="ml-10">
-              <a href="#features" className="font-medium relative nav-link hover:text-primary-light">Features</a>
+              <a href="#features" className="font-medium relative nav-link hover:text-primary-light">
+                {t('navigation.features')}
+              </a>
             </li>
             <li className="ml-10">
-              <a href="#markets" className="font-medium relative nav-link hover:text-primary-light">Markets</a>
+              <a href="#markets" className="font-medium relative nav-link hover:text-primary-light">
+                {t('navigation.markets')}
+              </a>
             </li>
             <li className="ml-10">
-              <a href="#contact" className="font-medium relative nav-link hover:text-primary-light">Contact</a>
+              <a href="#contact" className="font-medium relative nav-link hover:text-primary-light">
+                {t('navigation.contact')}
+              </a>
             </li>
           </ul>
         </nav>
 
-        <div className="flex gap-4">
+        <div className="flex gap-4 items-center">
+          {/* Language Switcher */}
+          <button 
+            onClick={toggleLanguage}
+            className="bg-secondary p-2 rounded-full hover:bg-secondary/80 transition-all duration-300 text-sm"
+            aria-label={language === 'en' ? 'Switch to Hebrew' : 'Switch to English'}
+          >
+            {language === 'en' ? 'עב' : 'EN'}
+          </button>
+          
           <button className="hidden sm:block border-2 border-primary px-5 py-2 rounded font-semibold hover:bg-primary transition-all duration-300">
-            Login
+            {t('navigation.login')}
           </button>
           <button className="bg-primary px-5 py-2 rounded font-semibold hover:bg-primary-light transition-all duration-300">
-            Sign Up
+            {t('navigation.signup')}
           </button>
           <button 
             className="md:hidden text-xl"
             onClick={toggleMenu}
+            aria-label="Toggle menu"
           >
             <i className={`fas ${isMenuOpen ? 'fa-times' : 'fa-bars'}`}></i>
           </button>
@@ -61,7 +87,7 @@ const Header: React.FC = () => {
                 className="block py-2 font-medium hover:text-primary-light"
                 onClick={() => setIsMenuOpen(false)}
               >
-                Home
+                {t('navigation.home')}
               </a>
             </li>
             <li>
@@ -70,7 +96,7 @@ const Header: React.FC = () => {
                 className="block py-2 font-medium hover:text-primary-light"
                 onClick={() => setIsMenuOpen(false)}
               >
-                Features
+                {t('navigation.features')}
               </a>
             </li>
             <li>
@@ -79,7 +105,7 @@ const Header: React.FC = () => {
                 className="block py-2 font-medium hover:text-primary-light"
                 onClick={() => setIsMenuOpen(false)}
               >
-                Markets
+                {t('navigation.markets')}
               </a>
             </li>
             <li>
@@ -88,8 +114,16 @@ const Header: React.FC = () => {
                 className="block py-2 font-medium hover:text-primary-light"
                 onClick={() => setIsMenuOpen(false)}
               >
-                Contact
+                {t('navigation.contact')}
               </a>
+            </li>
+            <li className="pt-2 border-t border-white/10">
+              <button 
+                onClick={toggleLanguage}
+                className="block py-2 font-medium hover:text-primary-light"
+              >
+                {language === 'en' ? 'עברית' : 'English'}
+              </button>
             </li>
           </ul>
         </nav>
