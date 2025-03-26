@@ -1,0 +1,92 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --primary: 222 47% 32%;
+    --primary-dark: 222 47% 24%;
+    --primary-light: 222 47% 40%; 
+    --accent: 222 53% 56%;
+    --success: 134 61% 41%;
+    --danger: 354 70% 54%;
+    
+    --background: 0 0% 0%;
+    --foreground: 0 0% 100%;
+    
+    --card: 0 0% 0%;
+    --card-foreground: 0 0% 100%;
+    
+    --popover: 0 0% 0%;
+    --popover-foreground: 0 0% 100%;
+    
+    --primary-foreground: 0 0% 100%;
+    
+    --secondary: 222 47% 11%;
+    --secondary-foreground: 0 0% 100%;
+    
+    --muted: 0 0% 10%;
+    --muted-foreground: 0 0% 70%;
+    
+    --accent: 222 53% 56%;
+    --accent-foreground: 0 0% 100%;
+    
+    --destructive: 0 62% 50%;
+    --destructive-foreground: 0 0% 100%;
+    
+    --border: 0 0% 10%;
+    --input: 0 0% 10%;
+    --ring: 222 47% 32%;
+    
+    --radius: 0.5rem;
+  }
+  
+  * {
+    @apply border-border;
+  }
+  
+  body {
+    @apply font-sans antialiased bg-background text-foreground;
+  }
+  
+  /* Chart animation background */
+  .charts-background {
+    @apply fixed top-0 left-0 w-full h-full opacity-[0.07] -z-10 overflow-hidden;
+  }
+  
+  .chart-line {
+    @apply absolute bg-primary w-[2px] origin-bottom;
+    animation: chartAnimation 8s infinite alternate;
+  }
+  
+  @keyframes chartAnimation {
+    0% { transform: scaleY(0); }
+    100% { transform: scaleY(1); }
+  }
+  
+  /* Navigation animation */
+  .nav-link::after {
+    @apply content-[''] absolute bottom-[-5px] left-0 w-0 h-[2px] bg-primary transition-all duration-300;
+  }
+  
+  .nav-link:hover::after {
+    @apply w-full;
+  }
+  
+  /* Chart elements */
+  .chart-line-positive {
+    @apply stroke-success stroke-2 fill-none;
+  }
+  
+  .chart-line-negative {
+    @apply stroke-danger stroke-2 fill-none;
+  }
+  
+  .chart-area-positive {
+    @apply fill-success/20;
+  }
+  
+  .chart-area-negative {
+    @apply fill-danger/20;
+  }
+}
