@@ -2,47 +2,29 @@ import { Switch, Route } from "wouter";
 import { Toaster } from "@/components/ui/toaster";
 import NotFound from "@/pages/not-found";
 import Home from "@/pages/Home";
+import { useEffect } from "react";
 import { useTranslation } from "react-i18next";
-import { createContext, useState, useContext, ReactNode } from "react";
 
-// Create a language context to manage language state
-type LanguageContextType = {
-  language: string;
-  setLanguage: (lang: string) => void;
-};
-
-const LanguageContext = createContext<LanguageContextType>({
-  language: "en",
-  setLanguage: () => {}
-});
-
-export const useLanguage = () => useContext(LanguageContext);
-
-// Create a provider for the language context
-type LanguageProviderProps = {
-  children: ReactNode;
-};
-
-function LanguageProvider({ children }: LanguageProviderProps) {
+// Initialize app with RTL support based on stored language preference
+function AppInitializer() {
   const { i18n } = useTranslation();
-  const [language, setLanguageState] = useState(i18n.language || "en");
-
-  const setLanguage = (lang: string) => {
-    i18n.changeLanguage(lang);
-    setLanguageState(lang);
-    // Store language preference
-    localStorage.setItem("i18nextLng", lang);
-    // Update HTML dir attribute for RTL support (Hebrew)
-    document.documentElement.dir = lang === "he" ? "rtl" : "ltr";
-    // Update lang attribute
-    document.documentElement.lang = lang;
-  };
-
-  return (
-    <LanguageContext.Provider value={{ language, setLanguage }}>
-      {children}
-    </LanguageContext.Provider>
-  );
+  
+  useEffect(() => {
+    // Get the stored language or use browser default
+    const storedLanguage = localStorage.getItem('i18nextLng') || navigator.language;
+    const langToUse = storedLanguage.includes('he') ? 'he' : 'en';
+    
+    // Set the initial language
+    if (i18n.language !== langToUse) {
+      i18n.changeLanguage(langToUse);
+    }
+    
+    // Set initial document direction
+    document.documentElement.dir = langToUse === 'he' ? 'rtl' : 'ltr';
+    document.documentElement.lang = langToUse;
+  }, [i18n]);
+  
+  return null;
 }
 
 function Router() {
@@ -56,10 +38,11 @@ function Router() {
 
 function App() {
   return (
-    <LanguageProvider>
+    <>
+      <AppInitializer />
       <Router />
       <Toaster />
-    </LanguageProvider>
+    </>
   );
 }
 

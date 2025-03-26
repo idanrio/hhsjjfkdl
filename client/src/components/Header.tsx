@@ -1,73 +1,67 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
-import { useLanguage } from '../App';
+import AuthModals from './AuthModals';
+import LanguageSwitcher from './LanguageSwitcher';
 
 const Header: React.FC = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const { t } = useTranslation();
-  const { language, setLanguage } = useLanguage();
+  const { t, i18n } = useTranslation();
+  const currentLanguage = i18n.language;
+  const isRtl = currentLanguage === 'he';
+
+  useEffect(() => {
+    // Set the document direction based on the language
+    document.documentElement.dir = isRtl ? 'rtl' : 'ltr';
+  }, [isRtl]);
 
   const toggleMenu = () => {
     setIsMenuOpen(!isMenuOpen);
-  };
-
-  const toggleLanguage = () => {
-    setLanguage(language === 'en' ? 'he' : 'en');
   };
 
   return (
     <header className="fixed w-full z-50 bg-black/80 backdrop-blur-lg border-b border-white/10">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 py-5 flex justify-between items-center">
         <div className="flex items-center">
-          <div className="text-primary text-2xl">
-            <i className="fas fa-chart-line"></i>
-          </div>
-          <div className="ml-2 text-2xl font-bold bg-gradient-to-r from-white to-blue-200 bg-clip-text text-transparent">
-            Capitalure
-          </div>
+          <img 
+            src="/images/capitalure-logo.png" 
+            alt="Capitalure Logo" 
+            className="h-10"
+          />
         </div>
 
         <nav className="hidden md:block">
-          <ul className="flex">
-            <li className="ml-10 first:ml-0">
-              <a href="#" className="font-medium relative nav-link hover:text-primary-light">
+          <ul className={`flex ${isRtl ? 'space-x-reverse space-x-10' : 'space-x-10'}`}>
+            <li>
+              <a href="#" className="font-medium relative nav-link hover:text-primary transition-colors">
                 {t('navigation.home')}
               </a>
             </li>
-            <li className="ml-10">
-              <a href="#features" className="font-medium relative nav-link hover:text-primary-light">
+            <li>
+              <a href="#features" className="font-medium relative nav-link hover:text-primary transition-colors">
                 {t('navigation.features')}
               </a>
             </li>
-            <li className="ml-10">
-              <a href="#markets" className="font-medium relative nav-link hover:text-primary-light">
+            <li>
+              <a href="#markets" className="font-medium relative nav-link hover:text-primary transition-colors">
                 {t('navigation.markets')}
               </a>
             </li>
-            <li className="ml-10">
-              <a href="#contact" className="font-medium relative nav-link hover:text-primary-light">
+            <li>
+              <a href="#contact" className="font-medium relative nav-link hover:text-primary transition-colors">
                 {t('navigation.contact')}
               </a>
             </li>
           </ul>
         </nav>
 
-        <div className="flex gap-4 items-center">
-          {/* Language Switcher */}
-          <button 
-            onClick={toggleLanguage}
-            className="bg-secondary p-2 rounded-full hover:bg-secondary/80 transition-all duration-300 text-sm"
-            aria-label={language === 'en' ? 'Switch to Hebrew' : 'Switch to English'}
-          >
-            {language === 'en' ? 'עב' : 'EN'}
-          </button>
+        <div className={`flex ${isRtl ? 'space-x-reverse space-x-4' : 'space-x-4'} items-center`}>
+          <LanguageSwitcher />
           
-          <button className="hidden sm:block border-2 border-primary px-5 py-2 rounded font-semibold hover:bg-primary transition-all duration-300">
-            {t('navigation.login')}
-          </button>
-          <button className="bg-primary px-5 py-2 rounded font-semibold hover:bg-primary-light transition-all duration-300">
-            {t('navigation.signup')}
-          </button>
+          <div className="hidden sm:flex items-center space-x-2">
+            <AuthModals initialView="login" />
+            <AuthModals initialView="signup" />
+          </div>
+
           <button 
             className="md:hidden text-xl"
             onClick={toggleMenu}
@@ -84,7 +78,7 @@ const Header: React.FC = () => {
             <li>
               <a 
                 href="#" 
-                className="block py-2 font-medium hover:text-primary-light"
+                className="block py-2 font-medium hover:text-primary transition-colors"
                 onClick={() => setIsMenuOpen(false)}
               >
                 {t('navigation.home')}
@@ -93,7 +87,7 @@ const Header: React.FC = () => {
             <li>
               <a 
                 href="#features" 
-                className="block py-2 font-medium hover:text-primary-light"
+                className="block py-2 font-medium hover:text-primary transition-colors"
                 onClick={() => setIsMenuOpen(false)}
               >
                 {t('navigation.features')}
@@ -102,7 +96,7 @@ const Header: React.FC = () => {
             <li>
               <a 
                 href="#markets" 
-                className="block py-2 font-medium hover:text-primary-light"
+                className="block py-2 font-medium hover:text-primary transition-colors"
                 onClick={() => setIsMenuOpen(false)}
               >
                 {t('navigation.markets')}
@@ -111,19 +105,15 @@ const Header: React.FC = () => {
             <li>
               <a 
                 href="#contact" 
-                className="block py-2 font-medium hover:text-primary-light"
+                className="block py-2 font-medium hover:text-primary transition-colors"
                 onClick={() => setIsMenuOpen(false)}
               >
                 {t('navigation.contact')}
               </a>
             </li>
-            <li className="pt-2 border-t border-white/10">
-              <button 
-                onClick={toggleLanguage}
-                className="block py-2 font-medium hover:text-primary-light"
-              >
-                {language === 'en' ? 'עברית' : 'English'}
-              </button>
+            <li className="flex flex-col gap-2 pt-4 border-t border-white/10">
+              <AuthModals initialView="login" />
+              <AuthModals initialView="signup" />
             </li>
           </ul>
         </nav>

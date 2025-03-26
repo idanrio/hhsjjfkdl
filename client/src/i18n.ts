@@ -13,6 +13,34 @@ const enTranslations = {
     login: 'Login',
     signup: 'Sign Up'
   },
+  // Authentication
+  auth: {
+    loginTitle: 'Login to your account',
+    signupTitle: 'Create an account',
+    nameLabel: 'Full Name',
+    namePlaceholder: 'Enter your full name',
+    emailLabel: 'Email address',
+    emailPlaceholder: 'Enter your email',
+    passwordLabel: 'Password',
+    passwordPlaceholder: 'Enter your password',
+    rememberMe: 'Remember me',
+    forgotPassword: 'Forgot password?',
+    loginButton: 'Login',
+    signupButton: 'Sign up',
+    noAccount: 'Don\'t have an account?',
+    createAccount: 'Create account',
+    haveAccount: 'Already have an account?',
+    loginInstead: 'Login instead',
+    termsPrefix: 'I agree to the',
+    termsLink: 'Terms of Service',
+    and: 'and',
+    privacyLink: 'Privacy Policy',
+    errorAllFields: 'Please fill in all fields',
+    errorTerms: 'You must agree to the terms and privacy policy',
+    thankYouTitle: 'Thank you for signing up!',
+    thankYouMessage: 'Your account has been created successfully. You can now login with your credentials.',
+    continueBrowsing: 'Continue browsing'
+  },
   // Hero section
   hero: {
     title: 'Master the Markets with Advanced Trading Education',
@@ -131,6 +159,34 @@ const heTranslations = {
     contact: 'צור קשר',
     login: 'התחברות',
     signup: 'הרשמה'
+  },
+  // Authentication
+  auth: {
+    loginTitle: 'התחבר לחשבון שלך',
+    signupTitle: 'צור חשבון חדש',
+    nameLabel: 'שם מלא',
+    namePlaceholder: 'הכנס את שמך המלא',
+    emailLabel: 'כתובת אימייל',
+    emailPlaceholder: 'הכנס את האימייל שלך',
+    passwordLabel: 'סיסמה',
+    passwordPlaceholder: 'הכנס את הסיסמה שלך',
+    rememberMe: 'זכור אותי',
+    forgotPassword: 'שכחת סיסמה?',
+    loginButton: 'התחבר',
+    signupButton: 'הרשם',
+    noAccount: 'אין לך חשבון?',
+    createAccount: 'צור חשבון',
+    haveAccount: 'כבר יש לך חשבון?',
+    loginInstead: 'התחבר כעת',
+    termsPrefix: 'אני מסכים/ה ל',
+    termsLink: 'תנאי השימוש',
+    and: 'ו',
+    privacyLink: 'מדיניות הפרטיות',
+    errorAllFields: 'אנא מלא את כל השדות',
+    errorTerms: 'עליך להסכים לתנאי השימוש ולמדיניות הפרטיות',
+    thankYouTitle: 'תודה על ההרשמה!',
+    thankYouMessage: 'החשבון שלך נוצר בהצלחה. כעת תוכל להתחבר עם הפרטים שלך.',
+    continueBrowsing: 'המשך לגלוש'
   },
   // Hero section
   hero: {
