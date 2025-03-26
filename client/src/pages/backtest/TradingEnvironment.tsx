@@ -49,16 +49,44 @@ const tradingPairs = [
 
 // List of technical indicators
 const indicators = [
-  { id: 'ma', name: 'Moving Average', category: 'trend', description: 'Simple Moving Average (SMA) is an arithmetic moving average calculated by adding recent prices and dividing by the number of time periods.' },
+  // Trend indicators
+  { id: 'ma', name: 'Simple Moving Average', category: 'trend', description: 'Simple Moving Average (SMA) is an arithmetic moving average calculated by adding recent prices and dividing by the number of time periods.' },
   { id: 'ema', name: 'Exponential Moving Average', category: 'trend', description: 'Exponential Moving Average (EMA) is a type of moving average that places a greater weight on recent data points.' },
+  { id: 'wma', name: 'Weighted Moving Average', category: 'trend', description: 'Weighted Moving Average (WMA) assigns a heavier weighting to more recent data points.' },
+  { id: 'vwap', name: 'Volume Weighted Average Price', category: 'trend', description: 'VWAP is a trading benchmark that represents the average price a security has traded at throughout the day, based on both volume and price.' },
+  { id: 'ichimoku', name: 'Ichimoku Cloud', category: 'trend', description: 'Ichimoku Cloud is a collection of technical indicators that show support and resistance levels, momentum and trend direction.' },
+  { id: 'parabolic', name: 'Parabolic SAR', category: 'trend', description: 'Parabolic SAR is used to determine the direction of an asset\'s momentum and the point in time when this momentum has a higher-than-normal probability of switching directions.' },
+  { id: 'adx', name: 'Average Directional Index', category: 'trend', description: 'Average Directional Index (ADX) is used to determine the strength of a trend.' },
+  { id: 'supertrend', name: 'SuperTrend', category: 'trend', description: 'SuperTrend is a trend-following indicator based on the Average True Range (ATR) to identify market trends.' },
+  
+  // Momentum indicators
   { id: 'macd', name: 'MACD', category: 'momentum', description: 'Moving Average Convergence Divergence (MACD) is a trend-following momentum indicator that shows the relationship between two moving averages of a security price.' },
   { id: 'rsi', name: 'Relative Strength Index', category: 'momentum', description: 'Relative Strength Index (RSI) is a momentum oscillator that measures the speed and change of price movements.' },
+  { id: 'stochastic', name: 'Stochastic Oscillator', category: 'momentum', description: 'The Stochastic Oscillator is a momentum indicator comparing a particular closing price of a security to its price range over a specific period of time.' },
+  { id: 'cci', name: 'Commodity Channel Index', category: 'momentum', description: 'The Commodity Channel Index (CCI) is a momentum-based oscillator used to determine overbought and oversold conditions.' },
+  { id: 'williams', name: 'Williams %R', category: 'momentum', description: 'Williams %R is a momentum indicator measuring overbought and oversold levels, similar to a stochastic oscillator.' },
+  { id: 'ao', name: 'Awesome Oscillator', category: 'momentum', description: 'Awesome Oscillator (AO) is an indicator used to measure market momentum by calculating the difference between a 34-period and 5-period simple moving average.' },
+  { id: 'mfi', name: 'Money Flow Index', category: 'momentum', description: 'Money Flow Index (MFI) is a momentum indicator that utilizes price and volume to identify overbought or oversold conditions.' },
+  
+  // Volatility indicators
   { id: 'bollinger', name: 'Bollinger Bands', category: 'volatility', description: 'Bollinger Bands are a type of statistical chart characterizing the prices and volatility over time of a financial instrument.' },
   { id: 'atr', name: 'Average True Range', category: 'volatility', description: 'Average True Range (ATR) is a technical analysis indicator that measures market volatility.' },
-  { id: 'stochastic', name: 'Stochastic Oscillator', category: 'momentum', description: 'The Stochastic Oscillator is a momentum indicator comparing a particular closing price of a security to its price range over a specific period of time.' },
-  { id: 'adx', name: 'Average Directional Index', category: 'trend', description: 'Average Directional Index (ADX) is used to determine the strength of a trend.' },
-  { id: 'ichimoku', name: 'Ichimoku Cloud', category: 'trend', description: 'Ichimoku Cloud is a collection of technical indicators that show support and resistance levels, momentum and trend direction.' },
+  { id: 'keltner', name: 'Keltner Channel', category: 'volatility', description: 'Keltner Channels are volatility-based envelopes set above and below an exponential moving average.' },
+  { id: 'stddev', name: 'Standard Deviation', category: 'volatility', description: 'Standard Deviation is a statistical term that measures the amount of variability or dispersion around an average.' },
+  
+  // Volume indicators
+  { id: 'vol', name: 'Volume', category: 'volume', description: 'Displays the number of shares or contracts traded in a security over a specified period of time.' },
+  { id: 'obv', name: 'On Balance Volume', category: 'volume', description: 'On Balance Volume (OBV) is a momentum indicator that uses volume flow to predict changes in stock price.' },
+  { id: 'cmf', name: 'Chaikin Money Flow', category: 'volume', description: 'Chaikin Money Flow (CMF) measures the amount of Money Flow Volume over a specific period of time, typically 20 or 21 days.' },
+  { id: 'vwma', name: 'Volume Weighted Moving Average', category: 'volume', description: 'VWMA considers both price and volume to identify market trends more accurately.' },
+  
+  // Pattern recognition
   { id: 'fibonacci', name: 'Fibonacci Retracement', category: 'pattern', description: 'Fibonacci retracement is a method of technical analysis that uses horizontal lines to indicate areas of support or resistance.' },
+  { id: 'pivots', name: 'Pivot Points', category: 'pattern', description: 'Pivot Points are technical indicators used to determine potential support and resistance levels.' },
+  
+  // Wyckoff indicators
+  { id: 'wyckoffVS', name: 'Wyckoff Volume Spread', category: 'wyckoff', description: 'Measures the relationship between volume and price spread to identify accumulation and distribution phases.' },
+  { id: 'wyckoffFE', name: 'Wyckoff Force/Effort', category: 'wyckoff', description: 'Analyzes volume and price changes to identify effort vs result imbalances.' },
 ];
 
 // Custom components for icons
