@@ -2,7 +2,8 @@ import React, { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { 
   LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, 
-  ResponsiveContainer, Area, AreaChart, Legend, ReferenceLine 
+  ResponsiveContainer, Area, AreaChart, BarChart, Bar as RechartsBar,
+  Legend, ReferenceLine 
 } from 'recharts';
 import { 
   ChevronDown, Maximize2, Minimize2, Settings, HelpCircle, 
@@ -31,6 +32,22 @@ interface ChartData {
   low?: number;
   close?: number;
   volume?: number;
+}
+
+// Position interface for long/short positions on the chart
+interface Position {
+  id: string;
+  type: 'long' | 'short';
+  entryPrice: number;
+  entryTime: string | number;
+  stopLoss: number | null;
+  takeProfit: number | null;
+  amount: number;
+  leverage: number;
+  status: 'active' | 'closed';
+  exitPrice?: number;
+  exitTime?: string | number;
+  profitLoss?: number;
 }
 
 // Mock data generator for demonstration
@@ -100,6 +117,13 @@ const TradingViewChart: React.FC<TradingViewChartProps> = ({
   const [priceChange, setPriceChange] = useState<number>(0);
   const [priceChangePercent, setPriceChangePercent] = useState<number>(0);
   const [activeDrawingTool, setActiveDrawingTool] = useState<string | null>(null);
+  const [positions, setPositions] = useState<Position[]>([]);
+  const [showPositionForm, setShowPositionForm] = useState(false);
+  const [positionType, setPositionType] = useState<'long' | 'short'>('long');
+  const [positionAmount, setPositionAmount] = useState('1000');
+  const [positionLeverage, setPositionLeverage] = useState(1);
+  const [positionStopLoss, setPositionStopLoss] = useState<string | null>(null);
+  const [positionTakeProfit, setPositionTakeProfit] = useState<string | null>(null);
   
   // Format larger numbers with k, m, b suffixes
   const formatLargeNumber = (num: number): string => {
@@ -203,6 +227,86 @@ const TradingViewChart: React.FC<TradingViewChartProps> = ({
       );
     }
     return null;
+  };
+
+  // Add a new position to the chart
+  const addPosition = () => {
+    if (!currentPrice) return;
+    
+    const newPosition: Position = {
+      id: Math.random().toString(36).substring(2, 9),
+      type: positionType,
+      entryPrice: currentPrice,
+      entryTime: chartData[chartData.length - 1]?.time || new Date().toISOString(),
+      amount: parseFloat(positionAmount),
+      leverage: positionLeverage,
+      stopLoss: positionStopLoss ? parseFloat(positionStopLoss) : null,
+      takeProfit: positionTakeProfit ? parseFloat(positionTakeProfit) : null,
+      status: 'active'
+    };
+    
+    setPositions([...positions, newPosition]);
+    setShowPositionForm(false);
+    
+    // Reset form
+    setPositionStopLoss(null);
+    setPositionTakeProfit(null);
+  };
+
+  // Close a position
+  const closePosition = (positionId: string) => {
+    if (!currentPrice) return;
+    
+    setPositions(positions.map(position => {
+      if (position.id === positionId) {
+        const profitLoss = position.type === 'long'
+          ? ((currentPrice - position.entryPrice) / position.entryPrice) * position.amount * position.leverage
+          : ((position.entryPrice - currentPrice) / position.entryPrice) * position.amount * position.leverage;
+        
+        return {
+          ...position,
+          status: 'closed',
+          exitPrice: currentPrice,
+          exitTime: chartData[chartData.length - 1]?.time || new Date().toISOString(),
+          profitLoss
+        };
+      }
+      return position;
+    }));
+  };
+
+  // Delete a position from the chart
+  const deletePosition = (positionId: string) => {
+    setPositions(positions.filter(position => position.id !== positionId));
+  };
+
+  // Format percentage with + or - sign
+  const formatPercentage = (value: number) => {
+    return `${value >= 0 ? '+' : ''}${value.toFixed(2)}%`;
+  };
+
+  // Calculate current P&L for a position
+  const calculatePnL = (position: Position) => {
+    if (position.status === 'closed' || !currentPrice) {
+      return position.profitLoss || 0;
+    }
+    
+    return position.type === 'long'
+      ? ((currentPrice - position.entryPrice) / position.entryPrice) * position.amount * position.leverage
+      : ((position.entryPrice - currentPrice) / position.entryPrice) * position.amount * position.leverage;
+  };
+
+  // Calculate P&L percentage for a position
+  const calculatePnLPercentage = (position: Position) => {
+    if (position.status === 'closed' || !currentPrice) {
+      return position.profitLoss 
+        ? (position.profitLoss / position.amount) * 100 
+        : 0;
+    }
+    
+    return position.type === 'long'
+      ? ((currentPrice - position.entryPrice) / position.entryPrice) * 100 * position.leverage
+      : ((position.entryPrice - currentPrice) / position.entryPrice) * 100 * position.leverage;
   };
 
   return (
@@ -385,6 +489,219 @@ const TradingViewChart: React.FC<TradingViewChartProps> = ({
       </CardHeader>
       
       <CardContent className="p-0 pt-0">
+        {/* Position Entry Form */}
+        {showPositionForm && (
+          <div className="bg-card border border-border rounded-md p-4 mb-4 mx-4">
+            <h3 className="text-lg font-medium mb-4">
+              {t('Create New Position')}
+            </h3>
+            
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <h4 className="text-sm font-medium">{t('Position Type')}</h4>
+                <div className="flex space-x-2">
+                  <Button
+                    variant={positionType === 'long' ? "default" : "outline"}
+                    size="sm"
+                    onClick={() => setPositionType('long')}
+                    className="w-full"
+                  >
+                    {t('Long')}
+                  </Button>
+                  <Button
+                    variant={positionType === 'short' ? "default" : "outline"}
+                    size="sm"
+                    onClick={() => setPositionType('short')}
+                    className="w-full"
+                  >
+                    {t('Short')}
+                  </Button>
+                </div>
+              </div>
+              
+              <div className="space-y-2">
+                <h4 className="text-sm font-medium">{t('Leverage')}</h4>
+                <div className="flex space-x-2">
+                  <Button
+                    variant={positionLeverage === 1 ? "default" : "outline"}
+                    size="sm"
+                    onClick={() => setPositionLeverage(1)}
+                  >
+                    1x
+                  </Button>
+                  <Button
+                    variant={positionLeverage === 2 ? "default" : "outline"}
+                    size="sm"
+                    onClick={() => setPositionLeverage(2)}
+                  >
+                    2x
+                  </Button>
+                  <Button
+                    variant={positionLeverage === 5 ? "default" : "outline"}
+                    size="sm"
+                    onClick={() => setPositionLeverage(5)}
+                  >
+                    5x
+                  </Button>
+                  <Button
+                    variant={positionLeverage === 10 ? "default" : "outline"}
+                    size="sm"
+                    onClick={() => setPositionLeverage(10)}
+                  >
+                    10x
+                  </Button>
+                </div>
+              </div>
+              
+              <div className="space-y-2">
+                <label className="text-sm font-medium">{t('Amount')}</label>
+                <input
+                  type="text"
+                  value={positionAmount}
+                  onChange={(e) => setPositionAmount(e.target.value)}
+                  className="w-full px-3 py-2 bg-background border border-input rounded text-sm"
+                />
+              </div>
+              
+              <div className="space-y-2">
+                <label className="text-sm font-medium">{t('Current Price')}</label>
+                <input
+                  type="text"
+                  value={currentPrice ? formatPrice(currentPrice) : ''}
+                  disabled
+                  className="w-full px-3 py-2 bg-muted text-muted-foreground border border-input rounded text-sm"
+                />
+              </div>
+              
+              <div className="space-y-2">
+                <label className="text-sm font-medium">{t('Stop Loss')} ({t('Optional')})</label>
+                <input
+                  type="text"
+                  value={positionStopLoss || ''}
+                  onChange={(e) => setPositionStopLoss(e.target.value || null)}
+                  placeholder={positionType === 'long' ? `-5% (${currentPrice ? formatPrice(currentPrice * 0.95) : ''})` : `+5% (${currentPrice ? formatPrice(currentPrice * 1.05) : ''})`}
+                  className="w-full px-3 py-2 bg-background border border-input rounded text-sm"
+                />
+              </div>
+              
+              <div className="space-y-2">
+                <label className="text-sm font-medium">{t('Take Profit')} ({t('Optional')})</label>
+                <input
+                  type="text"
+                  value={positionTakeProfit || ''}
+                  onChange={(e) => setPositionTakeProfit(e.target.value || null)}
+                  placeholder={positionType === 'long' ? `+10% (${currentPrice ? formatPrice(currentPrice * 1.1) : ''})` : `-10% (${currentPrice ? formatPrice(currentPrice * 0.9) : ''})`}
+                  className="w-full px-3 py-2 bg-background border border-input rounded text-sm"
+                />
+              </div>
+            </div>
+            
+            <div className="flex justify-end space-x-2 mt-4">
+              <Button
+                variant="outline"
+                onClick={() => setShowPositionForm(false)}
+              >
+                {t('Cancel')}
+              </Button>
+              <Button
+                variant="default"
+                onClick={addPosition}
+              >
+                {t('Create Position')}
+              </Button>
+            </div>
+          </div>
+        )}
+        
+        {/* Positions List */}
+        {positions.length > 0 && !showPositionForm && (
+          <div className="bg-card border border-border rounded-md mb-4 mx-4">
+            <h3 className="text-lg font-medium p-4 pb-2">{t('Positions')}</h3>
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead>
+                  <tr className="border-b border-border">
+                    <th className="text-start p-2 text-sm font-medium">{t('Type')}</th>
+                    <th className="text-start p-2 text-sm font-medium">{t('Entry')}</th>
+                    <th className="text-start p-2 text-sm font-medium">{t('Amount')}</th>
+                    <th className="text-start p-2 text-sm font-medium">{t('Leverage')}</th>
+                    <th className="text-start p-2 text-sm font-medium">{t('SL/TP')}</th>
+                    <th className="text-start p-2 text-sm font-medium">{t('P&L')}</th>
+                    <th className="text-start p-2 text-sm font-medium">{t('Actions')}</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {positions.map(position => {
+                    const pnl = calculatePnL(position);
+                    const pnlPercentage = calculatePnLPercentage(position);
+                    
+                    return (
+                      <tr key={position.id} className="border-b border-border">
+                        <td className="p-2 text-sm">
+                          <Badge variant={position.type === 'long' ? "outline" : "destructive"}>
+                            {position.type === 'long' ? t('LONG') : t('SHORT')}
+                          </Badge>
+                        </td>
+                        <td className="p-2 text-sm">{formatPrice(position.entryPrice)}</td>
+                        <td className="p-2 text-sm">{formatLargeNumber(position.amount)}</td>
+                        <td className="p-2 text-sm">{position.leverage}x</td>
+                        <td className="p-2 text-sm">
+                          {position.stopLoss && (
+                            <span className="text-destructive">SL: {formatPrice(position.stopLoss)}</span>
+                          )}
+                          {position.stopLoss && position.takeProfit && (
+                            <span className="mx-1">/</span>
+                          )}
+                          {position.takeProfit && (
+                            <span className="text-success">TP: {formatPrice(position.takeProfit)}</span>
+                          )}
+                          {!position.stopLoss && !position.takeProfit && "-"}
+                        </td>
+                        <td className={`p-2 text-sm ${pnl >= 0 ? 'text-success' : 'text-destructive'}`}>
+                          {formatPrice(pnl)} ({formatPercentage(pnlPercentage)})
+                        </td>
+                        <td className="p-2 text-sm">
+                          {position.status === 'active' ? (
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => closePosition(position.id)}
+                            >
+                              {t('Close')}
+                            </Button>
+                          ) : (
+                            <span className="text-muted-foreground">{t('Closed')}</span>
+                          )}
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => deletePosition(position.id)}
+                          >
+                            X
+                          </Button>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
+        
+        {/* Add position button */}
+        {!showPositionForm && (
+          <div className="flex justify-end px-4 mb-2">
+            <Button 
+              variant="outline" 
+              size="sm"
+              onClick={() => setShowPositionForm(true)}
+            >
+              + {t('Add Position')}
+            </Button>
+          </div>
+        )}
+        
         <div className={`w-full ${fullscreen ? 'h-screen' : 'h-[500px]'}`}>
           <ResponsiveContainer width="100%" height="100%">
             {chartType === 'line' ? (
@@ -564,7 +881,7 @@ const TradingViewChart: React.FC<TradingViewChartProps> = ({
                           />
                           
                           {/* OHLC body */}
-                          <Bar 
+                          <RechartsBar 
                             data={[{
                               time: data.time, 
                               value: Math.abs(data.close - data.open),
@@ -604,7 +921,7 @@ const TradingViewChart: React.FC<TradingViewChartProps> = ({
                 {showVolume && (
                   <div style={{ height: '100px' }}>
                     <ResponsiveContainer width="100%" height="100%">
-                      <BarChart2
+                      <BarChart
                         data={chartData}
                         margin={{ top: 5, right: 30, left: 10, bottom: 5 }}
                       >
@@ -628,12 +945,12 @@ const TradingViewChart: React.FC<TradingViewChartProps> = ({
                           formatter={(value: any) => [formatLargeNumber(value), 'Volume']}
                           labelFormatter={(label) => `Date: ${new Date(label).toLocaleDateString()}`}
                         />
-                        <Bar 
+                        <RechartsBar 
                           dataKey="volume" 
                           fill="#7e57c2"
                           fillOpacity={0.7}
                         />
-                      </BarChart2>
+                      </BarChart>
                     </ResponsiveContainer>
                   </div>
                 )}
@@ -646,7 +963,7 @@ const TradingViewChart: React.FC<TradingViewChartProps> = ({
   );
 };
 
-// These components don't actually exist in recharts and are just for visualization purposes in the candlestick view
-const Bar = (props: any) => null;
+// Use custom components if needed for additional visualization purposes
+// Note: We're now using the imported RechartsBar from recharts instead
 
 export default TradingViewChart;
