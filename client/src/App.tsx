@@ -5,6 +5,7 @@ import Home from "@/pages/Home";
 import BacktestDashboard from "@/pages/backtest/Dashboard";
 import AdminDashboard from "@/pages/backtest/Admin";
 import TradeForm from "@/pages/backtest/TradeForm";
+import TradingEnvironment from "@/pages/backtest/TradingEnvironment";
 import { useEffect } from "react";
 import { useTranslation } from "react-i18next";
 
@@ -38,6 +39,7 @@ function Router() {
       <Route path="/backtest/admin" component={AdminDashboard} />
       <Route path="/backtest/new-trade" component={TradeForm} />
       <Route path="/backtest/trades/:id" component={TradeForm} />
+      <Route path="/backtest/trading" component={TradingEnvironment} />
       <Route component={NotFound} />
     </Switch>
   );

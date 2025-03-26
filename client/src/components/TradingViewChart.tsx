@@ -211,7 +211,7 @@ const TradingViewChart: React.FC<TradingViewChartProps> = ({
         <div className="flex justify-between items-center">
           <div className="flex items-center gap-2">
             <CardTitle className="text-lg font-bold">{symbol}</CardTitle>
-            <Badge variant={priceChange >= 0 ? "success" : "destructive"} className="ml-2">
+            <Badge variant={priceChange >= 0 ? "outline" : "destructive"} className={cn("ml-2", priceChange >= 0 ? "text-success" : "")}>
               {priceChange >= 0 ? '+' : ''}{formatPrice(priceChange)} 
               ({priceChangePercent >= 0 ? '+' : ''}{priceChangePercent.toFixed(2)}%)
             </Badge>
@@ -604,7 +604,7 @@ const TradingViewChart: React.FC<TradingViewChartProps> = ({
                 {showVolume && (
                   <div style={{ height: '100px' }}>
                     <ResponsiveContainer width="100%" height="100%">
-                      <BarChart
+                      <BarChart2
                         data={chartData}
                         margin={{ top: 5, right: 30, left: 10, bottom: 5 }}
                       >
@@ -633,7 +633,7 @@ const TradingViewChart: React.FC<TradingViewChartProps> = ({
                           fill="#7e57c2"
                           fillOpacity={0.7}
                         />
-                      </BarChart>
+                      </BarChart2>
                     </ResponsiveContainer>
                   </div>
                 )}
