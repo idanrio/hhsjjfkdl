@@ -92,6 +92,35 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Middleware to check if user is authenticated
+  const isAuthenticated = (req: Request, res: Response, next: NextFunction) => {
+    if (!req.session || !req.session.userId) {
+      return res.status(401).json({ 
+        error: "Not authenticated" 
+      });
+    }
+    next();
+  };
+
+  // Middleware to check if user is admin
+  const isAdmin = async (req: Request, res: Response, next: NextFunction) => {
+    if (!req.session || !req.session.userId) {
+      return res.status(401).json({ 
+        error: "Not authenticated" 
+      });
+    }
+    
+    const user = await storage.getUser(req.session.userId);
+    
+    if (!user || !user.isAdmin) {
+      return res.status(403).json({ 
+        error: "Not authorized" 
+      });
+    }
+    
+    next();
+  };
+
   app.get("/api/auth/me", async (req, res) => {
     try {
       if (!req.session || !req.session.userId) {
@@ -114,7 +143,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         email: user.email,
         level: user.level,
         bio: user.bio,
-        riskTolerance: user.riskTolerance
+        riskTolerance: user.riskTolerance,
+        isAdmin: user.isAdmin
       });
     } catch (error) {
       console.error("Get current user error:", error);
@@ -460,6 +490,159 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
     } catch (error) {
       console.error("Get metrics error:", error);
+      return res.status(500).json({ 
+        error: "Internal server error" 
+      });
+    }
+  });
+
+  // Admin API routes
+  app.get("/api/admin/users", isAdmin, async (req, res) => {
+    try {
+      // Get all users
+      const users = Array.from(storage["users"].values());
+      
+      // Remove sensitive data
+      const safeUsers = users.map(user => {
+        const { password, ...safeUser } = user;
+        return safeUser;
+      });
+      
+      return res.status(200).json(safeUsers);
+    } catch (error) {
+      console.error("Admin get users error:", error);
+      return res.status(500).json({ 
+        error: "Internal server error" 
+      });
+    }
+  });
+  
+  app.get("/api/admin/trades", isAdmin, async (req, res) => {
+    try {
+      // Get all trades
+      const allTrades = Array.from(storage["trades"].values());
+      
+      return res.status(200).json(allTrades);
+    } catch (error) {
+      console.error("Admin get trades error:", error);
+      return res.status(500).json({ 
+        error: "Internal server error" 
+      });
+    }
+  });
+  
+  app.post("/api/admin/users/:id/level-up", isAdmin, async (req, res) => {
+    try {
+      const userId = parseInt(req.params.id);
+      
+      if (isNaN(userId)) {
+        return res.status(400).json({ 
+          error: "Invalid user ID" 
+        });
+      }
+      
+      // Check if user exists
+      const user = await storage.getUser(userId);
+      
+      if (!user) {
+        return res.status(404).json({ 
+          error: "User not found" 
+        });
+      }
+      
+      // Update user level
+      await storage.updateUserLevel(userId);
+      
+      // Get updated user
+      const updatedUser = await storage.getUser(userId);
+      
+      // Return user without password
+      const { password, ...safeUser } = updatedUser!;
+      
+      return res.status(200).json(safeUser);
+    } catch (error) {
+      console.error("Admin update user level error:", error);
+      return res.status(500).json({ 
+        error: "Internal server error" 
+      });
+    }
+  });
+  
+  app.delete("/api/admin/users/:id", isAdmin, async (req, res) => {
+    try {
+      const userId = parseInt(req.params.id);
+      
+      if (isNaN(userId)) {
+        return res.status(400).json({ 
+          error: "Invalid user ID" 
+        });
+      }
+      
+      // Check if user exists
+      const user = await storage.getUser(userId);
+      
+      if (!user) {
+        return res.status(404).json({ 
+          error: "User not found" 
+        });
+      }
+      
+      // Prevent deleting your own account
+      if (userId === req.session.userId) {
+        return res.status(400).json({ 
+          error: "Cannot delete your own account" 
+        });
+      }
+      
+      // Delete user (mock implementation - would need proper implementation in storage)
+      const success = storage["users"].delete(userId);
+      
+      if (!success) {
+        return res.status(500).json({ 
+          error: "Failed to delete user" 
+        });
+      }
+      
+      return res.status(204).end();
+    } catch (error) {
+      console.error("Admin delete user error:", error);
+      return res.status(500).json({ 
+        error: "Internal server error" 
+      });
+    }
+  });
+  
+  app.delete("/api/admin/trades/:id", isAdmin, async (req, res) => {
+    try {
+      const tradeId = parseInt(req.params.id);
+      
+      if (isNaN(tradeId)) {
+        return res.status(400).json({ 
+          error: "Invalid trade ID" 
+        });
+      }
+      
+      // Check if trade exists
+      const trade = await storage.getTrade(tradeId);
+      
+      if (!trade) {
+        return res.status(404).json({ 
+          error: "Trade not found" 
+        });
+      }
+      
+      // Delete trade
+      const success = await storage.deleteTrade(tradeId);
+      
+      if (!success) {
+        return res.status(500).json({ 
+          error: "Failed to delete trade" 
+        });
+      }
+      
+      return res.status(204).end();
+    } catch (error) {
+      console.error("Admin delete trade error:", error);
       return res.status(500).json({ 
         error: "Internal server error" 
       });

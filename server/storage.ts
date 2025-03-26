@@ -70,12 +70,118 @@ export class MemStorage implements IStorage {
       this.createStrategyType({ name });
     });
     
+    // Create admin user
+    const adminId = this.userCurrentId++;
+    const now = new Date();
+    const expiryDate = new Date();
+    expiryDate.setDate(now.getDate() + 365); // 1 year from now
+    
+    const adminUser: User = {
+      id: adminId,
+      username: 'admin',
+      password: 'admin123',
+      email: 'admin@capitulre.com',
+      isAdmin: true,
+      level: 3,
+      expiryDate,
+      bio: 'System administrator',
+      riskTolerance: 'High'
+    };
+    
+    this.users.set(adminId, adminUser);
+    
     // Create demo user
-    this.createUser({
+    const demoUser = this.createUser({
       username: 'demo',
       password: 'demo123',
       email: 'demo@capitulre.com'
     });
+    
+    // Create sample trades for demo user
+    const sampleTrades = [
+      {
+        userId: demoUser.id,
+        pair: 'BTC/USD',
+        amount: '0.5',
+        entryPrice: '50000',
+        exitPrice: '55000',
+        tradeType: 'long',
+        strategy: 'MACD Crossover',
+        notes: 'Strong bullish momentum on 4h timeframe',
+        status: 'completed'
+      },
+      {
+        userId: demoUser.id,
+        pair: 'ETH/USD',
+        amount: '5',
+        entryPrice: '3000',
+        exitPrice: '3200',
+        tradeType: 'long',
+        strategy: 'RSI Oversold/Overbought',
+        notes: 'RSI was at 30, indicating oversold conditions',
+        status: 'completed'
+      },
+      {
+        userId: demoUser.id,
+        pair: 'BNB/USD',
+        amount: '10',
+        entryPrice: '400',
+        tradeType: 'long',
+        strategy: 'Support/Resistance',
+        notes: 'Strong support level at $400',
+        status: 'active'
+      },
+      {
+        userId: demoUser.id,
+        pair: 'ADA/USD',
+        amount: '1000',
+        entryPrice: '1.20',
+        exitPrice: '1.10',
+        tradeType: 'short',
+        strategy: 'Bollinger Bands',
+        notes: 'Price at upper band, expected reversal',
+        status: 'completed'
+      },
+      {
+        userId: demoUser.id,
+        pair: 'XRP/USD',
+        amount: '2000',
+        entryPrice: '0.50',
+        exitPrice: '0.55',
+        tradeType: 'long',
+        strategy: 'Moving Average',
+        notes: '50 MA crossed above 200 MA',
+        status: 'completed'
+      }
+    ];
+    
+    // Add the sample trades
+    for (const tradeSample of sampleTrades) {
+      const now = new Date();
+      const oneWeekAgo = new Date(now);
+      oneWeekAgo.setDate(now.getDate() - 7);
+      
+      const id = this.tradeCurrentId++;
+      
+      const trade: Trade = {
+        id,
+        userId: tradeSample.userId,
+        date: oneWeekAgo,
+        endDate: tradeSample.status === 'completed' ? now : null,
+        pair: tradeSample.pair,
+        amount: tradeSample.amount,
+        entryPrice: tradeSample.entryPrice,
+        exitPrice: tradeSample.exitPrice || null,
+        strategy: tradeSample.strategy || null,
+        notes: tradeSample.notes || null,
+        entryScreenshot: null,
+        exitScreenshot: null,
+        status: tradeSample.status,
+        tradeType: tradeSample.tradeType
+      };
+      
+      this.trades.set(id, trade);
+    }
   }
 
   // User operations
