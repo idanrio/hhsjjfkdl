@@ -42,26 +42,32 @@ const AuthModals: React.FC<AuthModalProps> = ({ initialView = 'login' }) => {
     
     setIsLoading(true);
     try {
-      const response = await apiRequest('/api/auth/login', {
+      const response = await fetch('/api/auth/login', {
         method: 'POST',
         body: JSON.stringify({ username, password }),
         headers: {
           'Content-Type': 'application/json',
         },
       });
+      
+      if (!response.ok) {
+        throw new Error('Login failed');
+      }
+      
+      const userData = await response.json();
 
       // Refresh user data
       queryClient.invalidateQueries({ queryKey: ['/api/auth/me'] });
       
       toast({
         title: t('auth.loginSuccess'),
-        description: t('auth.welcomeBack', { name: response.username }),
+        description: t('auth.welcomeBack', { name: userData.username }),
       });
       
       setOpen(false);
       
       // Redirect to appropriate dashboard based on admin status
-      if (response.isAdmin) {
+      if (userData.isAdmin) {
         setLocation('/backtest/admin');
       } else {
         setLocation('/backtest/dashboard');
@@ -101,13 +107,19 @@ const AuthModals: React.FC<AuthModalProps> = ({ initialView = 'login' }) => {
     
     setIsLoading(true);
     try {
-      await apiRequest('/api/auth/register', {
+      const response = await fetch('/api/auth/register', {
         method: 'POST',
         body: JSON.stringify({ username, password, email }),
         headers: {
           'Content-Type': 'application/json',
         },
       });
+      
+      if (!response.ok) {
+        throw new Error('Registration failed');
+      }
+      
+      const userData = await response.json();
       
       // Show thank you screen
       setView('thankyou');

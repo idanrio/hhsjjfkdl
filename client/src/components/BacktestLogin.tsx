@@ -47,24 +47,31 @@ const BacktestLogin: React.FC<BacktestLoginProps> = ({ onLogin }) => {
 
     setIsLoading(true);
     try {
-      const response = await apiRequest('/api/auth/login', {
+      // Use normal fetch directly instead of apiRequest since it's expecting different parameters
+      const response = await fetch('/api/auth/login', {
         method: 'POST',
         body: JSON.stringify({ username, password }),
         headers: {
           'Content-Type': 'application/json',
         },
       });
+      
+      if (!response.ok) {
+        throw new Error('Login failed');
+      }
+      
+      const userData = await response.json();
 
       // Invalidate the user query to refresh the data
       queryClient.invalidateQueries({ queryKey: ['/api/auth/me'] });
       
       toast({
         title: t('auth.loginSuccess'),
-        description: t('auth.welcomeBack', { name: response.username }),
+        description: t('auth.welcomeBack', { name: userData.username }),
       });
       
       // Redirect to appropriate dashboard
-      if (response.isAdmin) {
+      if (userData.isAdmin) {
         setLocation('/backtest/admin');
       } else {
         setLocation('/backtest/dashboard');
