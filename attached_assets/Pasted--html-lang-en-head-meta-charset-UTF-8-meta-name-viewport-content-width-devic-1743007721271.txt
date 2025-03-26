@@ -1,0 +1,996 @@
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Capitalure - Advanced Trading Education</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --primary: #1c3d86;
+            --white: #FFFFFF;
+            --black: #000000;
+            --dark-blue: #152d63;
+            --light-blue: #2a4ea6;
+            --accent: #4d76d1;
+            --success: #28a745;
+            --danger: #dc3545;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background-color: var(--black);
+            color: var(--white);
+            overflow-x: hidden;
+        }
+
+        /* Background Charts Animation */
+        .charts-background {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            opacity: 0.07;
+            z-index: -1;
+            overflow: hidden;
+        }
+
+        .chart-line {
+            position: absolute;
+            background-color: var(--primary);
+            width: 2px;
+            transform-origin: bottom;
+            animation: chartAnimation 8s infinite alternate;
+        }
+
+        @keyframes chartAnimation {
+            0% {
+                transform: scaleY(0);
+            }
+            100% {
+                transform: scaleY(1);
+            }
+        }
+
+        /* Header Styles */
+        header {
+            background: rgba(0, 0, 0, 0.8);
+            backdrop-filter: blur(10px);
+            position: fixed;
+            width: 100%;
+            z-index: 100;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .header-container {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+        }
+
+        .logo-text {
+            font-size: 28px;
+            font-weight: 700;
+            background: linear-gradient(135deg, var(--white), #a3b8e0);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-left: 10px;
+        }
+
+        .logo-icon {
+            color: var(--primary);
+            font-size: 24px;
+        }
+
+        nav ul {
+            display: flex;
+            list-style: none;
+        }
+
+        nav ul li {
+            margin-left: 40px;
+        }
+
+        nav ul li a {
+            color: var(--white);
+            text-decoration: none;
+            font-weight: 500;
+            font-size: 16px;
+            transition: color 0.3s;
+            position: relative;
+        }
+
+        nav ul li a:hover {
+            color: var(--light-blue);
+        }
+
+        nav ul li a::after {
+            content: '';
+            position: absolute;
+            bottom: -5px;
+            left: 0;
+            width: 0;
+            height: 2px;
+            background-color: var(--primary);
+            transition: width 0.3s;
+        }
+
+        nav ul li a:hover::after {
+            width: 100%;
+        }
+
+        .auth-buttons {
+            display: flex;
+            gap: 15px;
+        }
+
+        .btn {
+            padding: 10px 20px;
+            border-radius: 4px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .btn-outline {
+            border: 2px solid var(--primary);
+            background: transparent;
+            color: var(--white);
+        }
+
+        .btn-outline:hover {
+            background-color: var(--primary);
+        }
+
+        .btn-primary {
+            background-color: var(--primary);
+            color: var(--white);
+            border: none;
+        }
+
+        .btn-primary:hover {
+            background-color: var(--light-blue);
+        }
+
+        /* Hero Section */
+        .hero {
+            height: 100vh;
+            display: flex;
+            align-items: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .hero-content {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 0 20px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            width: 100%;
+        }
+
+        .hero-text {
+            max-width: 600px;
+            z-index: 1;
+        }
+
+        .hero-text h1 {
+            font-size: 56px;
+            font-weight: 800;
+            margin-bottom: 25px;
+            line-height: 1.2;
+        }
+
+        .hero-text h1 span {
+            color: var(--primary);
+        }
+
+        .hero-text p {
+            font-size: 18px;
+            line-height: 1.6;
+            margin-bottom: 30px;
+            color: rgba(255, 255, 255, 0.8);
+        }
+
+        .hero-chart {
+            width: 500px;
+            height: 350px;
+            background: rgba(28, 61, 134, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            backdrop-filter: blur(5px);
+            overflow: hidden;
+            position: relative;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+        }
+
+        /* Features Section */
+        .features {
+            padding: 100px 20px;
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .section-title {
+            text-align: center;
+            margin-bottom: 60px;
+        }
+
+        .section-title h2 {
+            font-size: 40px;
+            font-weight: 700;
+            margin-bottom: 15px;
+        }
+
+        .section-title p {
+            color: rgba(255, 255, 255, 0.7);
+            max-width: 700px;
+            margin: 0 auto;
+            font-size: 18px;
+        }
+
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 30px;
+        }
+
+        .feature-card {
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            border-radius: 10px;
+            padding: 30px;
+            transition: all 0.3s;
+        }
+
+        .feature-card:hover {
+            transform: translateY(-10px);
+            background: rgba(28, 61, 134, 0.1);
+        }
+
+        .feature-icon {
+            background-color: var(--primary);
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 20px;
+        }
+
+        .feature-icon i {
+            font-size: 24px;
+            color: var(--white);
+        }
+
+        .feature-card h3 {
+            font-size: 22px;
+            margin-bottom: 15px;
+        }
+
+        .feature-card p {
+            color: rgba(255, 255, 255, 0.7);
+            line-height: 1.6;
+        }
+
+        /* Market Overview Section (NEW) */
+        .market-overview {
+            position: relative;
+            padding: 120px 0;
+            overflow: hidden;
+        }
+
+        .market-bg {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(to right, rgba(0,0,0,0.9), rgba(0,0,0,0.7)), url('https://cdnjs.cloudflare.com/ajax/libs/image-placeholder/4.0.3/placeholder.min.js');
+            background-size: cover;
+            background-position: center;
+            background-attachment: fixed;
+            z-index: -1;
+        }
+
+        .market-overview-container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 0 20px;
+        }
+
+        .market-header {
+            text-align: center;
+            margin-bottom: 60px;
+        }
+
+        .market-header h2 {
+            font-size: 40px;
+            font-weight: 700;
+            margin-bottom: 15px;
+            color: var(--white);
+        }
+
+        .market-header p {
+            color: rgba(255, 255, 255, 0.7);
+            max-width: 700px;
+            margin: 0 auto;
+            font-size: 18px;
+        }
+
+        .market-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 30px;
+            margin-bottom: 60px;
+        }
+
+        .market-card {
+            background: rgba(0, 0, 0, 0.6);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+            backdrop-filter: blur(5px);
+        }
+
+        .market-card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .market-name {
+            display: flex;
+            align-items: center;
+        }
+
+        .market-icon {
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            background-color: var(--primary);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 10px;
+        }
+
+        .market-change {
+            font-weight: 700;
+            padding: 5px 10px;
+            border-radius: 4px;
+        }
+
+        .positive {
+            color: var(--success);
+            background-color: rgba(40, 167, 69, 0.1);
+        }
+
+        .negative {
+            color: var(--danger);
+            background-color: rgba(220, 53, 69, 0.1);
+        }
+
+        .chart-container {
+            height: 150px;
+            margin-bottom: 15px;
+        }
+
+        .market-stats {
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .stat {
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 18px;
+            font-weight: 700;
+            margin-bottom: 5px;
+        }
+
+        .stat-label {
+            font-size: 12px;
+            color: rgba(255, 255, 255, 0.6);
+        }
+
+        .market-analysis {
+            background: rgba(28, 61, 134, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            border-radius: 10px;
+            padding: 40px;
+            backdrop-filter: blur(5px);
+        }
+
+        .analysis-content {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            gap: 40px;
+        }
+
+        .analysis-text {
+            flex: 1;
+        }
+
+        .analysis-text h3 {
+            font-size: 28px;
+            margin-bottom: 20px;
+        }
+
+        .analysis-text p {
+            color: rgba(255, 255, 255, 0.7);
+            margin-bottom: 20px;
+            line-height: 1.7;
+            font-size: 16px;
+        }
+
+        .analysis-chart {
+            flex: 1;
+            max-width: 500px;
+            height: 300px;
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            overflow: hidden;
+            position: relative;
+        }
+
+        /* CTA Section */
+        .cta {
+            padding: 100px 20px;
+            max-width: 1400px;
+            margin: 0 auto;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .cta-text {
+            max-width: 600px;
+        }
+
+        .cta-text h2 {
+            font-size: 40px;
+            font-weight: 700;
+            margin-bottom: 20px;
+        }
+
+        .cta-text p {
+            color: rgba(255, 255, 255, 0.7);
+            margin-bottom: 30px;
+            line-height: 1.6;
+            font-size: 18px;
+        }
+
+        .cta-form {
+            background: rgba(0, 0, 0, 0.5);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            padding: 40px;
+            width: 100%;
+            max-width: 500px;
+        }
+
+        .form-title {
+            font-size: 24px;
+            margin-bottom: 20px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 500;
+        }
+
+        .form-group input {
+            width: 100%;
+            padding: 15px;
+            border-radius: 4px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: var(--white);
+            font-size: 16px;
+        }
+
+        .form-group input:focus {
+            outline: none;
+            border-color: var(--primary);
+        }
+
+        .btn-full {
+            width: 100%;
+            padding: 15px;
+            font-size: 16px;
+        }
+
+        /* Footer */
+        footer {
+            padding: 60px 20px 30px;
+            background-color: rgba(0, 0, 0, 0.8);
+            border-top: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .footer-content {
+            max-width: 1400px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 40px;
+            margin-bottom: 60px;
+        }
+
+        .footer-logo {
+            display: flex;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .footer-col h4 {
+            font-size: 18px;
+            margin-bottom: 20px;
+            position: relative;
+            padding-bottom: 10px;
+        }
+
+        .footer-col h4::after {
+            content: '';
+            position: absolute;
+            left: 0;
+            bottom: 0;
+            width: 50px;
+            height: 2px;
+            background-color: var(--primary);
+        }
+
+        .footer-col ul {
+            list-style: none;
+        }
+
+        .footer-col ul li {
+            margin-bottom: 10px;
+        }
+
+        .footer-col ul li a {
+            color: rgba(255, 255, 255, 0.7);
+            text-decoration: none;
+            transition: color 0.3s;
+        }
+
+        .footer-col ul li a:hover {
+            color: var(--white);
+        }
+
+        .footer-col p {
+            color: rgba(255, 255, 255, 0.7);
+            line-height: 1.6;
+        }
+
+        .social-links {
+            display: flex;
+            gap: 15px;
+            margin-top: 20px;
+        }
+
+        .social-links a {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background-color: rgba(255, 255, 255, 0.05);
+            color: var(--white);
+            transition: all 0.3s;
+        }
+
+        .social-links a:hover {
+            background-color: var(--primary);
+        }
+
+        .copyright {
+            text-align: center;
+            color: rgba(255, 255, 255, 0.5);
+            font-size: 14px;
+            padding-top: 20px;
+            border-top: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        /* Floating stats ticker (NEW) */
+        .market-ticker {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            backdrop-filter: blur(10px);
+            padding: 10px 0;
+            z-index: 90;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .ticker-container {
+            white-space: nowrap;
+            overflow: hidden;
+        }
+
+        .ticker-items {
+            display: inline-block;
+            animation: tickerScroll 30s linear infinite;
+            padding-left: 100%;
+        }
+
+        .ticker-item {
+            display: inline-flex;
+            align-items: center;
+            margin-right: 40px;
+        }
+
+        .ticker-name {
+            font-weight: 600;
+            margin-right: 10px;
+        }
+
+        .ticker-value {
+            margin-right: 5px;
+        }
+
+        @keyframes tickerScroll {
+            0% {
+                transform: translateX(0);
+            }
+            100% {
+                transform: translateX(-100%);
+            }
+        }
+
+        /* Mobile Responsiveness */
+        .mobile-menu-toggle {
+            display: none;
+            font-size: 24px;
+            cursor: pointer;
+        }
+
+        @media (max-width: 1024px) {
+            .hero-text h1 {
+                font-size: 42px;
+            }
+            .hero-chart {
+                width: 400px;
+                height: 300px;
+            }
+            .analysis-content {
+                flex-direction: column;
+            }
+            .analysis-chart {
+                width: 100%;
+                max-width: 100%;
+                margin-top: 30px;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .mobile-menu-toggle {
+                display: block;
+            }
+            
+            nav {
+                position: fixed;
+                top: 80px;
+                left: -100%;
+                width: 100%;
+                height: calc(100vh - 80px);
+                background-color: var(--black);
+                transition: left 0.3s;
+            }
+            
+            nav.active {
+                left: 0;
+            }
+            
+            nav ul {
+                flex-direction: column;
+                padding: 40px 20px;
+            }
+            
+            nav ul li {
+                margin: 0 0 20px 0;
+            }
+            
+            .auth-buttons {
+                display: none;
+            }
+            
+            .hero-content {
+                flex-direction: column;
+                text-align: center;
+            }
+            
+            .hero-text {
+                margin-bottom: 40px;
+            }
+            
+            .hero-chart {
+                width: 100%;
+                max-width: 400px;
+            }
+            
+            .features-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .cta {
+                flex-direction: column;
+            }
+            
+            .cta-text {
+                margin-bottom: 40px;
+                text-align: center;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Background Charts Animation -->
+    <div class="charts-background" id="charts-background"></div>
+
+    <!-- Header -->
+    <header>
+        <div class="header-container">
+            <div class="logo">
+                <i class="fas fa-chart-line logo-icon"></i>
+                <span class="logo-text">Capitalure</span>
+            </div>
+
+            <div class="mobile-menu-toggle" id="mobile-menu-toggle">
+                <i class="fas fa-bars"></i>
+            </div>
+
+            <nav id="navigation">
+                <ul>
+                    <li><a href="#home">Home</a></li>
+                    <li><a href="#features">Features</a></li>
+                    <li><a href="#market">Market Overview</a></li>
+                    <li><a href="#methodology">Methodology</a></li>
+                    <li><a href="#pricing">Pricing</a></li>
+                    <li><a href="#about">About Us</a></li>
+                </ul>
+            </nav>
+
+            <div class="auth-buttons">
+                <button class="btn btn-outline">Log In</button>
+                <button class="btn btn-primary">Sign Up</button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Hero Section -->
+    <section class="hero" id="home">
+        <div class="hero-content">
+            <div class="hero-text">
+                <h1>Master The Market With <span>Capitalure</span></h1>
+                <p>Advanced trading education platform using proprietary methodologies to help you navigate crypto and stock markets with confidence. Discover the hidden patterns of market behavior.</p>
+                <button class="btn btn-primary">Start Your Journey</button>
+            </div>
+            <div class="hero-chart" id="hero-chart"></div>
+        </div>
+    </section>
+
+    <!-- Features Section -->
+    <section class="features" id="features">
+        <div class="section-title">
+            <h2>Why Choose Capitalure</h2>
+            <p>Our platform combines advanced methodology with cutting-edge technology to give you the edge in today's markets.</p>
+        </div>
+
+        <div class="features-grid">
+            <div class="feature-card">
+                <div class="feature-icon">
+                    <i class="fas fa-chart-bar"></i>
+                </div>
+                <h3>Pattern Recognition</h3>
+                <p>Learn to identify key market patterns that signal potential opportunities using our proprietary methodology.</p>
+            </div>
+
+            <div class="feature-card">
+                <div class="feature-icon">
+                    <i class="fas fa-graduation-cap"></i>
+                </div>
+                <h3>Expert Education</h3>
+                <p>Access our comprehensive curriculum designed by professional traders with years of market experience.</p>
+            </div>
+
+            <div class="feature-card">
+                <div class="feature-icon">
+                    <i class="fas fa-signal"></i>
+                </div>
+                <h3>Volume Analysis</h3>
+                <p>Understand the relationship between price and volume to anticipate market moves before they happen.</p>
+            </div>
+
+            <div class="feature-card">
+                <div class="feature-icon">
+                    <i class="fas fa-laptop-code"></i>
+                </div>
+                <h3>Trading Tools</h3>
+                <p>Utilize our suite of custom-built tools designed to complement our methodology and enhance your trading.</p>
+            </div>
+
+            <div class="feature-card">
+                <div class="feature-icon">
+                    <i class="fas fa-users"></i>
+                </div>
+                <h3>Community Access</h3>
+                <p>Join a community of like-minded traders sharing insights, strategies, and support.</p>
+            </div>
+
+            <div class="feature-card">
+                <div class="feature-icon">
+                    <i class="fas fa-bitcoin"></i>
+                </div>
+                <h3>Crypto Expertise</h3>
+                <p>Apply advanced methodology to the cryptocurrency markets with specialized training modules.</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- NEW SECTION: Market Overview -->
+    <section class="market-overview" id="market">
+        <div class="market-bg"></div>
+        <div class="market-overview-container">
+            <div class="market-header">
+                <h2>Market Overview</h2>
+                <p>Stay informed with real-time market data and expert analysis to make informed trading decisions.</p>
+            </div>
+
+            <div class="market-grid">
+                <!-- Market Card 1: S&P 500 -->
+                <div class="market-card">
+                    <div class="market-card-header">
+                        <div class="market-name">
+                            <div class="market-icon">
+                                <i class="fas fa-chart-line"></i>
+                            </div>
+                            <h3>S&P 500</h3>
+                        </div>
+                        <div class="market-change positive">+1.2%</div>
+                    </div>
+                    <div class="chart-container" id="sp500-chart">
+        <!-- Chart will be rendered here by JavaScript -->
+    </div>
+                    <div class="market-stats">
+                        <div class="stat">
+                            <div class="stat-value">5,321.45</div>
+                            <div class="stat-label">PRICE</div>
+                        </div>
+                        <div class="stat">
+                            <div class="stat-value">5,350.20</div>
+                            <div class="stat-label">HIGH</div>
+                        </div>
+                        <div class="stat">
+                            <div class="stat-value">5,270.80</div>
+                            <div class="stat-label">LOW</div>
+                        </div>
+                        <div class="stat">
+                            <div class="stat-value">2.6B</div>
+                            <div class="stat-label">VOLUME</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Market Card 2: Bitcoin -->
+                <div class="market-card">
+                    <div class="market-card-header">
+                        <div class="market-name">
+                            <div class="market-icon">
+                                <i class="fab fa-bitcoin"></i>
+                            </div>
+                            <h3>Bitcoin</h3>
+                        </div>
+                        <div class="market-change positive">+3.7%</div>
+                    </div>
+                    <div class="chart-container" id="btc-chart">
+        <!-- Chart will be rendered here by JavaScript -->
+    </div>
+                    <div class="market-stats">
+                        <div class="stat">
+                            <div class="stat-value">$82,145</div>
+                            <div class="stat-label">PRICE</div>
+                        </div>
+                        <div class="stat">
+                            <div class="stat-value">$83,210</div>
+                            <div class="stat-label">HIGH</div>
+                        </div>
+                        <div class="stat">
+                            <div class="stat-value">$79,450</div>
+                            <div class="stat-label">LOW</div>
+                        </div>
+                        <div class="stat">
+                            <div class="stat-value">$42.7B</div>
+                            <div class="stat-label">VOLUME</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Market Card 3: NASDAQ -->
+                <div class="market-card">
+                    <div class="market-card-header">
+                        <div class="market-name">
+                            <div class="market-icon">
+                                <i class="fas fa-building"></i>
+                            </div>
+                            <h3>NASDAQ</h3>
+                        </div>
+                        <div class="market-change negative">-0.8%</div>
+                    </div>
+                    <div class="chart-container" id="nasdaq-chart">
+        <!-- Chart will be rendered here by JavaScript -->
+    </div>
+                    <div class="market-stats">
+                        <div class="stat">
+                            <div class="stat-value">16,234.78</div>
+                            <div class="stat-label">PRICE</div>
+                        </div>
+                        <div class="stat">
+                            <div class="stat-value">16,420.15</div>
+                            <div class="stat-label">HIGH</div>
+                        </div>
+                        <div class="stat">
+                            <div class="stat-value">16,180.50</div>
+                            <div class="stat-label">LOW</div>
+                        </div>
+                        <div class="stat">
+                            <div class="stat-value">3.1B</div>
+                            <div class="stat-label">VOLUME</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="market-analysis">
+                <div class="analysis-content">
+                    <div class="analysis-text">
+                        <h3>Weekly Market Analysis</h3>
+                        <p>The markets have shown resilience this week despite ongoing geopolitical tensions. Technical indicators suggest a potential breakout in several key sectors, with technology and energy leading the pack.</p>
+                        <p>Volume analysis indicates strong institutional buying at current levels, suggesting a robust foundation for continued upward momentum. Our proprietary models are showing bullish divergence patterns in multiple time frames.</p>
+                        <p>Key levels to watch include the 5,350 resistance on the S&P 500, which if broken could signal a continued bull run towards the 5,500 target. Bitcoin's consolidation above $80,000 appears to be forming a bull flag pattern, with significant support established at the $78,500 level.</p>
+                        <button class="btn btn-primary">Access Full Analysis</button>
+                    </div>
+                    <div class="analysis-chart" id="analysis-chart">
+        <!-- Detailed analysis chart will be rendered here by JavaScript -->
+    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- CTA Section -->
+    <section class="c
