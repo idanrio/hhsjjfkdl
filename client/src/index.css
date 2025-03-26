@@ -5,12 +5,12 @@
 @layer base {
   :root {
     /* Capitulre Brand Colors */
-    --primary: 217 65% 32%; /* #1c3d86 - Deep blue */
-    --primary-rgb: 28, 61, 134; /* RGB version for rgba */
-    --primary-dark: 217 65% 25%;
-    --primary-light: 217 65% 40%; 
-    --accent: 199 79% 51%; /* #22a1e2 - Light blue */
-    --accent-rgb: 34, 161, 226; /* RGB version for rgba */
+    --primary: 199 79% 51%; /* #22a1e2 - Light blue (now primary) */
+    --primary-rgb: 34, 161, 226; /* RGB version for rgba */
+    --primary-dark: 199 79% 40%;
+    --primary-light: 199 79% 60%; 
+    --accent: 217 65% 32%; /* #1c3d86 - Deep blue (now accent) */
+    --accent-rgb: 28, 61, 134; /* RGB version for rgba */
     --success: 142 76% 45%; /* Green */
     --danger: 354 70% 54%; /* Red */
     
@@ -38,7 +38,7 @@
     
     --border: 215 25% 20%;
     --input: 215 25% 18%;
-    --ring: 210 100% 50%;
+    --ring: 199 79% 51%; /* Match primary */
     
     --radius: 0.5rem;
   }
@@ -50,8 +50,8 @@
   body {
     @apply font-sans antialiased bg-background text-foreground;
     text-align: start; /* Use logical properties instead of left/right */
-    background-image: radial-gradient(circle at 0% 0%, hsl(217, 65%, 20%) 0%, transparent 30%),
-                     radial-gradient(circle at 100% 100%, hsl(199, 79%, 30%, 0.2) 0%, transparent 30%);
+    background-image: radial-gradient(circle at 0% 0%, hsl(199, 79%, 30%) 0%, transparent 40%),
+                     radial-gradient(circle at 100% 100%, hsl(217, 65%, 20%, 0.2) 0%, transparent 30%);
     background-attachment: fixed;
   }
   
@@ -153,24 +153,47 @@
   
   /* Brand color buttons */
   .bg-brand-primary {
-    background-color: #1c3d86; /* Deep blue */
+    background-color: #22a1e2; /* Light blue - now primary */
   }
   
   .bg-brand-accent {
-    background-color: #22a1e2; /* Light blue */
+    background-color: #1c3d86; /* Deep blue - now accent */
   }
   
   /* Gradient backgrounds using brand colors */
   .bg-brand-gradient {
-    background: linear-gradient(135deg, #1c3d86, #22a1e2);
+    background: linear-gradient(135deg, #22a1e2, #1c3d86);
   }
   
   .from-brand-primary {
-    --tw-gradient-from: #1c3d86;
+    --tw-gradient-from: #22a1e2;
   }
   
   .to-brand-accent {
-    --tw-gradient-to: #22a1e2;
+    --tw-gradient-to: #1c3d86;
+  }
+  
+  /* Additional brand color utilities */
+  .text-brand-primary {
+    color: #22a1e2;
+  }
+  
+  .text-brand-accent {
+    color: #1c3d86;
+  }
+  
+  .border-brand-primary {
+    border-color: #22a1e2;
+  }
+  
+  /* Special highlight effects */
+  .glow-primary {
+    box-shadow: 0 0 15px rgba(34, 161, 226, 0.5);
+  }
+  
+  .hover-glow-primary:hover {
+    box-shadow: 0 0 15px rgba(34, 161, 226, 0.5);
+    transition: box-shadow 0.3s ease;
   }
   
   /* Enhanced Comprehensive RTL Support */
