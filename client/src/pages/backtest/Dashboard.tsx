@@ -1,21 +1,25 @@
 import { useState, useEffect } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Separator } from "@/components/ui/separator";
 import { useToast } from "@/hooks/use-toast";
-import { getQueryFn } from "@/lib/queryClient";
+import { getQueryFn, apiRequest } from "@/lib/queryClient";
 import { Trade, TradingPair, StrategyType } from "@shared/schema";
 import { Link } from "wouter";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, LineChart, Line } from "recharts";
-import { Plus, Download, TrendingUp, Filter, ChevronLeft } from "lucide-react";
+import { Plus, Download, TrendingUp, Filter, ChevronLeft, Presentation } from "lucide-react";
+import IntegratedTradingEnvironment from "@/components/IntegratedTradingEnvironment";
 
 export default function BacktestDashboard() {
   const { t } = useTranslation();
   const { toast } = useToast();
   const [activeTab, setActiveTab] = useState<string>("overview");
+  const [tradingEnvironmentOpen, setTradingEnvironmentOpen] = useState<boolean>(false);
+  const [fullScreenMode, setFullScreenMode] = useState<boolean>(false);
 
   // Fetch user data
   const { data: userData, isLoading: userLoading } = useQuery({
@@ -435,127 +439,204 @@ export default function BacktestDashboard() {
         
         {/* Analytics Tab */}
         <TabsContent value="analytics">
-          <Card className="bg-card">
-            <CardHeader>
-              <CardTitle>{t("Trading Analytics")}</CardTitle>
-              <CardDescription>
-                {t("Detailed analysis of your trading performance")}
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              {tradesLoading || trades?.length === 0 ? (
-                <div className="flex flex-col items-center justify-center h-64">
-                  <p className="text-muted-foreground mb-2">
-                    {tradesLoading ? t("Loading analytics...") : t("Not enough trading data for analytics")}
-                  </p>
-                  {!tradesLoading && trades?.length === 0 && (
-                    <Link href="/backtest/new-trade">
-                      <Button size="sm" className="bg-brand-primary hover-glow-primary">
-                        <Plus className="mr-2 h-4 w-4" />
-                        {t("Add Trade")}
+          {tradingEnvironmentOpen ? (
+            <IntegratedTradingEnvironment 
+              onClose={() => setTradingEnvironmentOpen(false)}
+              fullScreen={fullScreenMode}
+              onSaveTrade={(trade) => {
+                // Create a trade with the data from the trading environment
+                const saveTrade = async () => {
+                  try {
+                    const response = await apiRequest('/api/trades', {
+                      method: 'POST',
+                      body: JSON.stringify(trade),
+                    });
+                    
+                    if (response.ok) {
+                      toast({
+                        title: t("Trade saved"),
+                        description: t("Your trade has been saved successfully"),
+                      });
+                    }
+                  } catch (error) {
+                    toast({
+                      title: t("Error"),
+                      description: t("Failed to save trade"),
+                      variant: "destructive",
+                    });
+                  }
+                };
+                
+                if (!fullScreenMode) {
+                  saveTrade();
+                }
+              }}
+            />
+          ) : (
+            <div className="space-y-6">
+              {/* Trading Environment Launch Card */}
+              <Card className="bg-card border-2 border-brand-primary/20 hover:border-brand-primary/50 transition-colors">
+                <CardContent className="p-6">
+                  <div className="flex flex-col md:flex-row items-center justify-between gap-6">
+                    <div className="flex items-center gap-4">
+                      <div className="bg-brand-primary/10 p-4 rounded-full">
+                        <Presentation className="h-8 w-8 text-brand-primary" />
+                      </div>
+                      <div>
+                        <h3 className="text-xl font-bold">{t("Interactive Trading Environment")}</h3>
+                        <p className="text-muted-foreground">
+                          {t("Practice trading in our professional backtesting environment")}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="flex gap-2">
+                      <Button
+                        variant="outline"
+                        className="border-brand-primary text-brand-primary hover:bg-brand-primary/10"
+                        onClick={() => {
+                          setTradingEnvironmentOpen(true);
+                          setFullScreenMode(true);
+                        }}
+                      >
+                        {t("Full Screen")}
                       </Button>
-                    </Link>
+                      <Button 
+                        className="bg-brand-primary hover-glow-primary"
+                        onClick={() => {
+                          setTradingEnvironmentOpen(true);
+                          setFullScreenMode(false);
+                        }}
+                      >
+                        {t("Open Trading Environment")}
+                      </Button>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card className="bg-card">
+                <CardHeader>
+                  <CardTitle>{t("Trading Analytics")}</CardTitle>
+                  <CardDescription>
+                    {t("Detailed analysis of your trading performance")}
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  {tradesLoading || trades?.length === 0 ? (
+                    <div className="flex flex-col items-center justify-center h-64">
+                      <p className="text-muted-foreground mb-2">
+                        {tradesLoading ? t("Loading analytics...") : t("Not enough trading data for analytics")}
+                      </p>
+                      {!tradesLoading && trades?.length === 0 && (
+                        <Link href="/backtest/new-trade">
+                          <Button size="sm" className="bg-brand-primary hover-glow-primary">
+                            <Plus className="mr-2 h-4 w-4" />
+                            {t("Add Trade")}
+                          </Button>
+                        </Link>
+                      )}
+                    </div>
+                  ) : (
+                    <div className="space-y-8">
+                      {/* Performance by Pair */}
+                      <div>
+                        <h3 className="text-lg font-medium mb-4">{t("Performance by Trading Pair")}</h3>
+                        <div className="h-80">
+                          <ResponsiveContainer width="100%" height="100%">
+                            <BarChart
+                              data={tradingPairs?.map((pair: TradingPair) => {
+                                const pairTrades = trades?.filter((t: Trade) => t.pair === pair.pair) || [];
+                                const completedTrades = pairTrades.filter(t => t.status === 'completed' && t.exitPrice);
+                                const totalProfitLoss = completedTrades.reduce((total, trade) => {
+                                  const isLong = trade.tradeType === 'long';
+                                  const entryPrice = parseFloat(trade.entryPrice);
+                                  const exitPrice = parseFloat(trade.exitPrice!);
+                                  const amount = parseFloat(trade.amount);
+                                  
+                                  const profitLoss = isLong ? 
+                                    (exitPrice - entryPrice) * amount : 
+                                    (entryPrice - exitPrice) * amount;
+                                  
+                                  return total + profitLoss;
+                                }, 0);
+                                
+                                return {
+                                  pair: pair.pair,
+                                  totalProfitLoss,
+                                  tradesCount: pairTrades.length
+                                };
+                              })}
+                              margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
+                            >
+                              <CartesianGrid strokeDasharray="3 3" />
+                              <XAxis dataKey="pair" />
+                              <YAxis />
+                              <Tooltip />
+                              <Legend />
+                              <Bar 
+                                dataKey="totalProfitLoss" 
+                                name={t("Total P/L")} 
+                                fill="#22a1e2" 
+                                fillOpacity={0.8}
+                              />
+                            </BarChart>
+                          </ResponsiveContainer>
+                        </div>
+                      </div>
+                      
+                      <Separator />
+                      
+                      {/* Performance by Strategy */}
+                      <div>
+                        <h3 className="text-lg font-medium mb-4">{t("Performance by Strategy")}</h3>
+                        <div className="h-80">
+                          <ResponsiveContainer width="100%" height="100%">
+                            <BarChart
+                              data={strategyTypes?.map((strategy: StrategyType) => {
+                                const strategyTrades = trades?.filter((t: Trade) => t.strategy === strategy.name) || [];
+                                const completedTrades = strategyTrades.filter(t => t.status === 'completed' && t.exitPrice);
+                                const totalProfitLoss = completedTrades.reduce((total, trade) => {
+                                  const isLong = trade.tradeType === 'long';
+                                  const entryPrice = parseFloat(trade.entryPrice);
+                                  const exitPrice = parseFloat(trade.exitPrice!);
+                                  const amount = parseFloat(trade.amount);
+                                  
+                                  const profitLoss = isLong ? 
+                                    (exitPrice - entryPrice) * amount : 
+                                    (entryPrice - exitPrice) * amount;
+                                  
+                                  return total + profitLoss;
+                                }, 0);
+                                
+                                return {
+                                  strategy: strategy.name,
+                                  totalProfitLoss,
+                                  tradesCount: strategyTrades.length
+                                };
+                              })}
+                              margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
+                            >
+                              <CartesianGrid strokeDasharray="3 3" />
+                              <XAxis dataKey="strategy" />
+                              <YAxis />
+                              <Tooltip />
+                              <Legend />
+                              <Bar 
+                                dataKey="totalProfitLoss" 
+                                name={t("Total P/L")} 
+                                fill="#22a1e2" 
+                                fillOpacity={0.8}
+                              />
+                            </BarChart>
+                          </ResponsiveContainer>
+                        </div>
+                      </div>
+                    </div>
                   )}
-                </div>
-              ) : (
-                <div className="space-y-8">
-                  {/* Performance by Pair */}
-                  <div>
-                    <h3 className="text-lg font-medium mb-4">{t("Performance by Trading Pair")}</h3>
-                    <div className="h-80">
-                      <ResponsiveContainer width="100%" height="100%">
-                        <BarChart
-                          data={tradingPairs?.map((pair: TradingPair) => {
-                            const pairTrades = trades?.filter((t: Trade) => t.pair === pair.pair) || [];
-                            const completedTrades = pairTrades.filter(t => t.status === 'completed' && t.exitPrice);
-                            const totalProfitLoss = completedTrades.reduce((total, trade) => {
-                              const isLong = trade.tradeType === 'long';
-                              const entryPrice = parseFloat(trade.entryPrice);
-                              const exitPrice = parseFloat(trade.exitPrice!);
-                              const amount = parseFloat(trade.amount);
-                              
-                              const profitLoss = isLong ? 
-                                (exitPrice - entryPrice) * amount : 
-                                (entryPrice - exitPrice) * amount;
-                              
-                              return total + profitLoss;
-                            }, 0);
-                            
-                            return {
-                              pair: pair.pair,
-                              totalProfitLoss,
-                              tradesCount: pairTrades.length
-                            };
-                          })}
-                          margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
-                        >
-                          <CartesianGrid strokeDasharray="3 3" />
-                          <XAxis dataKey="pair" />
-                          <YAxis />
-                          <Tooltip />
-                          <Legend />
-                          <Bar 
-                            dataKey="totalProfitLoss" 
-                            name={t("Total P/L")} 
-                            fill="#22a1e2" 
-                            fillOpacity={0.8}
-                          />
-                        </BarChart>
-                      </ResponsiveContainer>
-                    </div>
-                  </div>
-                  
-                  <Separator />
-                  
-                  {/* Performance by Strategy */}
-                  <div>
-                    <h3 className="text-lg font-medium mb-4">{t("Performance by Strategy")}</h3>
-                    <div className="h-80">
-                      <ResponsiveContainer width="100%" height="100%">
-                        <BarChart
-                          data={strategyTypes?.map((strategy: StrategyType) => {
-                            const strategyTrades = trades?.filter((t: Trade) => t.strategy === strategy.name) || [];
-                            const completedTrades = strategyTrades.filter(t => t.status === 'completed' && t.exitPrice);
-                            const totalProfitLoss = completedTrades.reduce((total, trade) => {
-                              const isLong = trade.tradeType === 'long';
-                              const entryPrice = parseFloat(trade.entryPrice);
-                              const exitPrice = parseFloat(trade.exitPrice!);
-                              const amount = parseFloat(trade.amount);
-                              
-                              const profitLoss = isLong ? 
-                                (exitPrice - entryPrice) * amount : 
-                                (entryPrice - exitPrice) * amount;
-                              
-                              return total + profitLoss;
-                            }, 0);
-                            
-                            return {
-                              strategy: strategy.name,
-                              totalProfitLoss,
-                              tradesCount: strategyTrades.length
-                            };
-                          })}
-                          margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
-                        >
-                          <CartesianGrid strokeDasharray="3 3" />
-                          <XAxis dataKey="strategy" />
-                          <YAxis />
-                          <Tooltip />
-                          <Legend />
-                          <Bar 
-                            dataKey="totalProfitLoss" 
-                            name={t("Total P/L")} 
-                            fill="#22a1e2" 
-                            fillOpacity={0.8}
-                          />
-                        </BarChart>
-                      </ResponsiveContainer>
-                    </div>
-                  </div>
-                </div>
-              )}
-            </CardContent>
-          </Card>
+                </CardContent>
+              </Card>
+            </div>
+          )}
         </TabsContent>
         
         {/* Settings Tab */}
