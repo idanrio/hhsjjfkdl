@@ -12,8 +12,11 @@ const enTranslations = {
     contact: 'Contact',
     login: 'Login',
     signup: 'Sign Up',
-    topTraders: 'Top Traders'
+    topTraders: 'Top Traders',
+    backtest: 'Backtesting',
+    admin: 'Admin'
   },
+  logged_in_as: 'Logged in as',
   // Authentication
   auth: {
     loginTitle: 'Login to your account',
@@ -171,8 +174,11 @@ const heTranslations = {
     contact: 'צור קשר',
     login: 'כניסה',
     signup: 'הרשמה',
-    topTraders: 'סוחרים מובילים'
+    topTraders: 'סוחרים מובילים',
+    backtest: 'בקטסטינג',
+    admin: 'ניהול'
   },
+  logged_in_as: 'מחובר כ',
   // Authentication
   auth: {
     loginTitle: 'התחברות לחשבון שלך',

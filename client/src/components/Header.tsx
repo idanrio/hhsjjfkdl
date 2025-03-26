@@ -1,14 +1,27 @@
 import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
+import { Link, useLocation } from 'wouter';
+import { useQuery } from '@tanstack/react-query';
 import AuthModals from './AuthModals';
 import LanguageSwitcher from './LanguageSwitcher';
 import CapitulreLogo from '../assets/logo';
+import { getQueryFn } from '@/lib/queryClient';
 
 const Header: React.FC = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const { t, i18n } = useTranslation();
   const currentLanguage = i18n.language;
   const isRtl = currentLanguage === 'he';
+  const [location] = useLocation();
+
+  // Fetch user data to determine if the user is logged in and admin status
+  const { data: userData } = useQuery({
+    queryKey: ["/api/auth/me"],
+    queryFn: getQueryFn({ on401: "returnNull" }),
+  });
+
+  const isLoggedIn = !!userData;
+  const isAdmin = userData?.isAdmin;
 
   useEffect(() => {
     // Set the document direction based on the language
@@ -29,9 +42,9 @@ const Header: React.FC = () => {
         <nav className="hidden md:block">
           <ul className={`flex ${isRtl ? 'space-x-reverse space-x-10' : 'space-x-10'}`}>
             <li>
-              <a href="#" className="font-medium relative nav-link hover:text-primary transition-colors">
+              <Link href="/" className={`font-medium relative nav-link hover:text-primary transition-colors ${location === "/" ? "text-brand-primary" : ""}`}>
                 {t('navigation.home')}
-              </a>
+              </Link>
             </li>
             <li>
               <a href="#features" className="font-medium relative nav-link hover:text-primary transition-colors">
@@ -43,6 +56,20 @@ const Header: React.FC = () => {
                 {t('navigation.markets')}
               </a>
             </li>
+            {isLoggedIn && (
+              <li>
+                <Link href="/backtest/dashboard" className={`font-medium relative nav-link hover:text-primary transition-colors ${location.includes("/backtest") ? "text-brand-primary" : ""}`}>
+                  {t('navigation.backtest')}
+                </Link>
+              </li>
+            )}
+            {isAdmin && (
+              <li>
+                <Link href="/backtest/admin" className={`font-medium relative nav-link hover:text-primary transition-colors ${location === "/backtest/admin" ? "text-brand-primary" : ""}`}>
+                  {t('navigation.admin')}
+                </Link>
+              </li>
+            )}
             <li>
               <a href="#contact" className="font-medium relative nav-link hover:text-primary transition-colors">
                 {t('navigation.contact')}
@@ -73,13 +100,13 @@ const Header: React.FC = () => {
         <nav className="px-4 py-5">
           <ul className="space-y-4">
             <li>
-              <a 
-                href="#" 
-                className="block py-2 font-medium hover:text-primary transition-colors"
+              <Link
+                href="/"
+                className={`block py-2 font-medium hover:text-primary transition-colors ${location === "/" ? "text-brand-primary" : ""}`}
                 onClick={() => setIsMenuOpen(false)}
               >
                 {t('navigation.home')}
-              </a>
+              </Link>
             </li>
             <li>
               <a 
@@ -99,6 +126,28 @@ const Header: React.FC = () => {
                 {t('navigation.markets')}
               </a>
             </li>
+            {isLoggedIn && (
+              <li>
+                <Link
+                  href="/backtest/dashboard"
+                  className={`block py-2 font-medium hover:text-primary transition-colors ${location.includes("/backtest") ? "text-brand-primary" : ""}`}
+                  onClick={() => setIsMenuOpen(false)}
+                >
+                  {t('navigation.backtest')}
+                </Link>
+              </li>
+            )}
+            {isAdmin && (
+              <li>
+                <Link
+                  href="/backtest/admin"
+                  className={`block py-2 font-medium hover:text-primary transition-colors ${location === "/backtest/admin" ? "text-brand-primary" : ""}`}
+                  onClick={() => setIsMenuOpen(false)}
+                >
+                  {t('navigation.admin')}
+                </Link>
+              </li>
+            )}
             <li>
               <a 
                 href="#contact" 
@@ -109,8 +158,16 @@ const Header: React.FC = () => {
               </a>
             </li>
             <li className="flex flex-col gap-2 pt-4 border-t border-white/10">
-              <AuthModals initialView="login" />
-              <AuthModals initialView="signup" />
+              {!isLoggedIn ? (
+                <>
+                  <AuthModals initialView="login" />
+                  <AuthModals initialView="signup" />
+                </>
+              ) : (
+                <div className="py-2 text-sm text-brand-primary">
+                  {t('logged_in_as')}: {userData?.username}
+                </div>
+              )}
             </li>
           </ul>
         </nav>
