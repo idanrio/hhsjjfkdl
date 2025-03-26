@@ -52,7 +52,7 @@ const BacktestLogin: React.FC<BacktestLoginProps> = ({ onLogin }) => {
           </Button>
           <Button 
             onClick={handleLogin}
-            className="flex-1 bg-primary hover:bg-primary/80"
+            className="flex-1 bg-brand-primary hover:bg-brand-primary/90"
           >
             {t('backtest.loginButton')}
           </Button>
