@@ -73,7 +73,7 @@ const Footer: React.FC = () => {
 
         <div className={`pt-8 border-t border-white/10 flex flex-col md:flex-row justify-between items-center ${isRtl ? 'text-right' : 'text-left'}`}>
           <div className="text-white/50 mb-4 md:mb-0">
-            &copy; {new Date().getFullYear()} Apex Analysis. {t('footer.rights')}
+            &copy; {new Date().getFullYear()} Capitulre. {t('footer.rights')}
           </div>
           <div className="flex gap-6">
             <a href="#" className="text-white/50 hover:text-primary">{t('footer.privacy')}</a>

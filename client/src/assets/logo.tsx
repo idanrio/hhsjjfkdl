@@ -1,10 +1,11 @@
 import React from 'react';
+import logo from '@/assets/images/Capitulre.png';
 
 export const CapitulreLogo: React.FC<{ className?: string }> = ({ className = 'h-10' }) => {
   return (
     <img 
-      src="/images/capitulre-logo.png" 
-      alt="Apex Analysis" 
+      src={logo} 
+      alt="Capitulre" 
       className={className}
     />
   );

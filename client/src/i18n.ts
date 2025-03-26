@@ -51,7 +51,7 @@ const enTranslations = {
   },
   // Features section
   features: {
-    title: 'Why Choose Apex Analysis',
+    title: 'Why Choose Capitulre',
     subtitle: 'Our platform offers unparalleled resources and tools to help you succeed in today\'s complex financial markets.',
     expertLed: {
       title: 'Expert-Led Education',
@@ -152,7 +152,7 @@ const enTranslations = {
     faqs: 'FAQs',
     contactUs: 'Contact Us',
     address: '123 Trading Street, Financial District, NY 10004',
-    email: 'support@apexanalysis.com',
+    email: 'support@capitulre.com',
     phone: '+1 (555) 123-4567',
     rights: 'All rights reserved.',
     privacy: 'Privacy Policy',
@@ -210,7 +210,7 @@ const heTranslations = {
   },
   // Features section
   features: {
-    title: 'למה לבחור באפקס אנליסיס',
+    title: 'למה לבחור בקפיטולר',
     subtitle: 'הפלטפורמה שלנו מציעה משאבים וכלים ייחודיים שיסייעו לך להצליח בשווקים הפיננסיים המורכבים של ימינו.',
     expertLed: {
       title: 'הדרכה ממומחים מובילים',
@@ -311,7 +311,7 @@ const heTranslations = {
     faqs: 'שאלות נפוצות',
     contactUs: 'צור קשר',
     address: 'רחוב המסחר 123, המרכז הפיננסי, תל אביב 67023',
-    email: 'support@apexanalysis.com',
+    email: 'support@capitulre.com',
     phone: '+972 (55) 123-4567',
     rights: 'כל הזכויות שמורות.',
     privacy: 'מדיניות פרטיות',
