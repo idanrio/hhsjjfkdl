@@ -56,10 +56,11 @@ const enTranslations = {
     current: 'Current',
     change: 'Change',
     high: 'High',
+    fetchError: 'Unable to fetch market data. Please try again later.',
     analysis: {
       title: 'Weekly Market Analysis',
-      description1: 'The S&P 500 continues its upward trend, driven by strong performance in technology stocks and positive economic indicators. Market sentiment remains optimistic despite concerns about inflation.',
-      description2: 'Our analysis suggests a potential consolidation phase before the next leg up. Traders should watch key resistance levels around 4,200 and maintain appropriate risk management strategies.',
+      paragraph1: 'The S&P 500 continues its upward trend, driven by strong performance in technology stocks and positive economic indicators. Market sentiment remains optimistic despite concerns about inflation.',
+      paragraph2: 'Our analysis suggests a potential consolidation phase before the next leg up. Traders should watch key resistance levels around 4,200 and maintain appropriate risk management strategies.',
       readMore: 'Read Full Analysis'
     }
   },
@@ -86,6 +87,18 @@ const enTranslations = {
       alreadyAccount: 'Already have an account?',
       signIn: 'Sign in'
     }
+  },
+  // Backtesting system
+  backtest: {
+    launchSystem: 'Launch Backtesting System',
+    loginTitle: 'Login to Backtesting System',
+    emailLabel: 'Email Address',
+    emailPlaceholder: 'Enter your email',
+    passwordLabel: 'Password',
+    passwordPlaceholder: 'Enter your password',
+    loginButton: 'Login',
+    cancel: 'Cancel',
+    loginError: 'Please enter both email and password'
   },
   // Footer
   footer: {
@@ -162,10 +175,11 @@ const heTranslations = {
     current: 'נוכחי',
     change: 'שינוי',
     high: 'גבוה',
+    fetchError: 'לא ניתן לטעון נתוני שוק. אנא נסה שוב מאוחר יותר.',
     analysis: {
       title: 'ניתוח שוק שבועי',
-      description1: 'מדד S&P 500 ממשיך במגמה העולה שלו, בהובלת ביצועים חזקים במניות הטכנולוגיה ואינדיקטורים כלכליים חיוביים. הלך הרוח בשוק נשאר אופטימי למרות החששות מאינפלציה.',
-      description2: 'הניתוח שלנו מצביע על פוטנציאל לשלב של התבססות לפני הרגל הבאה למעלה. סוחרים צריכים לעקוב אחר רמות התנגדות מפתח סביב 4,200 ולשמור על אסטרטגיות ניהול סיכונים מתאימות.',
+      paragraph1: 'מדד S&P 500 ממשיך במגמה העולה שלו, בהובלת ביצועים חזקים במניות הטכנולוגיה ואינדיקטורים כלכליים חיוביים. הלך הרוח בשוק נשאר אופטימי למרות החששות מאינפלציה.',
+      paragraph2: 'הניתוח שלנו מצביע על פוטנציאל לשלב של התבססות לפני הרגל הבאה למעלה. סוחרים צריכים לעקוב אחר רמות התנגדות מפתח סביב 4,200 ולשמור על אסטרטגיות ניהול סיכונים מתאימות.',
       readMore: 'קרא ניתוח מלא'
     }
   },
@@ -192,6 +206,18 @@ const heTranslations = {
       alreadyAccount: 'כבר יש לך חשבון?',
       signIn: 'התחבר'
     }
+  },
+  // Backtesting system
+  backtest: {
+    launchSystem: 'הפעל מערכת בדיקה',
+    loginTitle: 'התחברות למערכת הבדיקה',
+    emailLabel: 'כתובת אימייל',
+    emailPlaceholder: 'הכנס את האימייל שלך',
+    passwordLabel: 'סיסמה',
+    passwordPlaceholder: 'הכנס את הסיסמה שלך',
+    loginButton: 'התחבר',
+    cancel: 'ביטול',
+    loginError: 'אנא הכנס את האימייל והסיסמה'
   },
   // Footer
   footer: {
