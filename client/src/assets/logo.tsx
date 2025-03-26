@@ -4,7 +4,7 @@ export const CapitulreLogo: React.FC<{ className?: string }> = ({ className = 'h
   return (
     <img 
       src="/images/capitulre-logo.png" 
-      alt="Capitulre" 
+      alt="Apex Analysis" 
       className={className}
     />
   );

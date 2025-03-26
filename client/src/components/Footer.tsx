@@ -13,7 +13,7 @@ const Footer: React.FC = () => {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 mb-12">
           <div>
             <div className="flex items-center mb-6">
-              <CapitulreLogo className="h-24 font-bold" />
+              <CapitulreLogo className="h-24 w-auto font-bold" />
             </div>
             <p className={`text-white/60 mb-6 leading-relaxed ${isRtl ? 'text-right' : 'text-left'}`}>
               {t('footer.description')}
@@ -73,7 +73,7 @@ const Footer: React.FC = () => {
 
         <div className={`pt-8 border-t border-white/10 flex flex-col md:flex-row justify-between items-center ${isRtl ? 'text-right' : 'text-left'}`}>
           <div className="text-white/50 mb-4 md:mb-0">
-            &copy; {new Date().getFullYear()} Capitulre. {t('footer.rights')}
+            &copy; {new Date().getFullYear()} Apex Analysis. {t('footer.rights')}
           </div>
           <div className="flex gap-6">
             <a href="#" className="text-white/50 hover:text-primary">{t('footer.privacy')}</a>
