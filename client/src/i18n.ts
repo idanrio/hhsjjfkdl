@@ -11,7 +11,8 @@ const enTranslations = {
     markets: 'Markets',
     contact: 'Contact',
     login: 'Login',
-    signup: 'Sign Up'
+    signup: 'Sign Up',
+    topTraders: 'Top Traders'
   },
   // Authentication
   auth: {
@@ -149,79 +150,79 @@ const enTranslations = {
   }
 };
 
-// Hebrew translations
+// Hebrew translations - Improved grammatical correctness and fluency
 const heTranslations = {
   // Header
   navigation: {
     home: 'דף הבית',
-    features: 'תכונות',
+    features: 'יתרונות',
     markets: 'שווקים',
     contact: 'צור קשר',
-    login: 'התחברות',
+    login: 'כניסה',
     signup: 'הרשמה'
   },
   // Authentication
   auth: {
-    loginTitle: 'התחבר לחשבון שלך',
-    signupTitle: 'צור חשבון חדש',
+    loginTitle: 'התחברות לחשבון שלך',
+    signupTitle: 'יצירת חשבון חדש',
     nameLabel: 'שם מלא',
-    namePlaceholder: 'הכנס את שמך המלא',
-    emailLabel: 'כתובת אימייל',
-    emailPlaceholder: 'הכנס את האימייל שלך',
+    namePlaceholder: 'הזן את שמך המלא',
+    emailLabel: 'דואר אלקטרוני',
+    emailPlaceholder: 'הזן את כתובת הדואר האלקטרוני',
     passwordLabel: 'סיסמה',
-    passwordPlaceholder: 'הכנס את הסיסמה שלך',
+    passwordPlaceholder: 'הזן את הסיסמה שלך',
     rememberMe: 'זכור אותי',
     forgotPassword: 'שכחת סיסמה?',
-    loginButton: 'התחבר',
-    signupButton: 'הרשם',
+    loginButton: 'כניסה',
+    signupButton: 'הרשמה',
     noAccount: 'אין לך חשבון?',
     createAccount: 'צור חשבון',
     haveAccount: 'כבר יש לך חשבון?',
-    loginInstead: 'התחבר כעת',
+    loginInstead: 'היכנס עכשיו',
     termsPrefix: 'אני מסכים/ה ל',
     termsLink: 'תנאי השימוש',
-    and: 'ו',
+    and: 'ול',
     privacyLink: 'מדיניות הפרטיות',
-    errorAllFields: 'אנא מלא את כל השדות',
-    errorTerms: 'עליך להסכים לתנאי השימוש ולמדיניות הפרטיות',
+    errorAllFields: 'נא למלא את כל השדות',
+    errorTerms: 'יש להסכים לתנאי השימוש ולמדיניות הפרטיות',
     thankYouTitle: 'תודה על ההרשמה!',
-    thankYouMessage: 'החשבון שלך נוצר בהצלחה. כעת תוכל להתחבר עם הפרטים שלך.',
-    continueBrowsing: 'המשך לגלוש'
+    thankYouMessage: 'החשבון שלך נוצר בהצלחה. כעת ניתן להתחבר עם פרטי הכניסה שלך.',
+    continueBrowsing: 'המשך לגלישה'
   },
   // Hero section
   hero: {
-    title: 'שלוט בשווקים עם חינוך מסחר מתקדם',
-    description: 'נצל הזדמנויות שוק עם פלטפורמת החינוך המקיפה שלנו למסחר. למד אסטרטגיות מסוחרים מומחים וקח שליטה על עתידך הפיננסי.',
+    title: 'שלוט בשווקים באמצעות הכשרת מסחר מתקדמת',
+    description: 'נצל הזדמנויות בשוק עם פלטפורמת ההכשרה המקיפה שלנו. למד אסטרטגיות מסוחרים מומחים וקח שליטה על עתידך הפיננסי.',
     getStarted: 'התחל עכשיו',
     watchDemo: 'צפה בהדגמה'
   },
   // Features section
   features: {
-    title: 'למה לבחור בקפיטלור',
-    subtitle: 'הפלטפורמה שלנו מציעה משאבים וכלים ייחודיים שיעזרו לך להצליח בשווקים הפיננסיים המורכבים של היום.',
+    title: 'למה לבחור באפקס אנליסיס',
+    subtitle: 'הפלטפורמה שלנו מציעה משאבים וכלים ייחודיים שיסייעו לך להצליח בשווקים הפיננסיים המורכבים של ימינו.',
     expertLed: {
-      title: 'לימוד מובל ע"י מומחים',
-      description: 'למד ממקצוענים בתעשייה עם שנים של ניסיון בשווקים פיננסיים ואסטרטגיות מסחר.'
+      title: 'הדרכה ממומחים מובילים',
+      description: 'למד ממקצוענים בעלי שנות ניסיון בשווקים פיננסיים ובאסטרטגיות מסחר.'
     },
     analytics: {
-      title: 'אנליטיקה מתקדמת',
-      description: 'גישה לכלי ניתוח טכני חזקים ונתוני שוק בזמן אמת כדי לתמוך בהחלטות המסחר שלך.'
+      title: 'ניתוח מתקדם',
+      description: 'גישה לכלי ניתוח טכני חזקים ולנתוני שוק בזמן אמת לתמיכה בהחלטות המסחר שלך.'
     },
     community: {
-      title: 'תמיכת קהילה',
-      description: 'הצטרף לקהילה משגשגת של סוחרים החולקים תובנות, אסטרטגיות ותמיכה במסע המסחר שלך.'
+      title: 'קהילה תומכת',
+      description: 'הצטרף לקהילה פעילה של סוחרים החולקים תובנות, אסטרטגיות ותמיכה במסע המסחר שלך.'
     },
     simulations: {
       title: 'סימולציות מסחר',
-      description: 'התאמן במסחר בסביבה נטולת סיכון עם טכנולוגיית סימולציית השוק המתקדמת שלנו.'
+      description: 'התאמן במסחר בסביבה ללא סיכון עם טכנולוגיית סימולציית שוק מתקדמת.'
     },
     mobile: {
-      title: 'גישה מהנייד',
-      description: 'גש לקורסים ולנתוני השוק שלך בכל מכשיר עם הפלטפורמה המגיבה שלנו.'
+      title: 'גישה ממכשירים ניידים',
+      description: 'גש לקורסים ולנתוני השוק מכל מכשיר באמצעות הפלטפורמה המותאמת שלנו.'
     },
     certification: {
       title: 'תוכניות הסמכה',
-      description: 'קבל תעודות מוכרות בתעשייה כדי לתקף את הידע והמומחיות שלך במסחר.'
+      description: 'קבל תעודות מוכרות בתעשייה המאשרות את הידע והמומחיות שלך במסחר.'
     }
   },
   // Markets section
@@ -230,19 +231,19 @@ const heTranslations = {
     subtitle: 'הישאר מעודכן עם נתוני שוק בזמן אמת וניתוחים מקצועיים מהמומחים שלנו.',
     current: 'נוכחי',
     change: 'שינוי',
-    high: 'גבוה',
-    fetchError: 'לא ניתן לטעון נתוני שוק. אנא נסה שוב מאוחר יותר.',
+    high: 'שיא',
+    fetchError: 'לא ניתן לטעון נתוני שוק. נא לנסות שוב מאוחר יותר.',
     analysis: {
       title: 'ניתוח שוק שבועי',
-      paragraph1: 'מדד S&P 500 ממשיך במגמה העולה שלו, בהובלת ביצועים חזקים במניות הטכנולוגיה ואינדיקטורים כלכליים חיוביים. הלך הרוח בשוק נשאר אופטימי למרות החששות מאינפלציה.',
-      paragraph2: 'הניתוח שלנו מצביע על פוטנציאל לשלב של התבססות לפני הרגל הבאה למעלה. סוחרים צריכים לעקוב אחר רמות התנגדות מפתח סביב 4,200 ולשמור על אסטרטגיות ניהול סיכונים מתאימות.',
+      paragraph1: 'מדד S&P 500 ממשיך במגמה העולה שלו, בהובלת ביצועים חזקים במניות הטכנולוגיה ואינדיקטורים כלכליים חיוביים. אווירת השוק נותרת אופטימית למרות החששות מאינפלציה.',
+      paragraph2: 'הניתוח שלנו מצביע על פוטנציאל לשלב התבססות לפני המשך העלייה. סוחרים צריכים לעקוב אחר רמות התנגדות מרכזיות באזור 4,200 ולשמור על אסטרטגיות ניהול סיכונים מתאימות.',
       readMore: 'קרא ניתוח מלא'
     }
   },
   // CTA section
   cta: {
     title: 'התחל את מסע המסחר שלך היום',
-    description: 'הצטרף לאלפי סוחרים ששינו את הגישה שלהם לשווקים עם פלטפורמת החינוך המקיפה שלנו. הירשם עכשיו כדי לגשת לקורסי מתחילים בחינם.',
+    description: 'הצטרף לאלפי סוחרים ששינו את גישתם לשווקים עם פלטפורמת ההכשרה המקיפה שלנו. הירשם עכשיו לקבלת קורסי מתחילים בחינם.',
     students: 'תלמידים פעילים',
     videos: 'שיעורי וידאו',
     rating: 'דירוג ממוצע',
@@ -250,49 +251,49 @@ const heTranslations = {
       title: 'צור חשבון חינמי',
       fullName: 'שם מלא',
       fullNamePlaceholder: 'ישראל ישראלי',
-      email: 'כתובת אימייל',
+      email: 'דואר אלקטרוני',
       emailPlaceholder: 'israel@example.com',
       password: 'סיסמה',
       passwordPlaceholder: '••••••••',
       terms: 'אני מסכים/ה ל',
       termsLink: 'תנאי השירות',
-      and: 'ו',
-      privacyLink: 'מדיניות פרטיות',
+      and: 'ול',
+      privacyLink: 'מדיניות הפרטיות',
       submit: 'התחל עכשיו',
       alreadyAccount: 'כבר יש לך חשבון?',
-      signIn: 'התחבר'
+      signIn: 'היכנס'
     }
   },
   // Backtesting system
   backtest: {
-    launchSystem: 'הפעל מערכת בדיקה',
-    loginTitle: 'התחברות למערכת הבדיקה',
-    emailLabel: 'כתובת אימייל',
-    emailPlaceholder: 'הכנס את האימייל שלך',
+    launchSystem: 'כניסה למערכת הבקטסטינג',
+    loginTitle: 'כניסה למערכת הבקטסטינג',
+    emailLabel: 'דואר אלקטרוני',
+    emailPlaceholder: 'הזן את כתובת הדואר האלקטרוני',
     passwordLabel: 'סיסמה',
-    passwordPlaceholder: 'הכנס את הסיסמה שלך',
-    loginButton: 'התחבר',
+    passwordPlaceholder: 'הזן את הסיסמה שלך',
+    loginButton: 'כניסה',
     cancel: 'ביטול',
-    loginError: 'אנא הכנס את האימייל והסיסמה'
+    loginError: 'נא להזין דואר אלקטרוני וסיסמה'
   },
   // Footer
   footer: {
-    description: 'חינוך מסחר מתקדם לסוחרים שאפתניים ומנוסים. למד, התאמן, ושלוט בשווקים.',
+    description: 'הכשרת מסחר מתקדמת לסוחרים שאפתניים ומנוסים. למד, התאמן ושלוט בשווקים.',
     quickLinks: 'קישורים מהירים',
     resources: 'משאבים',
     tradingGuides: 'מדריכי מסחר',
     marketAnalysis: 'ניתוח שוק',
-    educationBlog: 'בלוג חינוכי',
+    educationBlog: 'בלוג לימודי',
     glossary: 'מילון מונחים',
     faqs: 'שאלות נפוצות',
     contactUs: 'צור קשר',
-    address: 'רחוב המסחר 123, רובע פיננסי, ת"א 67023',
-    email: 'support@capitalure.com',
+    address: 'רחוב המסחר 123, המרכז הפיננסי, תל אביב 67023',
+    email: 'support@apexanalysis.com',
     phone: '+972 (55) 123-4567',
     rights: 'כל הזכויות שמורות.',
     privacy: 'מדיניות פרטיות',
     terms: 'תנאי שימוש',
-    disclaimer: 'כתב ויתור'
+    disclaimer: 'הצהרת אחריות'
   }
 };
 

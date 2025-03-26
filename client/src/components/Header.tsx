@@ -23,7 +23,7 @@ const Header: React.FC = () => {
     <header className="fixed w-full z-50 bg-black/80 backdrop-blur-lg border-b border-white/10">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 py-5 flex justify-between items-center">
         <div className="flex items-center">
-          <CapitulreLogo className="h-12" />
+          <CapitulreLogo className="h-20 font-bold" />
         </div>
 
         <nav className="hidden md:block">

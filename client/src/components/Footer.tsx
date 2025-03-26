@@ -13,7 +13,7 @@ const Footer: React.FC = () => {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 mb-12">
           <div>
             <div className="flex items-center mb-6">
-              <CapitulreLogo className="h-16" />
+              <CapitulreLogo className="h-24 font-bold" />
             </div>
             <p className={`text-white/60 mb-6 leading-relaxed ${isRtl ? 'text-right' : 'text-left'}`}>
               {t('footer.description')}
