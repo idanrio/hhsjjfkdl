@@ -129,6 +129,17 @@ const enTranslations = {
     cancel: 'Cancel',
     loginError: 'Please enter both email and password'
   },
+  // Top Traders section
+  topTraders: {
+    title: 'Top Backtesting Traders',
+    subtitle: 'Meet our most successful traders based on backtesting performance. Learn from their strategies and achievements.',
+    winRate: 'Win Rate',
+    profit: 'Total Profit',
+    profitPct: 'Profit %',
+    viewStrategy: 'View Strategy',
+    viewAll: 'View All Top Traders',
+    joinRanking: 'Join Our Ranking'
+  },
   // Footer
   footer: {
     description: 'Advanced trading education for aspiring and experienced traders. Learn, practice, and master the markets.',
@@ -141,7 +152,7 @@ const enTranslations = {
     faqs: 'FAQs',
     contactUs: 'Contact Us',
     address: '123 Trading Street, Financial District, NY 10004',
-    email: 'support@capitalure.com',
+    email: 'support@apexanalysis.com',
     phone: '+1 (555) 123-4567',
     rights: 'All rights reserved.',
     privacy: 'Privacy Policy',
@@ -159,7 +170,8 @@ const heTranslations = {
     markets: 'שווקים',
     contact: 'צור קשר',
     login: 'כניסה',
-    signup: 'הרשמה'
+    signup: 'הרשמה',
+    topTraders: 'סוחרים מובילים'
   },
   // Authentication
   auth: {
@@ -275,6 +287,17 @@ const heTranslations = {
     loginButton: 'כניסה',
     cancel: 'ביטול',
     loginError: 'נא להזין דואר אלקטרוני וסיסמה'
+  },
+  // Top Traders section
+  topTraders: {
+    title: 'סוחרים מובילים במערכת הבקטסטינג',
+    subtitle: 'הכירו את הסוחרים המצליחים ביותר שלנו על בסיס ביצועי בקטסטינג. למדו מהאסטרטגיות וההישגים שלהם.',
+    winRate: 'אחוז הצלחה',
+    profit: 'רווח כולל',
+    profitPct: 'אחוז רווח',
+    viewStrategy: 'צפייה באסטרטגיה',
+    viewAll: 'צפייה בכל הסוחרים המובילים',
+    joinRanking: 'הצטרף לדירוג שלנו'
   },
   // Footer
   footer: {
