@@ -4,39 +4,40 @@
 
 @layer base {
   :root {
-    --primary: 198 85% 40%;
-    --primary-dark: 198 85% 32%;
-    --primary-light: 198 85% 48%; 
-    --accent: 190 90% 60%;
-    --success: 134 61% 41%;
-    --danger: 354 70% 54%;
+    /* Apex Analysis Main Colors */
+    --primary: 210 100% 50%; /* Primary blue */
+    --primary-rgb: 0, 115, 255; /* RGB version for rgba */
+    --primary-dark: 210 100% 40%;
+    --primary-light: 210 100% 60%; 
+    --accent: 250 100% 60%; /* Purple accent */
+    --success: 142 76% 45%; /* Green */
+    --danger: 354 70% 54%; /* Red */
     
-    --background: 0 0% 0%;
-    --foreground: 0 0% 100%;
+    --background: 222 47% 11%; /* Dark blue/gray */
+    --foreground: 210 40% 98%; /* Off-white */
     
-    --card: 0 0% 0%;
+    --card: 225 25% 7%;
     --card-foreground: 0 0% 100%;
     
-    --popover: 0 0% 0%;
+    --popover: 220 30% 10%;
     --popover-foreground: 0 0% 100%;
     
     --primary-foreground: 0 0% 100%;
     
-    --secondary: 198 60% 15%;
+    --secondary: 218 30% 22%;
     --secondary-foreground: 0 0% 100%;
     
-    --muted: 0 0% 10%;
-    --muted-foreground: 0 0% 70%;
+    --muted: 220 15% 16%;
+    --muted-foreground: 210 40% 80%;
     
-    --accent: 190 90% 60%;
     --accent-foreground: 0 0% 100%;
     
     --destructive: 0 62% 50%;
     --destructive-foreground: 0 0% 100%;
     
-    --border: 0 0% 10%;
-    --input: 0 0% 10%;
-    --ring: 198 85% 40%;
+    --border: 215 25% 20%;
+    --input: 215 25% 18%;
+    --ring: 210 100% 50%;
     
     --radius: 0.5rem;
   }
@@ -48,20 +49,59 @@
   body {
     @apply font-sans antialiased bg-background text-foreground;
     text-align: start; /* Use logical properties instead of left/right */
+    background-image: radial-gradient(circle at 0% 0%, hsl(220, 60%, 15%) 0%, transparent 25%),
+                     radial-gradient(circle at 100% 100%, hsl(250, 100%, 25%, 0.15) 0%, transparent 25%);
+    background-attachment: fixed;
+  }
+  
+  /* Chart Background Container */
+  .charts-background-container {
+    @apply fixed top-0 left-0 w-full h-full -z-10 overflow-hidden;
+  }
+  
+  /* Particles Canvas */
+  .particles-canvas {
+    @apply absolute top-0 left-0 w-full h-full;
+    opacity: 0.3;
   }
   
   /* Chart animation background */
   .charts-background {
-    @apply fixed top-0 left-0 w-full h-full opacity-[0.07] -z-10 overflow-hidden;
+    @apply fixed top-0 left-0 w-full h-full -z-10 overflow-hidden;
   }
   
+  /* Grid Lines */
+  .grid-line {
+    @apply absolute bg-white/5;
+  }
+  
+  .grid-line.horizontal {
+    @apply w-full h-[1px];
+  }
+  
+  .grid-line.vertical {
+    @apply h-full w-[1px];
+  }
+  
+  /* Chart Lines */
   .chart-line {
-    @apply absolute bg-primary w-[2px] origin-bottom;
+    @apply absolute bg-primary/30 w-[2px] origin-bottom;
     animation: chartAnimation 8s infinite alternate;
   }
   
+  .chart-line.premium {
+    background: linear-gradient(to top, var(--primary-color, #0073ff), transparent);
+    box-shadow: 0 0 8px rgba(var(--primary-rgb), 0.3);
+  }
+  
+  /* Gradient Overlay */
+  .gradient-overlay {
+    @apply absolute top-0 left-0 w-full h-full;
+    background: radial-gradient(circle at 50% 50%, transparent 0%, hsla(var(--background)) 90%);
+  }
+  
   @keyframes chartAnimation {
-    0% { transform: scaleY(0); }
+    0% { transform: scaleY(0.3); }
     100% { transform: scaleY(1); }
   }
   
