@@ -4,10 +4,10 @@
 
 @layer base {
   :root {
-    --primary: 222 47% 32%;
-    --primary-dark: 222 47% 24%;
-    --primary-light: 222 47% 40%; 
-    --accent: 222 53% 56%;
+    --primary: 198 85% 40%;
+    --primary-dark: 198 85% 32%;
+    --primary-light: 198 85% 48%; 
+    --accent: 190 90% 60%;
     --success: 134 61% 41%;
     --danger: 354 70% 54%;
     
@@ -22,13 +22,13 @@
     
     --primary-foreground: 0 0% 100%;
     
-    --secondary: 222 47% 11%;
+    --secondary: 198 60% 15%;
     --secondary-foreground: 0 0% 100%;
     
     --muted: 0 0% 10%;
     --muted-foreground: 0 0% 70%;
     
-    --accent: 222 53% 56%;
+    --accent: 190 90% 60%;
     --accent-foreground: 0 0% 100%;
     
     --destructive: 0 62% 50%;
@@ -36,7 +36,7 @@
     
     --border: 0 0% 10%;
     --input: 0 0% 10%;
-    --ring: 222 47% 32%;
+    --ring: 198 85% 40%;
     
     --radius: 0.5rem;
   }
@@ -93,11 +93,22 @@
   
   /* RTL Support */
   [dir="rtl"] .language-switcher {
-    @apply space-x-reverse;
+    flex-direction: row-reverse;
   }
   
   [dir="rtl"] .nav-link::after {
-    @apply right-0 left-auto;
+    right: 0;
+    left: auto;
+  }
+  
+  [dir="rtl"] .charts-background {
+    right: 0;
+    left: auto;
+  }
+  
+  /* RTL specific spacing override classes */
+  .rtl-space-reverse {
+    flex-direction: row-reverse;
   }
   
   /* Language specific font settings */
