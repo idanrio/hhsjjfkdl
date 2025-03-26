@@ -98,12 +98,14 @@ interface TradingViewChartProps {
   symbol: string;
   initialPrice?: number;
   className?: string;
+  initialPositions?: Position[];
 }
 
 const TradingViewChart: React.FC<TradingViewChartProps> = ({ 
   symbol, 
   initialPrice = 40000,
-  className
+  className,
+  initialPositions = []
 }) => {
   const { t } = useTranslation();
   const [chartData, setChartData] = useState<ChartData[]>([]);
@@ -117,7 +119,7 @@ const TradingViewChart: React.FC<TradingViewChartProps> = ({
   const [priceChange, setPriceChange] = useState<number>(0);
   const [priceChangePercent, setPriceChangePercent] = useState<number>(0);
   const [activeDrawingTool, setActiveDrawingTool] = useState<string | null>(null);
-  const [positions, setPositions] = useState<Position[]>([]);
+  const [positions, setPositions] = useState<Position[]>(initialPositions);
   const [showPositionForm, setShowPositionForm] = useState(false);
   const [positionType, setPositionType] = useState<'long' | 'short'>('long');
   const [positionAmount, setPositionAmount] = useState('1000');
@@ -829,11 +831,68 @@ const TradingViewChart: React.FC<TradingViewChartProps> = ({
                 )}
                 
                 <Legend />
+                {/* Current price reference line */}
                 <ReferenceLine 
                   y={currentPrice || 0} 
                   stroke="rgba(255,255,255,0.3)" 
-                  strokeDasharray="3 3" 
+                  strokeDasharray="3 3"
+                  label={{ 
+                    value: formatPrice(currentPrice || 0),
+                    position: 'right',
+                    fill: 'rgba(255,255,255,0.7)',
+                    fontSize: 10
+                  }}
                 />
+                
+                {/* Position entry, stop loss and take profit lines */}
+                {positions.filter(p => p.status === 'active').map(position => (
+                  <React.Fragment key={position.id}>
+                    {/* Entry price line */}
+                    <ReferenceLine 
+                      y={position.entryPrice} 
+                      stroke={position.type === 'long' ? "#4caf50" : "#f44336"} 
+                      strokeWidth={1}
+                      label={{ 
+                        value: `Entry: ${formatPrice(position.entryPrice)}`,
+                        position: 'insideTopRight',
+                        fill: position.type === 'long' ? "#4caf50" : "#f44336",
+                        fontSize: 10
+                      }}
+                    />
+                    
+                    {/* Stop loss line */}
+                    {position.stopLoss && (
+                      <ReferenceLine 
+                        y={position.stopLoss} 
+                        stroke="#f44336" 
+                        strokeWidth={1}
+                        strokeDasharray="3 3"
+                        label={{ 
+                          value: `SL: ${formatPrice(position.stopLoss)}`,
+                          position: 'insideTopRight',
+                          fill: "#f44336",
+                          fontSize: 10
+                        }}
+                      />
+                    )}
+                    
+                    {/* Take profit line */}
+                    {position.takeProfit && (
+                      <ReferenceLine 
+                        y={position.takeProfit} 
+                        stroke="#4caf50" 
+                        strokeWidth={1}
+                        strokeDasharray="3 3"
+                        label={{ 
+                          value: `TP: ${formatPrice(position.takeProfit)}`,
+                          position: 'insideTopRight',
+                          fill: "#4caf50",
+                          fontSize: 10
+                        }}
+                      />
+                    )}
+                  </React.Fragment>
+                ))}
               </AreaChart>
             ) : (
               // Candlestick chart visualization using recharts
@@ -894,6 +953,56 @@ const TradingViewChart: React.FC<TradingViewChartProps> = ({
                         </React.Fragment>
                       ))}
                       
+                      {/* Position Entry Lines */}
+                      {positions.map(position => (
+                        <ReferenceLine 
+                          key={`entry-${position.id}`}
+                          y={position.entryPrice} 
+                          stroke={position.type === 'long' ? "#4caf50" : "#f44336"}
+                          strokeWidth={2}
+                          label={{
+                            value: `${position.type === 'long' ? 'Long' : 'Short'} Entry: ${formatPrice(position.entryPrice)}`,
+                            position: 'insideBottomRight',
+                            fill: position.type === 'long' ? "#4caf50" : "#f44336",
+                            fontSize: 12
+                          }}
+                        />
+                      ))}
+
+                      {/* Position Stop Loss Lines */}
+                      {positions.filter(p => p.stopLoss !== null).map(position => (
+                        <ReferenceLine 
+                          key={`sl-${position.id}`}
+                          y={position.stopLoss as number} 
+                          stroke={position.type === 'long' ? "#f44336" : "#4caf50"}
+                          strokeWidth={1}
+                          strokeDasharray="3 3"
+                          label={{
+                            value: `Stop Loss: ${formatPrice(position.stopLoss as number)}`,
+                            position: 'insideTopRight',
+                            fill: position.type === 'long' ? "#f44336" : "#4caf50",
+                            fontSize: 12
+                          }}
+                        />
+                      ))}
+
+                      {/* Position Take Profit Lines */}
+                      {positions.filter(p => p.takeProfit !== null).map(position => (
+                        <ReferenceLine 
+                          key={`tp-${position.id}`}
+                          y={position.takeProfit as number} 
+                          stroke="#2196f3"
+                          strokeWidth={1}
+                          strokeDasharray="3 3"
+                          label={{
+                            value: `Take Profit: ${formatPrice(position.takeProfit as number)}`,
+                            position: 'insideTopRight',
+                            fill: "#2196f3",
+                            fontSize: 12
+                          }}
+                        />
+                      ))}
+
                       {/* Render indicators */}
                       {indicators.includes('ma') && (
                         <Line 
@@ -908,11 +1017,20 @@ const TradingViewChart: React.FC<TradingViewChartProps> = ({
                       )}
                       
                       <Legend />
+                      {/* Current price reference line */}
                       <ReferenceLine 
                         y={currentPrice || 0} 
                         stroke="rgba(255,255,255,0.3)" 
                         strokeDasharray="3 3" 
+                        label={{ 
+                          value: formatPrice(currentPrice || 0),
+                          position: 'right',
+                          fill: 'rgba(255,255,255,0.7)',
+                          fontSize: 10
+                        }}
                       />
+                      
+                      {/* Current price reference line */}
                     </LineChart>
                   </ResponsiveContainer>
                 </div>
