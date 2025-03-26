@@ -51,7 +51,7 @@ const enTranslations = {
   },
   // Features section
   features: {
-    title: 'Why Choose Capitalure',
+    title: 'Why Choose Apex Analysis',
     subtitle: 'Our platform offers unparalleled resources and tools to help you succeed in today\'s complex financial markets.',
     expertLed: {
       title: 'Expert-Led Education',

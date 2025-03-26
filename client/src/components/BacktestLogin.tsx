@@ -1,9 +1,6 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { useTranslation } from 'react-i18next';
-import { Label } from '@/components/ui/label';
-import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { useToast } from '@/hooks/use-toast';
 
 interface BacktestLoginProps {
   onLogin: (email: string, password: string) => void;
@@ -11,23 +8,12 @@ interface BacktestLoginProps {
 
 const BacktestLogin: React.FC<BacktestLoginProps> = ({ onLogin }) => {
   const { t } = useTranslation();
-  const { toast } = useToast();
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
   const { i18n } = useTranslation();
   const isRtl = i18n.language === 'he';
 
-  const handleSubmit = () => {
-    if (!email || !password) {
-      toast({
-        title: 'Error',
-        description: t('backtest.loginError'),
-        variant: 'destructive',
-      });
-      return;
-    }
-    
-    onLogin(email, password);
+  // Simplified login with just demo access
+  const handleLogin = () => {
+    onLogin('demo@apexanalysis.com', 'demo123');
   };
 
   return (
@@ -55,40 +41,17 @@ const BacktestLogin: React.FC<BacktestLoginProps> = ({ onLogin }) => {
 
       <div className="relative z-10 p-6 backdrop-blur-sm">
         <div className="text-xl font-bold mb-4 text-center">{t('backtest.loginTitle')}</div>
-        <div className="grid gap-4 py-4">
-          <div className="grid gap-2">
-            <Label htmlFor="backtest-email" className="text-white">{t('backtest.emailLabel')}</Label>
-            <Input
-              id="backtest-email"
-              type="email"
-              placeholder={t('backtest.emailPlaceholder')}
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              className="border-primary/30 bg-black/50 backdrop-blur-md focus:border-primary"
-            />
-          </div>
-          <div className="grid gap-2">
-            <Label htmlFor="backtest-password" className="text-white">{t('backtest.passwordLabel')}</Label>
-            <Input
-              id="backtest-password"
-              type="password"
-              placeholder={t('backtest.passwordPlaceholder')}
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              className="border-primary/30 bg-black/50 backdrop-blur-md focus:border-primary"
-            />
-          </div>
-        </div>
+        
         <div className={`flex ${isRtl ? 'flex-row-reverse' : ''} justify-between mt-6 gap-4`}>
           <Button 
             variant="outline" 
-            onClick={() => onLogin('', '')}
+            onClick={() => window.location.href = "#markets"}
             className="flex-1 border-white/20 hover:bg-white/10 hover:text-white"
           >
             {t('backtest.cancel')}
           </Button>
           <Button 
-            onClick={handleSubmit}
+            onClick={handleLogin}
             className="flex-1 bg-primary hover:bg-primary/80"
           >
             {t('backtest.loginButton')}

@@ -43,11 +43,15 @@ const MarketOverviewSection: React.FC = () => {
 
   return (
     <section id="markets" className="relative py-24">
-      {/* Modern gradient background with blue/light blue accent */}
-      <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-b from-gray-900 via-blue-900/20 to-gray-900 z-0"></div>
+      {/* Modern gradient background with brand colors */}
+      <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-b from-black via-blue-900/30 to-black z-0"></div>
       
-      {/* Pattern overlay */}
-      <div className="absolute top-0 left-0 w-full h-full bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHZpZXdCb3g9IjAgMCA2MCA2MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZyBmaWxsPSJub25lIiBmaWxsLXJ1bGU9ImV2ZW5vZGQiPjxnIGZpbGw9IiMyMDIwMzAiIGZpbGwtb3BhY2l0eT0iMC4xIj48cGF0aCBkPSJNMzYgMzRjMC0yLjIxLTEuNzktNC00LTRzLTQgMS43OS00IDQgMS43OSA0IDQgNCA0LTEuNzkgNC00eiIvPjwvZz48L2c+PC9zdmc+')] opacity-50 z-0"></div>
+      {/* Enhanced pattern overlay with subtle glow effect */}
+      <div className="absolute top-0 left-0 w-full h-full opacity-40 z-0">
+        <div className="absolute top-1/4 left-1/4 w-1/2 h-1/2 rounded-full bg-blue-500/10 filter blur-[100px]"></div>
+        <div className="absolute top-1/3 right-1/4 w-1/3 h-1/3 rounded-full bg-indigo-500/10 filter blur-[80px]"></div>
+        <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHZpZXdCb3g9IjAgMCA2MCA2MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZyBmaWxsPSJub25lIiBmaWxsLXJ1bGU9ImV2ZW5vZGQiPjxnIGZpbGw9IiMyMDIwMzAiIGZpbGwtb3BhY2l0eT0iMC4xIj48cGF0aCBkPSJNMzYgMzRjMC0yLjIxLTEuNzktNC00LTRzLTQgMS43OS00IDQgMS43OSA0IDQgNCA0LTEuNzkgNC00eiIvPjwvZz48L2c+PC9zdmc+')] opacity-50"></div>
+      </div>
       
       <div className="max-w-7xl mx-auto px-4 sm:px-6 relative z-10">
         <div className="text-center mb-16">
