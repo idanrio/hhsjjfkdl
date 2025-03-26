@@ -23,50 +23,50 @@ const TopTradersSection: React.FC = () => {
   const isRTL = i18n.dir() === 'rtl';
   const [showLogin, setShowLogin] = useState(false);
   
-  // Sample data for top traders
+  // Sample data for top traders - sorted by win rate first, then profit percentage
   const topTraders: TopTrader[] = [
     {
       id: 1,
-      name: 'Alex Chen',
-      winRate: 78,
+      name: 'Alex',
+      winRate: 85,
       totalProfit: 15420,
-      profitPercentage: 32.5,
+      profitPercentage: 38.2,
       tradingPair: 'BTC/USD',
       position: 1,
     },
     {
       id: 2,
-      name: 'Sarah Johnson',
-      winRate: 74,
-      totalProfit: 12350,
-      profitPercentage: 28.4,
+      name: 'Sarah',
+      winRate: 79,
+      totalProfit: 14350,
+      profitPercentage: 34.7,
       tradingPair: 'ETH/USD',
       position: 2,
     },
     {
       id: 3,
-      name: 'Michael Williams',
-      winRate: 72,
-      totalProfit: 11280,
-      profitPercentage: 25.8,
+      name: 'Michael',
+      winRate: 79,
+      totalProfit: 12800,
+      profitPercentage: 31.2,
       tradingPair: 'SPY/USD',
       position: 3,
     },
     {
       id: 4,
-      name: 'Rachel Kim',
-      winRate: 69,
-      totalProfit: 9870,
-      profitPercentage: 22.3,
+      name: 'Rachel',
+      winRate: 75,
+      totalProfit: 10870,
+      profitPercentage: 29.5,
       tradingPair: 'AAPL/USD',
       position: 4,
     },
     {
       id: 5,
-      name: 'David Levy',
-      winRate: 67,
-      totalProfit: 8950,
-      profitPercentage: 20.7,
+      name: 'David',
+      winRate: 72,
+      totalProfit: 9950,
+      profitPercentage: 27.8,
       tradingPair: 'NASDAQ/USD',
       position: 5,
     },
@@ -163,14 +163,10 @@ const TopTradersSection: React.FC = () => {
                       </div>
                     </div>
 
-                    <div className="flex items-center gap-6">
+                    <div className="flex items-center gap-8">
                       <div className={`text-${isRTL ? 'left' : 'right'}`}>
                         <div className="text-xs text-gray-400 font-medium uppercase tracking-wider">{t('topTraders.winRate')}</div>
                         <div className="font-medium text-green-400">{trader.winRate}%</div>
-                      </div>
-                      <div className={`text-${isRTL ? 'left' : 'right'} min-w-[100px]`}>
-                        <div className="text-xs text-gray-400 font-medium uppercase tracking-wider">{t('topTraders.profit')}</div>
-                        <div className="font-medium text-white">{formatCurrency(trader.totalProfit)}</div>
                       </div>
                       <div className={`text-${isRTL ? 'left' : 'right'}`}>
                         <div className="text-xs text-gray-400 font-medium uppercase tracking-wider">{t('topTraders.profitPct')}</div>

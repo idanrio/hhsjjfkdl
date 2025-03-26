@@ -13,7 +13,7 @@ const BacktestLogin: React.FC<BacktestLoginProps> = ({ onLogin }) => {
 
   // Simplified login with just demo access
   const handleLogin = () => {
-    onLogin('demo@apexanalysis.com', 'demo123');
+    onLogin('demo@capitulre.com', 'demo123');
   };
 
   return (
