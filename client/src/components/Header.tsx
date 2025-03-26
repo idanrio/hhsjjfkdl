@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import AuthModals from './AuthModals';
 import LanguageSwitcher from './LanguageSwitcher';
+import CapitulreLogo from '../assets/logo';
 
 const Header: React.FC = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -22,11 +23,7 @@ const Header: React.FC = () => {
     <header className="fixed w-full z-50 bg-black/80 backdrop-blur-lg border-b border-white/10">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 py-5 flex justify-between items-center">
         <div className="flex items-center">
-          <img 
-            src="/images/capitalure-logo.png" 
-            alt="Capitalure Logo" 
-            className="h-10"
-          />
+          <CapitulreLogo className="h-12" />
         </div>
 
         <nav className="hidden md:block">
