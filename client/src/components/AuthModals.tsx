@@ -1,7 +1,12 @@
 import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import * as Dialog from '@radix-ui/react-dialog';
-import { X } from 'lucide-react';
+import { Dialog, DialogContent, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
+import { Label } from '@/components/ui/label';
+import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
+import { Checkbox } from '@/components/ui/checkbox';
+import { useToast } from '@/hooks/use-toast';
+import BacktestLogin from './BacktestLogin';
 
 interface AuthModalProps {
   initialView?: 'login' | 'signup';
@@ -9,318 +14,231 @@ interface AuthModalProps {
 
 const AuthModals: React.FC<AuthModalProps> = ({ initialView = 'login' }) => {
   const { t } = useTranslation();
-  const [isOpen, setIsOpen] = useState(false);
-  const [view, setView] = useState<'login' | 'signup' | 'thankYou'>(initialView);
-  
-  // Form state
+  const { toast } = useToast();
+  const [open, setOpen] = useState(false);
+  const [view, setView] = useState<'login' | 'signup' | 'thankyou' | 'backtest'>(initialView);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [fullName, setFullName] = useState('');
-  const [error, setError] = useState('');
-  const [agreeToTerms, setAgreeToTerms] = useState(false);
+  const [name, setName] = useState('');
+  const [rememberMe, setRememberMe] = useState(false);
+  const [acceptTerms, setAcceptTerms] = useState(false);
 
-  const resetForm = () => {
-    setEmail('');
-    setPassword('');
-    setFullName('');
-    setError('');
-    setAgreeToTerms(false);
-  };
-
-  const handleClose = () => {
-    setIsOpen(false);
-    setTimeout(() => {
-      resetForm();
-      setView(initialView);
-    }, 300);
-  };
-
-  const handleLoginSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!email || !password) {
-      setError(t('auth.errorAllFields'));
-      return;
+  const handleSubmit = () => {
+    if (view === 'login') {
+      // Check if all fields are filled
+      if (!email || !password) {
+        toast({
+          title: 'Error',
+          description: 'Please fill in all required fields',
+          variant: 'destructive',
+        });
+        return;
+      }
+      
+      // Login logic would go here
+      console.log('Login attempt:', { email, password, rememberMe });
+      
+      // For demo purposes, just close the modal
+      setOpen(false);
+    } else if (view === 'signup') {
+      // Check if all fields are filled
+      if (!name || !email || !password) {
+        toast({
+          title: 'Error',
+          description: t('auth.errorAllFields'),
+          variant: 'destructive',
+        });
+        return;
+      }
+      
+      // Check if terms are accepted
+      if (!acceptTerms) {
+        toast({
+          title: 'Error',
+          description: t('auth.errorTerms'),
+          variant: 'destructive',
+        });
+        return;
+      }
+      
+      // Signup logic would go here
+      console.log('Signup attempt:', { name, email, password, acceptTerms });
+      
+      // Show thank you screen
+      setView('thankyou');
     }
+  };
+
+  const handleBacktestLogin = (email: string, password: string) => {
+    // Handle backtesting system login
+    console.log('Backtest login:', { email, password });
     
-    // For demo purposes, just log the credentials and show success
-    console.log('Login attempt with:', email, password);
-    handleClose();
-  };
-
-  const handleSignupSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!email || !password || !fullName) {
-      setError(t('auth.errorAllFields'));
-      return;
-    }
-    
-    if (!agreeToTerms) {
-      setError(t('auth.errorTerms'));
-      return;
-    }
-    
-    // For demo purposes, just log the registration and show thank you page
-    console.log('Signup with:', { email, password, fullName });
-    setView('thankYou');
-  };
-
-  const handleTriggerClick = () => {
-    resetForm();
-    setIsOpen(true);
-  };
-
-  const renderTriggerButton = () => {
-    if (initialView === 'login') {
-      return (
-        <button 
-          onClick={handleTriggerClick}
-          className="text-sm font-medium px-4 py-2 rounded bg-primary text-white hover:bg-primary-light transition-colors"
-        >
-          {t('navigation.login')}
-        </button>
-      );
-    } else {
-      return (
-        <button 
-          onClick={handleTriggerClick}
-          className="text-sm font-medium px-4 py-2 rounded bg-white/10 text-white hover:bg-white/20 transition-colors"
-        >
-          {t('navigation.signup')}
-        </button>
-      );
-    }
+    // For demo purposes, just close the modal
+    setOpen(false);
   };
 
   return (
-    <Dialog.Root open={isOpen} onOpenChange={setIsOpen}>
-      <Dialog.Trigger asChild>
-        {renderTriggerButton()}
-      </Dialog.Trigger>
-      
-      <Dialog.Portal>
-        <Dialog.Overlay className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50" />
-        <Dialog.Content className="fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-full max-w-md bg-black border border-white/10 rounded-xl p-6 z-50">
+    <>
+      <Button
+        onClick={() => {
+          setView(initialView);
+          setOpen(true);
+        }}
+        variant={initialView === 'login' ? 'outline' : 'default'}
+        className={initialView === 'login' ? 'border-primary text-primary hover:text-white hover:bg-primary' : ''}
+      >
+        {initialView === 'login' ? t('navigation.login') : t('navigation.signup')}
+      </Button>
+
+      <Dialog open={open} onOpenChange={setOpen}>
+        <DialogContent className="sm:max-w-[425px]">
           {view === 'login' && (
             <>
-              <Dialog.Title className="text-2xl font-bold mb-6">
-                {t('auth.loginTitle')}
-              </Dialog.Title>
-              
-              <form onSubmit={handleLoginSubmit} className="space-y-4">
-                {error && (
-                  <div className="bg-red-900/30 border border-red-500 text-red-200 p-3 rounded-md text-sm">
-                    {error}
-                  </div>
-                )}
-                
-                <div className="space-y-2">
-                  <label htmlFor="email" className="block text-sm font-medium">
-                    {t('auth.emailLabel')}
-                  </label>
-                  <input
+              <DialogTitle>{t('auth.loginTitle')}</DialogTitle>
+              <div className="grid gap-4 py-4">
+                <div className="grid gap-2">
+                  <Label htmlFor="email">{t('auth.emailLabel')}</Label>
+                  <Input
                     id="email"
                     type="email"
+                    placeholder={t('auth.emailPlaceholder')}
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
-                    className="w-full bg-black/30 p-3 rounded-md border border-white/10 focus:outline-none focus:ring-2 focus:ring-primary"
-                    placeholder={t('auth.emailPlaceholder')}
                   />
                 </div>
-                
-                <div className="space-y-2">
-                  <label htmlFor="password" className="block text-sm font-medium">
-                    {t('auth.passwordLabel')}
-                  </label>
-                  <input
+                <div className="grid gap-2">
+                  <Label htmlFor="password">{t('auth.passwordLabel')}</Label>
+                  <Input
                     id="password"
                     type="password"
+                    placeholder={t('auth.passwordPlaceholder')}
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
-                    className="w-full bg-black/30 p-3 rounded-md border border-white/10 focus:outline-none focus:ring-2 focus:ring-primary"
-                    placeholder={t('auth.passwordPlaceholder')}
                   />
                 </div>
-                
                 <div className="flex items-center justify-between">
-                  <div className="flex items-center">
-                    <input
-                      id="remember-me"
-                      type="checkbox"
-                      className="h-4 w-4 rounded border-white/10 bg-black/30 text-primary focus:ring-primary"
+                  <div className="flex items-center space-x-2">
+                    <Checkbox
+                      id="rememberMe"
+                      checked={rememberMe}
+                      onCheckedChange={(checked) => setRememberMe(checked as boolean)}
                     />
-                    <label htmlFor="remember-me" className="ml-2 block text-sm text-white/70">
+                    <Label htmlFor="rememberMe" className="text-sm font-normal cursor-pointer">
                       {t('auth.rememberMe')}
-                    </label>
+                    </Label>
                   </div>
-                  
-                  <div className="text-sm">
-                    <a href="#" className="text-primary hover:underline">
-                      {t('auth.forgotPassword')}
-                    </a>
-                  </div>
+                  <Button variant="link" className="p-0 h-auto">
+                    {t('auth.forgotPassword')}
+                  </Button>
                 </div>
-                
-                <div className="pt-2">
-                  <button
-                    type="submit"
-                    className="w-full bg-primary p-3 rounded-md font-semibold hover:bg-primary-light transition-all duration-300"
-                  >
-                    {t('auth.loginButton')}
-                  </button>
-                </div>
-                
-                <div className="text-center text-sm text-white/70 mt-4">
+              </div>
+              <DialogFooter className="flex flex-col space-y-4">
+                <Button onClick={handleSubmit} className="w-full">
+                  {t('auth.loginButton')}
+                </Button>
+                <div className="text-center text-sm">
                   {t('auth.noAccount')}{' '}
-                  <button
-                    type="button"
-                    onClick={() => { setView('signup'); setError(''); }}
-                    className="text-primary hover:underline"
-                  >
+                  <Button variant="link" className="p-0 h-auto" onClick={() => setView('signup')}>
                     {t('auth.createAccount')}
-                  </button>
+                  </Button>
                 </div>
-              </form>
+                <div className="text-center text-sm">
+                  <Button variant="link" className="p-0 h-auto" onClick={() => setView('backtest')}>
+                    {t('backtest.launchSystem')}
+                  </Button>
+                </div>
+              </DialogFooter>
             </>
           )}
-          
+
           {view === 'signup' && (
             <>
-              <Dialog.Title className="text-2xl font-bold mb-6">
-                {t('auth.signupTitle')}
-              </Dialog.Title>
-              
-              <form onSubmit={handleSignupSubmit} className="space-y-4">
-                {error && (
-                  <div className="bg-red-900/30 border border-red-500 text-red-200 p-3 rounded-md text-sm">
-                    {error}
-                  </div>
-                )}
-                
-                <div className="space-y-2">
-                  <label htmlFor="fullName" className="block text-sm font-medium">
-                    {t('auth.nameLabel')}
-                  </label>
-                  <input
-                    id="fullName"
-                    type="text"
-                    value={fullName}
-                    onChange={(e) => setFullName(e.target.value)}
-                    className="w-full bg-black/30 p-3 rounded-md border border-white/10 focus:outline-none focus:ring-2 focus:ring-primary"
+              <DialogTitle>{t('auth.signupTitle')}</DialogTitle>
+              <div className="grid gap-4 py-4">
+                <div className="grid gap-2">
+                  <Label htmlFor="name">{t('auth.nameLabel')}</Label>
+                  <Input
+                    id="name"
                     placeholder={t('auth.namePlaceholder')}
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
                   />
                 </div>
-                
-                <div className="space-y-2">
-                  <label htmlFor="email-signup" className="block text-sm font-medium">
-                    {t('auth.emailLabel')}
-                  </label>
-                  <input
-                    id="email-signup"
+                <div className="grid gap-2">
+                  <Label htmlFor="email">{t('auth.emailLabel')}</Label>
+                  <Input
+                    id="email"
                     type="email"
+                    placeholder={t('auth.emailPlaceholder')}
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
-                    className="w-full bg-black/30 p-3 rounded-md border border-white/10 focus:outline-none focus:ring-2 focus:ring-primary"
-                    placeholder={t('auth.emailPlaceholder')}
                   />
                 </div>
-                
-                <div className="space-y-2">
-                  <label htmlFor="password-signup" className="block text-sm font-medium">
-                    {t('auth.passwordLabel')}
-                  </label>
-                  <input
-                    id="password-signup"
+                <div className="grid gap-2">
+                  <Label htmlFor="password">{t('auth.passwordLabel')}</Label>
+                  <Input
+                    id="password"
                     type="password"
+                    placeholder={t('auth.passwordPlaceholder')}
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
-                    className="w-full bg-black/30 p-3 rounded-md border border-white/10 focus:outline-none focus:ring-2 focus:ring-primary"
-                    placeholder={t('auth.passwordPlaceholder')}
                   />
                 </div>
-                
-                <div className="flex items-start mt-4">
-                  <div className="flex h-5 items-center">
-                    <input
-                      id="terms"
-                      type="checkbox"
-                      checked={agreeToTerms}
-                      onChange={(e) => setAgreeToTerms(e.target.checked)}
-                      className="h-4 w-4 rounded border-white/10 bg-black/30 text-primary focus:ring-primary"
-                    />
-                  </div>
-                  <div className="ml-3 text-sm">
-                    <label htmlFor="terms" className="text-white/70">
-                      {t('auth.termsPrefix')}{' '}
-                      <a href="#" className="text-primary hover:underline">
-                        {t('auth.termsLink')}
-                      </a>{' '}
-                      {t('auth.and')}{' '}
-                      <a href="#" className="text-primary hover:underline">
-                        {t('auth.privacyLink')}
-                      </a>
-                    </label>
-                  </div>
+                <div className="flex items-center space-x-2">
+                  <Checkbox
+                    id="terms"
+                    checked={acceptTerms}
+                    onCheckedChange={(checked) => setAcceptTerms(checked as boolean)}
+                  />
+                  <Label htmlFor="terms" className="text-sm font-normal cursor-pointer">
+                    {t('auth.termsPrefix')}{' '}
+                    <Button variant="link" className="p-0 h-auto">
+                      {t('auth.termsLink')}
+                    </Button>{' '}
+                    {t('auth.and')}{' '}
+                    <Button variant="link" className="p-0 h-auto">
+                      {t('auth.privacyLink')}
+                    </Button>
+                  </Label>
                 </div>
-                
-                <div className="pt-2">
-                  <button
-                    type="submit"
-                    className="w-full bg-primary p-3 rounded-md font-semibold hover:bg-primary-light transition-all duration-300"
-                  >
-                    {t('auth.signupButton')}
-                  </button>
-                </div>
-                
-                <div className="text-center text-sm text-white/70 mt-4">
+              </div>
+              <DialogFooter className="flex flex-col space-y-4">
+                <Button onClick={handleSubmit} className="w-full">
+                  {t('auth.signupButton')}
+                </Button>
+                <div className="text-center text-sm">
                   {t('auth.haveAccount')}{' '}
-                  <button
-                    type="button"
-                    onClick={() => { setView('login'); setError(''); }}
-                    className="text-primary hover:underline"
-                  >
+                  <Button variant="link" className="p-0 h-auto" onClick={() => setView('login')}>
                     {t('auth.loginInstead')}
-                  </button>
+                  </Button>
                 </div>
-              </form>
+              </DialogFooter>
             </>
           )}
-          
-          {view === 'thankYou' && (
-            <div className="text-center py-6">
-              <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-green-500/20 mb-4">
-                <svg 
-                  xmlns="http://www.w3.org/2000/svg" 
-                  className="h-8 w-8 text-green-400" 
-                  fill="none" 
-                  viewBox="0 0 24 24" 
-                  stroke="currentColor"
-                >
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                </svg>
-              </div>
-              <h2 className="text-2xl font-bold mb-3">{t('auth.thankYouTitle')}</h2>
-              <p className="text-white/70 mb-6">{t('auth.thankYouMessage')}</p>
-              <button
-                onClick={handleClose}
-                className="bg-primary px-6 py-2 rounded font-semibold hover:bg-primary-light transition-all duration-300"
-              >
-                {t('auth.continueBrowsing')}
-              </button>
-            </div>
+
+          {view === 'thankyou' && (
+            <>
+              <DialogTitle>{t('auth.thankYouTitle')}</DialogTitle>
+              <DialogDescription>
+                {t('auth.thankYouMessage')}
+              </DialogDescription>
+              <DialogFooter>
+                <Button onClick={() => setOpen(false)} className="w-full">
+                  {t('auth.continueBrowsing')}
+                </Button>
+              </DialogFooter>
+            </>
           )}
-          
-          <Dialog.Close asChild className="absolute top-4 right-4">
-            <button
-              type="button"
-              className="text-white/70 hover:text-white rounded-full p-1"
-              aria-label="Close"
-            >
-              <X size={18} />
-            </button>
-          </Dialog.Close>
-        </Dialog.Content>
-      </Dialog.Portal>
-    </Dialog.Root>
+
+          {view === 'backtest' && (
+            <>
+              <DialogTitle>{t('backtest.loginTitle')}</DialogTitle>
+              <BacktestLogin onLogin={handleBacktestLogin} />
+            </>
+          )}
+        </DialogContent>
+      </Dialog>
+    </>
   );
 };
 
