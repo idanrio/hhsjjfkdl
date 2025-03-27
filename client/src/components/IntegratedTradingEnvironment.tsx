@@ -23,7 +23,7 @@ import {
 import TradingViewChart from './TradingViewChart';
 import TimeController from './TimeController';
 import { useQuery } from '@tanstack/react-query';
-import { getStockData, getCryptoData, getMultipleMarketData } from '@/services/marketService';
+import { getStockData, getCryptoData, getForexData, getGoldData, getMultipleMarketData } from '@/services/marketService';
 import { Trade } from '@shared/schema';
 
 interface Position {
@@ -52,8 +52,15 @@ interface IntegratedTradingEnvironmentProps {
 
 // Trading pairs available for analysis
 const tradingPairs = [
+  // Cryptocurrencies
   { symbol: 'BTC/USD', name: 'Bitcoin', type: 'crypto', initialPrice: 40000 },
   { symbol: 'ETH/USD', name: 'Ethereum', type: 'crypto', initialPrice: 2200 },
+  { symbol: 'XRP/USD', name: 'Ripple', type: 'crypto', initialPrice: 0.5 },
+  { symbol: 'SOL/USD', name: 'Solana', type: 'crypto', initialPrice: 120 },
+  { symbol: 'ADA/USD', name: 'Cardano', type: 'crypto', initialPrice: 0.4 },
+  { symbol: 'DOT/USD', name: 'Polkadot', type: 'crypto', initialPrice: 6 },
+
+  // US Stocks
   { symbol: 'AAPL', name: 'Apple Inc.', type: 'stock', initialPrice: 170 },
   { symbol: 'MSFT', name: 'Microsoft', type: 'stock', initialPrice: 320 },
   { symbol: 'GOOG', name: 'Google', type: 'stock', initialPrice: 135 },
@@ -62,6 +69,24 @@ const tradingPairs = [
   { symbol: 'META', name: 'Meta Platforms', type: 'stock', initialPrice: 330 },
   { symbol: 'NVDA', name: 'NVIDIA', type: 'stock', initialPrice: 420 },
   { symbol: 'JPM', name: 'JPMorgan Chase', type: 'stock', initialPrice: 175 },
+  
+  // Indices
+  { symbol: 'SPY', name: 'S&P 500', type: 'index', initialPrice: 500 },
+  { symbol: 'QQQ', name: 'NASDAQ', type: 'index', initialPrice: 400 },
+  { symbol: 'DIA', name: 'Dow Jones', type: 'index', initialPrice: 380 },
+  { symbol: 'IWM', name: 'Russell 2000', type: 'index', initialPrice: 200 },
+  
+  // Commodities
+  { symbol: 'GLD', name: 'Gold', type: 'commodity', initialPrice: 2000 },
+  { symbol: 'SLV', name: 'Silver', type: 'commodity', initialPrice: 25 },
+  { symbol: 'USO', name: 'Oil', type: 'commodity', initialPrice: 75 },
+  
+  // Forex
+  { symbol: 'EUR/USD', name: 'Euro/US Dollar', type: 'forex', initialPrice: 1.08 },
+  { symbol: 'USD/JPY', name: 'US Dollar/Japanese Yen', type: 'forex', initialPrice: 150 },
+  { symbol: 'GBP/USD', name: 'British Pound/US Dollar', type: 'forex', initialPrice: 1.26 },
+  { symbol: 'USD/CHF', name: 'US Dollar/Swiss Franc', type: 'forex', initialPrice: 0.90 },
+  { symbol: 'USD/CAD', name: 'US Dollar/Canadian Dollar', type: 'forex', initialPrice: 1.37 },
 ];
 
 // List of technical indicators
@@ -117,10 +142,24 @@ const IntegratedTradingEnvironment: React.FC<IntegratedTradingEnvironmentProps> 
   const { data: marketData, isLoading } = useQuery({
     queryKey: ['marketData', selectedPair.symbol],
     queryFn: async () => {
-      if (selectedPair.type === 'crypto') {
-        return await getCryptoData(selectedPair.symbol.split('/')[0]);
-      } else {
-        return await getStockData(selectedPair.symbol);
+      switch(selectedPair.type) {
+        case 'crypto':
+          return await getCryptoData(selectedPair.symbol.split('/')[0]);
+        case 'forex':
+          if (selectedPair.symbol.includes('/')) {
+            const [base, quote] = selectedPair.symbol.split('/');
+            return await getForexData(base, quote);
+          }
+          return await getStockData(selectedPair.symbol);
+        case 'commodity':
+          if (selectedPair.symbol === 'GLD') {
+            return await getGoldData();
+          }
+          return await getStockData(selectedPair.symbol);
+        case 'index':
+        case 'stock':
+        default:
+          return await getStockData(selectedPair.symbol);
       }
     },
     refetchInterval: 60000, // Refresh every 60 seconds
