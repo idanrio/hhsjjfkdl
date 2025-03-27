@@ -23,6 +23,8 @@ const enTranslations = {
     signupTitle: 'Create an account',
     nameLabel: 'Full Name',
     namePlaceholder: 'Enter your full name',
+    usernameLabel: 'Username',
+    usernamePlaceholder: 'Enter your username',
     emailLabel: 'Email address',
     emailPlaceholder: 'Enter your email',
     passwordLabel: 'Password',
@@ -130,7 +132,9 @@ const enTranslations = {
     passwordPlaceholder: 'Enter your password',
     loginButton: 'Login',
     cancel: 'Cancel',
-    loginError: 'Please enter both email and password'
+    loginError: 'Please enter both email and password',
+    loginAsDemo: 'Login as Demo User',
+    loginAsAdmin: 'Login as Admin'
   },
   // Top Traders section
   topTraders: {
@@ -185,6 +189,8 @@ const heTranslations = {
     signupTitle: 'יצירת חשבון חדש',
     nameLabel: 'שם מלא',
     namePlaceholder: 'הזן את שמך המלא',
+    usernameLabel: 'שם משתמש',
+    usernamePlaceholder: 'הזן את שם המשתמש שלך',
     emailLabel: 'דואר אלקטרוני',
     emailPlaceholder: 'הזן את כתובת הדואר האלקטרוני',
     passwordLabel: 'סיסמה',
@@ -292,7 +298,9 @@ const heTranslations = {
     passwordPlaceholder: 'הזן את הסיסמה שלך',
     loginButton: 'כניסה',
     cancel: 'ביטול',
-    loginError: 'נא להזין דואר אלקטרוני וסיסמה'
+    loginError: 'נא להזין דואר אלקטרוני וסיסמה',
+    loginAsDemo: 'כניסה כמשתמש הדגמה',
+    loginAsAdmin: 'כניסה כמנהל'
   },
   // Top Traders section
   topTraders: {
