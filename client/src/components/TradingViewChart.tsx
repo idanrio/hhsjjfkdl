@@ -50,36 +50,19 @@ interface Position {
   profitLoss?: number;
 }
 
-// Mock data generator for demonstration
-const generateMockOHLCData = (days: number = 30, startPrice: number = 40000): ChartData[] => {
-  const data: ChartData[] = [];
-  let currentPrice = startPrice;
-  
-  for (let i = 0; i < days; i++) {
-    const volatility = Math.random() * 0.05; // 5% max daily volatility
-    const date = new Date();
-    date.setDate(date.getDate() - (days - i));
-    
-    const open = currentPrice;
-    const close = currentPrice * (1 + (Math.random() - 0.5) * volatility);
-    const high = Math.max(open, close) * (1 + Math.random() * 0.02);
-    const low = Math.min(open, close) * (1 - Math.random() * 0.02);
-    const volume = Math.floor(Math.random() * 10000 + 5000);
-    
-    data.push({
-      time: date.toISOString().split('T')[0],
-      value: close,
-      open,
-      high,
-      low,
-      close,
-      volume
-    });
-    
-    currentPrice = close;
-  }
-  
-  return data;
+// Convert historical data to chart data format
+const convertHistoricalToChartData = (
+  historicalData: import('@/services/marketService').HistoricalDataPoint[]
+): ChartData[] => {
+  return historicalData.map(dataPoint => ({
+    time: dataPoint.date,
+    value: dataPoint.close,
+    open: dataPoint.open,
+    high: dataPoint.high,
+    low: dataPoint.low,
+    close: dataPoint.close,
+    volume: dataPoint.volume
+  }));
 };
 
 // This would be fetched from an API in a real application
@@ -93,6 +76,20 @@ const mockIndicators = [
 
 // Time periods for chart viewing
 const timeRanges = ['1D', '1W', '1M', '3M', '6M', '1Y', 'ALL'];
+
+// Helper function to format large numbers (e.g., for volume)
+const formatLargeNumber = (num: number): string => {
+  if (num >= 1000000000) {
+    return (num / 1000000000).toFixed(1) + 'B';
+  }
+  if (num >= 1000000) {
+    return (num / 1000000).toFixed(1) + 'M';
+  }
+  if (num >= 1000) {
+    return (num / 1000).toFixed(1) + 'K';
+  }
+  return num.toString();
+};
 
 interface TradingViewChartProps {
   symbol: string;
@@ -152,27 +149,85 @@ const TradingViewChart: React.FC<TradingViewChartProps> = ({
 
   // Generate or fetch chart data based on active range
   useEffect(() => {
-    // In a real app, this would fetch data from an API
-    const rangeDays = activeRange === '1D' ? 1 : 
-                      activeRange === '1W' ? 7 : 
-                      activeRange === '1M' ? 30 : 
-                      activeRange === '3M' ? 90 : 
-                      activeRange === '6M' ? 180 : 
-                      activeRange === '1Y' ? 365 : 730;
+    // Determine the date range for the API request
+    const endDate = new Date();
+    const startDate = new Date();
     
-    const data = generateMockOHLCData(rangeDays, initialPrice);
-    setChartData(data);
+    if (activeRange === '1D') startDate.setDate(endDate.getDate() - 1);
+    else if (activeRange === '1W') startDate.setDate(endDate.getDate() - 7);
+    else if (activeRange === '1M') startDate.setDate(endDate.getDate() - 30);
+    else if (activeRange === '3M') startDate.setDate(endDate.getDate() - 90);
+    else if (activeRange === '6M') startDate.setDate(endDate.getDate() - 180);
+    else if (activeRange === '1Y') startDate.setDate(endDate.getDate() - 365);
+    else startDate.setDate(endDate.getDate() - 730); // 2 years for 'ALL'
     
-    if (data.length > 0) {
-      const lastPrice = data[data.length - 1].close || data[data.length - 1].value;
-      const firstPrice = data[0].open || data[0].value;
-      setCurrentPrice(lastPrice);
-      
-      const change = lastPrice - firstPrice;
-      setPriceChange(change);
-      setPriceChangePercent((change / firstPrice) * 100);
-    }
-  }, [activeRange, initialPrice]);
+    // Determine if this is a crypto or stock symbol
+    const isCrypto = symbol.includes('BTC') || symbol.includes('ETH') || symbol.includes('/');
+    const stockSymbol = isCrypto ? symbol.split('/')[0] : symbol;
+    
+    // Set loading state
+    setChartData([]);
+    
+    // Define an async function to fetch the data
+    const fetchHistoricalData = async () => {
+      try {
+        let historicalData;
+        
+        if (isCrypto) {
+          // For crypto, use the CoinAPI endpoints
+          const startDateIso = startDate.toISOString();
+          const endDateIso = endDate.toISOString();
+          
+          // Determine appropriate period based on date range
+          let period = '1DAY';
+          if (activeRange === '1D') period = '1HRS';
+          else if (activeRange === '1W') period = '4HRS';
+          
+          // Import and use the historical crypto data function
+          const { getHistoricalCryptoData } = await import('@/services/marketService');
+          historicalData = await getHistoricalCryptoData(stockSymbol, startDateIso, endDateIso, period);
+        } else {
+          // For stocks, use Alpha Vantage endpoints
+          let interval: 'daily' | 'weekly' | 'monthly' = 'daily';
+          if (activeRange === '1Y' || activeRange === 'ALL') interval = 'weekly';
+          
+          // Import and use the historical stock data function
+          const { getHistoricalStockData } = await import('@/services/marketService');
+          historicalData = await getHistoricalStockData(stockSymbol, interval);
+        }
+        
+        // Convert historical data to chart format
+        const chartDataFormatted = convertHistoricalToChartData(historicalData);
+        setChartData(chartDataFormatted);
+        
+        // Update price information if data is available
+        if (chartDataFormatted.length > 0) {
+          const lastPrice = chartDataFormatted[chartDataFormatted.length - 1].close;
+          const firstPrice = chartDataFormatted[0].open;
+          setCurrentPrice(lastPrice);
+          
+          const change = lastPrice - firstPrice;
+          setPriceChange(change);
+          setPriceChangePercent((change / firstPrice) * 100);
+        } else {
+          // If no data, set current price from props
+          setCurrentPrice(initialPrice);
+          setPriceChange(0);
+          setPriceChangePercent(0);
+        }
+      } catch (error) {
+        console.error('Error fetching historical data:', error);
+        // In case of error, set current price from props
+        setCurrentPrice(initialPrice);
+        setPriceChange(0);
+        setPriceChangePercent(0);
+      }
+    };
+    
+    // Call the async function
+    fetchHistoricalData();
+    
+  }, [activeRange, symbol, initialPrice]);
 
   // Toggle fullscreen
   const toggleFullscreen = () => {

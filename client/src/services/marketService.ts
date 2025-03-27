@@ -369,6 +369,133 @@ export const getGoldData = async (): Promise<MarketData | null> => {
   }
 };
 
+// Interface for historical data point
+export interface HistoricalDataPoint {
+  date: string;
+  open: number;
+  high: number;
+  low: number;
+  close: number;
+  volume: number;
+}
+
+// Function to get historical stock data from Alpha Vantage
+export const getHistoricalStockData = async (
+  symbol: string, 
+  interval: 'daily' | 'weekly' | 'monthly' = 'daily',
+  outputSize: 'compact' | 'full' = 'compact' // compact = 100 data points, full = 20+ years
+): Promise<HistoricalDataPoint[]> => {
+  try {
+    if (!API_KEY) {
+      console.error('Alpha Vantage API key is missing for historical data');
+      throw new Error('API key is required for historical data');
+    }
+
+    let timeSeriesFunction = 'TIME_SERIES_DAILY';
+    if (interval === 'weekly') timeSeriesFunction = 'TIME_SERIES_WEEKLY';
+    if (interval === 'monthly') timeSeriesFunction = 'TIME_SERIES_MONTHLY';
+
+    const response = await axios.get(ALPHA_VANTAGE_BASE_URL, {
+      params: {
+        function: timeSeriesFunction,
+        symbol,
+        outputsize: outputSize,
+        apikey: API_KEY
+      }
+    });
+
+    // Check for API errors
+    if (response.data.Note || response.data['Error Message']) {
+      console.error('API Key issue:', response.data.Note || response.data['Error Message']);
+      throw new Error('API error: ' + (response.data.Note || response.data['Error Message']));
+    }
+
+    // Extract the time series data (the property name varies by interval)
+    const timeSeriesKey = `Time Series (${
+      interval === 'daily' ? 'Daily' : 
+      interval === 'weekly' ? 'Weekly' : 'Monthly'
+    })`;
+    
+    const timeSeries = response.data[timeSeriesKey];
+    
+    if (!timeSeries) {
+      console.error('Failed to fetch historical data for', symbol);
+      throw new Error('No time series data available');
+    }
+
+    // Convert the time series data to an array of data points
+    const historicalData: HistoricalDataPoint[] = [];
+    
+    for (const date in timeSeries) {
+      const dataPoint = timeSeries[date];
+      historicalData.push({
+        date,
+        open: parseFloat(dataPoint['1. open']),
+        high: parseFloat(dataPoint['2. high']),
+        low: parseFloat(dataPoint['3. low']),
+        close: parseFloat(dataPoint['4. close']),
+        volume: parseFloat(dataPoint['5. volume'])
+      });
+    }
+
+    // Sort by date ascending (oldest to newest)
+    historicalData.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+    
+    return historicalData;
+  } catch (error) {
+    console.error('Error fetching historical stock data:', error);
+    throw error;
+  }
+};
+
+// Function to get historical crypto data from CoinAPI
+export const getHistoricalCryptoData = async (
+  symbol: string,
+  timeStart: string, // ISO date string
+  timeEnd: string = new Date().toISOString(),
+  period: string = '1DAY' // Options: 1SEC, 1MIN, 5MIN, 15MIN, 30MIN, 1HRS, 4HRS, 1DAY, etc.
+): Promise<HistoricalDataPoint[]> => {
+  try {
+    if (!COIN_API_KEY) {
+      console.error('CoinAPI key is missing for historical data');
+      throw new Error('API key is required for historical data');
+    }
+
+    const response = await axios.get(
+      `${COINAPI_BASE_URL}/ohlcv/${symbol}/USD/history`, {
+      headers: {
+        'X-CoinAPI-Key': COIN_API_KEY
+      },
+      params: {
+        period_id: period,
+        time_start: timeStart,
+        time_end: timeEnd,
+        limit: 500 // Maximum limit for data points
+      }
+    });
+
+    if (response.data.error) {
+      console.error('API Error:', response.data.error);
+      throw new Error('API error: ' + response.data.error);
+    }
+
+    // Map CoinAPI response to our HistoricalDataPoint interface
+    const historicalData: HistoricalDataPoint[] = response.data.map((item: any) => ({
+      date: item.time_period_start.split('T')[0],
+      open: item.price_open,
+      high: item.price_high,
+      low: item.price_low,
+      close: item.price_close,
+      volume: item.volume_traded
+    }));
+
+    return historicalData;
+  } catch (error) {
+    console.error('Error fetching historical crypto data:', error);
+    throw error;
+  }
+};
+
 // Function to get multiple market data points
 export const getMultipleMarketData = async (): Promise<MarketData[]> => {
   try {
@@ -388,22 +515,14 @@ export const getMultipleMarketData = async (): Promise<MarketData[]> => {
     const marketData: MarketData[] = [];
     
     // Add each asset to the marketData array
-    // Using the results or fallback to a basic placeholder if the API call failed
+    // Check if data was successfully fetched
     
     // S&P 500
     const spyResult = results[0];
     if (spyResult.status === 'fulfilled' && spyResult.value) {
       marketData.push(spyResult.value);
     } else {
-      marketData.push({
-        symbol: 'SPY',
-        name: 'S&P 500',
-        price: 450.75,
-        change: 2.15,
-        changePercent: 0.48,
-        high: 452.30,
-        icon: 'fas fa-chart-line'
-      });
+      throw new Error('Failed to fetch S&P 500 data');
     }
     
     // Bitcoin
@@ -411,15 +530,7 @@ export const getMultipleMarketData = async (): Promise<MarketData[]> => {
     if (btcResult.status === 'fulfilled' && btcResult.value) {
       marketData.push(btcResult.value);
     } else {
-      marketData.push({
-        symbol: 'BTC',
-        name: 'Bitcoin',
-        price: 56892.50,
-        change: 1205.75,
-        changePercent: 2.17,
-        high: 57100.25,
-        icon: 'fab fa-bitcoin'
-      });
+      throw new Error('Failed to fetch Bitcoin data');
     }
     
     // Gold
@@ -427,50 +538,12 @@ export const getMultipleMarketData = async (): Promise<MarketData[]> => {
     if (goldResult.status === 'fulfilled' && goldResult.value) {
       marketData.push(goldResult.value);
     } else {
-      marketData.push({
-        symbol: 'GOLD',
-        name: 'Gold',
-        price: 2350.25,
-        change: 15.75,
-        changePercent: 0.67,
-        high: 2355.50,
-        icon: 'fas fa-coins'
-      });
+      throw new Error('Failed to fetch Gold data');
     }
     
     return marketData;
   } catch (error) {
     console.error('Error fetching multiple market data:', error);
-    
-    // Return basic placeholders for all three assets if there's a catastrophic error
-    return [
-      {
-        symbol: 'SPY',
-        name: 'S&P 500',
-        price: 450.75,
-        change: 2.15,
-        changePercent: 0.48,
-        high: 452.30,
-        icon: 'fas fa-chart-line'
-      },
-      {
-        symbol: 'BTC',
-        name: 'Bitcoin',
-        price: 56892.50,
-        change: 1205.75,
-        changePercent: 2.17,
-        high: 57100.25,
-        icon: 'fab fa-bitcoin'
-      },
-      {
-        symbol: 'GOLD',
-        name: 'Gold',
-        price: 2350.25,
-        change: 15.75,
-        changePercent: 0.67,
-        high: 2355.50,
-        icon: 'fas fa-coins'
-      }
-    ];
+    throw error;
   }
 };
