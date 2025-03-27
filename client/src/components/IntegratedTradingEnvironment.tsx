@@ -425,14 +425,13 @@ const IntegratedTradingEnvironment: React.FC<IntegratedTradingEnvironmentProps> 
           
           {/* Right panel - positions and controls */}
           <ResizablePanel defaultSize={25} minSize={20}>
-            <Tabs defaultValue="positions">
+            <Tabs defaultValue="trading">
               <TabsList className="w-full">
-                <TabsTrigger value="positions">{t("Positions")}</TabsTrigger>
-                <TabsTrigger value="orders">{t("Orders")}</TabsTrigger>
-                <TabsTrigger value="time">{t("Time")}</TabsTrigger>
+                <TabsTrigger value="trading">{t("Trading")}</TabsTrigger>
+                <TabsTrigger value="time">{t("Time Control")}</TabsTrigger>
               </TabsList>
               
-              <TabsContent value="positions" className="p-0">
+              <TabsContent value="trading" className="p-0">
                 <div className="p-4 space-y-4">
                   <h3 className="font-medium">{t("Create Position")}</h3>
                   
@@ -597,36 +596,6 @@ const IntegratedTradingEnvironment: React.FC<IntegratedTradingEnvironmentProps> 
                         </AccordionItem>
                       </Accordion>
                     </>
-                  )}
-                </div>
-              </TabsContent>
-              
-              <TabsContent value="orders" className="p-4">
-                <div className="space-y-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="order-type">{t("Order Type")}</Label>
-                    <Select value={orderType} onValueChange={setOrderType}>
-                      <SelectTrigger id="order-type">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="market">{t("Market")}</SelectItem>
-                        <SelectItem value="limit">{t("Limit")}</SelectItem>
-                        <SelectItem value="stop">{t("Stop")}</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  
-                  {orderType !== 'market' && (
-                    <div className="space-y-2">
-                      <Label htmlFor="price">{t("Price ($)")}</Label>
-                      <Input 
-                        id="price" 
-                        value={orderPrice}
-                        onChange={(e) => setOrderPrice(e.target.value)}
-                        type="number"
-                      />
-                    </div>
                   )}
                 </div>
               </TabsContent>

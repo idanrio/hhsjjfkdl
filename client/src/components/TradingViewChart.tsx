@@ -204,11 +204,13 @@ const TradingViewChart: React.FC<TradingViewChartProps> = ({
         if (chartDataFormatted.length > 0) {
           const lastPrice = chartDataFormatted[chartDataFormatted.length - 1].close;
           const firstPrice = chartDataFormatted[0].open;
-          setCurrentPrice(lastPrice);
+          setCurrentPrice(lastPrice || null);
           
-          const change = lastPrice - firstPrice;
-          setPriceChange(change);
-          setPriceChangePercent((change / firstPrice) * 100);
+          if (lastPrice !== undefined && firstPrice !== undefined) {
+            const change = lastPrice - firstPrice;
+            setPriceChange(change);
+            setPriceChangePercent((change / firstPrice) * 100);
+          }
         } else {
           // If no data, set current price from props
           setCurrentPrice(initialPrice);
@@ -981,32 +983,44 @@ const TradingViewChart: React.FC<TradingViewChartProps> = ({
                       <Tooltip content={<CustomTooltip />} />
                       
                       {/* Custom candlestick rendering */}
-                      {chartData.map((data, index) => (
-                        <React.Fragment key={index}>
-                          {/* Price bar (high to low) */}
-                          <Line 
-                            data={[{time: data.time, value: data.high}, {time: data.time, value: data.low}]}
-                            dataKey="value"
-                            stroke={data.close >= data.open ? "#4caf50" : "#f44336"}
-                            strokeWidth={1}
-                            dot={false}
-                            connectNulls
-                            isAnimationActive={false}
-                          />
-                          
-                          {/* OHLC body */}
-                          <RechartsBar 
-                            data={[{
-                              time: data.time, 
-                              value: Math.abs(data.close - data.open),
-                              y: Math.min(data.open, data.close)
-                            }]}
-                            dataKey="value"
-                            fill={data.close >= data.open ? "#4caf50" : "#f44336"}
-                            isAnimationActive={false}
-                          />
-                        </React.Fragment>
-                      ))}
+                      {chartData.map((data, index) => {
+                        // Skip if we don't have all the OHLC data
+                        if (!data.open || !data.close || !data.high || !data.low) return null;
+                        
+                        // Determine color based on price movement
+                        const priceColor = data.close >= data.open ? "#4caf50" : "#f44336";
+                        
+                        return (
+                          <React.Fragment key={index}>
+                            {/* Price bar (high to low) */}
+                            <Line 
+                              data={[
+                                { x: index, value: data.high },
+                                { x: index, value: data.low }
+                              ]}
+                              dataKey="value"
+                              stroke={priceColor}
+                              strokeWidth={1}
+                              dot={false}
+                              connectNulls
+                              isAnimationActive={false}
+                            />
+                            
+                            {/* OHLC body */}
+                            <RechartsBar 
+                              barSize={8}
+                              data={[{
+                                x: index,
+                                value: Math.abs(data.close - data.open),
+                                y: Math.min(data.open, data.close)
+                              }]}
+                              dataKey="value"
+                              fill={priceColor}
+                              isAnimationActive={false}
+                            />
+                          </React.Fragment>
+                        );
+                      })}
                       
                       {/* Position Entry Lines */}
                       {positions.map(position => (
