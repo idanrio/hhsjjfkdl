@@ -429,6 +429,14 @@ const IntegratedTradingEnvironment: React.FC<IntegratedTradingEnvironmentProps> 
                       initialPrice={selectedPair.initialPrice}
                       className="h-full w-full"
                       initialPositions={positions}
+                      showArea={chartType === 'line'}
+                      activeIndicators={activeIndicators}
+                      activeRange={selectedTimeframe.toLowerCase()}
+                      showVolume={showVolume}
+                      simulateRealTime={true}
+                      timeControllerDate={timeControllerDate}
+                      isPlaying={isPlaying}
+                      playbackSpeed={playbackSpeed}
                     />
                   </div>
                   

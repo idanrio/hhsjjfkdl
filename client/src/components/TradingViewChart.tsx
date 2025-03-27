@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { 
   LineChart, AreaChart, XAxis, YAxis, CartesianGrid, Tooltip, 
   ResponsiveContainer, ReferenceLine, Legend, Line, Area,
@@ -46,6 +47,14 @@ interface TradingViewChartProps {
   initialPrice?: number;
   className?: string;
   initialPositions?: Position[];
+  showArea?: boolean;
+  activeIndicators?: string[];
+  activeRange?: string;
+  showVolume?: boolean;
+  simulateRealTime?: boolean;
+  timeControllerDate?: Date;
+  isPlaying?: boolean;
+  playbackSpeed?: number;
 }
 
 // Custom tooltip component for the chart
@@ -146,22 +155,50 @@ const TradingViewChart: React.FC<TradingViewChartProps> = ({
   symbol, 
   initialPrice = 100,
   className = '', 
-  initialPositions = []
+  initialPositions = [],
+  showArea: propShowArea = false,
+  activeIndicators = ['ma'],
+  activeRange: propActiveRange = '1d',
+  showVolume: propShowVolume = true,
+  simulateRealTime = false,
+  timeControllerDate,
+  isPlaying = false,
+  playbackSpeed = 1
 }) => {
   const { t } = useTranslation();
   const [chartData, setChartData] = useState<ChartData[]>([]);
   const [currentPrice, setCurrentPrice] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
-  const [showArea, setShowArea] = useState(false);
+  const [showArea, setShowArea] = useState(propShowArea);
   const [positions, setPositions] = useState<Position[]>(initialPositions);
-  const [activeRange, setActiveRange] = useState('1D');
-  const [indicators, setIndicators] = useState<string[]>(['ma']);
-  const [showVolume, setShowVolume] = useState(true);
+  const [activeRange, setActiveRange] = useState(propActiveRange);
+  const [indicators, setIndicators] = useState<string[]>(activeIndicators);
+  const [showVolume, setShowVolume] = useState(propShowVolume);
   
   // Update positions when initialPositions prop changes
   useEffect(() => {
     setPositions(initialPositions);
   }, [initialPositions]);
+  
+  // Update showArea when prop changes
+  useEffect(() => {
+    setShowArea(propShowArea);
+  }, [propShowArea]);
+  
+  // Update activeRange when prop changes
+  useEffect(() => {
+    setActiveRange(propActiveRange);
+  }, [propActiveRange]);
+  
+  // Update indicators when prop changes
+  useEffect(() => {
+    setIndicators(activeIndicators);
+  }, [activeIndicators]);
+  
+  // Update showVolume when prop changes
+  useEffect(() => {
+    setShowVolume(propShowVolume);
+  }, [propShowVolume]);
   
   // Load chart data on mount and when symbol or time frame changes
   useEffect(() => {
@@ -275,11 +312,36 @@ const TradingViewChart: React.FC<TradingViewChartProps> = ({
     fetchData();
   }, [symbol, activeRange, initialPrice]);
   
-  // Fetch live price updates at regular intervals
+  // Fetch live price updates at regular intervals, or simulate with time controller
   useEffect(() => {
+    // Define the function to get the current price either from real API or simulation
     const fetchCurrentPrice = async () => {
       try {
-        // Determine if it's a crypto or stock symbol
+        // If we're using the time controller to simulate data
+        if (simulateRealTime && timeControllerDate) {
+          // Find the closest data point to the current time controller date
+          if (chartData.length > 0) {
+            const controllerTime = timeControllerDate.getTime();
+            
+            // Find the closest data point to the current time
+            let closestPoint = chartData[0];
+            let minTimeDiff = Math.abs(new Date(chartData[0].time).getTime() - controllerTime);
+            
+            for (const point of chartData) {
+              const timeDiff = Math.abs(new Date(point.time).getTime() - controllerTime);
+              if (timeDiff < minTimeDiff) {
+                minTimeDiff = timeDiff;
+                closestPoint = point;
+              }
+            }
+            
+            // Use the close price from that data point
+            setCurrentPrice(closestPoint.close || initialPrice);
+            return;
+          }
+        }
+        
+        // If not in simulation mode or no time controller date, fetch real data
         const symbolType = symbol.includes('/') ? 'crypto' : 'stock';
         
         if (symbolType === 'crypto') {
@@ -304,11 +366,16 @@ const TradingViewChart: React.FC<TradingViewChartProps> = ({
     // Fetch immediately
     fetchCurrentPrice();
     
-    // Then set up interval to fetch every second
-    const interval = setInterval(fetchCurrentPrice, 1000);
+    // If using time controller, update on timeControllerDate change
+    if (simulateRealTime && timeControllerDate) {
+      fetchCurrentPrice();
+      return;
+    }
     
+    // Otherwise set up interval to fetch real data every second
+    const interval = setInterval(fetchCurrentPrice, 1000);
     return () => clearInterval(interval);
-  }, [symbol]);
+  }, [symbol, timeControllerDate, simulateRealTime, chartData.length]);
 
   // Calculate PnL for a position
   const calculatePnL = (position: Position) => {
@@ -401,6 +468,11 @@ const TradingViewChart: React.FC<TradingViewChartProps> = ({
       <CardHeader className="p-2 flex-row justify-between items-center space-y-0 border-b">
         <CardTitle className="text-base flex items-center">
           {t("Chart")}: {symbol} {currentPrice && `- ${formatPrice(currentPrice)}`}
+          {timeControllerDate && simulateRealTime && (
+            <Badge variant="outline" className="ml-2">
+              {timeControllerDate.toLocaleString()}
+            </Badge>
+          )}
         </CardTitle>
         {renderTimeFrameSelector()}
       </CardHeader>
