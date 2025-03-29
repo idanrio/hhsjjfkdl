@@ -2,8 +2,7 @@ import React, { useEffect, useRef, useState, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import * as LightweightCharts from 'lightweight-charts';
 import { 
-  Button, 
-  ButtonGroup 
+  Button
 } from "@/components/ui/button";
 import { 
   Select, 
@@ -58,7 +57,7 @@ import {
   ChevronUp,
   ChevronRight
 } from 'lucide-react';
-import type { Position, ChartPatternRecognitionResult } from '@/types/trading';
+import { Position, ChartPatternRecognitionResult } from '@/types/trading';
 
 // Technical indicators implementation for charts
 import { computeRSI, computeMACD, computeBollingerBands, computeEMA, computeSMA } from '@/lib/indicators';
