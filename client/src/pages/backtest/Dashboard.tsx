@@ -13,6 +13,9 @@ import { Link } from "wouter";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, LineChart, Line } from "recharts";
 import { Plus, Download, TrendingUp, Filter, ChevronLeft, Presentation } from "lucide-react";
 import IntegratedTradingEnvironment from "@/components/IntegratedTradingEnvironment";
+import { AIAssistant } from "@/components/AIAssistant";
+import { ChartPatternAnalysis } from "@/components/ChartPatternAnalysis";
+import { PersonalizedAdvice } from "@/components/PersonalizedAdvice";
 
 export default function BacktestDashboard() {
   const { t } = useTranslation();
@@ -635,6 +638,23 @@ export default function BacktestDashboard() {
                   )}
                 </CardContent>
               </Card>
+
+              {/* AI Analytics Components */}
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-6">
+                {/* Chart Pattern Analysis */}
+                <ChartPatternAnalysis 
+                  symbol={selectedTrade?.pair || 'BTC/USD'}
+                  chartData={tradeChartData || []}
+                />
+                
+                {/* Personalized Trading Advice */}
+                <PersonalizedAdvice userId={1} />
+                
+                {/* AI Trading Assistant */}
+                <div className="lg:col-span-2 mt-4">
+                  <AIAssistant />
+                </div>
+              </div>
             </div>
           )}
         </TabsContent>

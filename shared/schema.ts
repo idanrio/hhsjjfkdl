@@ -26,6 +26,7 @@ export const trades = pgTable("trades", {
   amount: numeric("amount").notNull(),
   entryPrice: numeric("entry_price").notNull(),
   exitPrice: numeric("exit_price"),
+  profitLoss: numeric("profit_loss"),
   strategy: text("strategy"),
   notes: text("notes"),
   entryScreenshot: text("entry_screenshot"),
@@ -56,6 +57,7 @@ export const insertTradeSchema = createInsertSchema(trades).pick({
   amount: true,
   entryPrice: true,
   exitPrice: true,
+  profitLoss: true,
   strategy: true,
   notes: true,
   tradeType: true,
@@ -64,6 +66,7 @@ export const insertTradeSchema = createInsertSchema(trades).pick({
   amount: z.string().transform(val => parseFloat(val)),
   entryPrice: z.string().transform(val => parseFloat(val)),
   exitPrice: z.string().optional().transform(val => val ? parseFloat(val) : null),
+  profitLoss: z.string().optional().transform(val => val ? parseFloat(val) : null),
 });
 
 export const insertTradingPairSchema = createInsertSchema(tradingPairs).pick({

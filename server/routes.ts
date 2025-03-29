@@ -4,6 +4,7 @@ import session from "express-session";
 import { storage } from "./storage";
 import { insertTradeSchema, insertTradingPairSchema, insertStrategyTypeSchema, insertUserSchema } from "@shared/schema";
 import { z } from "zod";
+import { aiService } from "./services/aiService";
 
 // Extend the Express session with our user ID
 declare module "express-session" {
@@ -646,6 +647,69 @@ export async function registerRoutes(app: Express): Promise<Server> {
       return res.status(500).json({ 
         error: "Internal server error" 
       });
+    }
+  });
+
+  // AI Routes
+  app.post('/api/ai/ask', async (req, res) => {
+    try {
+      const { question } = req.body;
+      if (!question) {
+        return res.status(400).json({ error: 'Question is required' });
+      }
+
+      const aiResponse = await aiService.processQuestion(question);
+      res.json(aiResponse);
+    } catch (error) {
+      console.error('Error in /api/ai/ask:', error);
+      res.status(500).json({ error: 'Failed to process question' });
+    }
+  });
+
+  app.post('/api/ai/analyze-chart', async (req, res) => {
+    try {
+      const { symbol, timeframe, data } = req.body;
+      if (!symbol || !timeframe || !data) {
+        return res.status(400).json({ error: 'Symbol, timeframe, and data are required' });
+      }
+
+      const analysis = await aiService.analyzeChart(data, symbol, timeframe);
+      res.json(analysis);
+    } catch (error) {
+      console.error('Error in /api/ai/analyze-chart:', error);
+      res.status(500).json({ error: 'Failed to analyze chart' });
+    }
+  });
+
+  app.get('/api/ai/personalized-advice/:userId', isAuthenticated, async (req, res) => {
+    try {
+      const userId = parseInt(req.params.userId);
+      if (isNaN(userId)) {
+        return res.status(400).json({ error: 'Invalid user ID' });
+      }
+
+      // Check if the user is requesting their own advice or is an admin
+      const sessionUserId = req.session.userId;
+      
+      // Not authenticated
+      if (sessionUserId === undefined) {
+        return res.status(401).json({ error: 'Not authenticated' });
+      }
+      
+      // Different user than requested
+      if (sessionUserId !== userId) {
+        // Check if requester is an admin
+        const user = await storage.getUser(sessionUserId);
+        if (!user || !user.isAdmin) {
+          return res.status(403).json({ error: 'Unauthorized' });
+        }
+      }
+
+      const advice = await aiService.getPersonalizedAdvice(userId);
+      res.json({ advice });
+    } catch (error) {
+      console.error('Error in /api/ai/personalized-advice:', error);
+      res.status(500).json({ error: 'Failed to get personalized advice' });
     }
   });
 

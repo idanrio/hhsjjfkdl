@@ -180,6 +180,53 @@ const enTranslations = {
   'Rectangle': 'Rectangle',
   'Fibonacci': 'Fibonacci',
   'Add Position': 'Add Position',
+  // AI Assistant
+  aiAssistant: {
+    title: 'AI Trading Assistant',
+    description: 'Ask questions about trading, market analysis, or Wyckoff methodology.',
+    placeholder: 'Ask a question about trading or market analysis...',
+    emptyState: 'Ask your first question to get personalized trading insights.',
+    you: 'You',
+    assistant: 'Assistant',
+    sources: 'Sources',
+    error: 'Unable to process your question. Please try again.'
+  },
+  // Chart Analysis
+  chartAnalysis: {
+    title: 'Chart Pattern Analysis',
+    description: 'Discover Wyckoff patterns in your chart data.',
+    timeframe: 'Timeframe',
+    timeframes: {
+      '1m': '1 Minute',
+      '5m': '5 Minutes',
+      '15m': '15 Minutes',
+      '1h': '1 Hour',
+      '4h': '4 Hours',
+      '1d': '1 Day'
+    },
+    analyze: 'Analyze Chart',
+    analyzing: 'Analyzing...',
+    attention: 'Attention',
+    noData: 'No chart data available for analysis.',
+    noPatterns: 'No significant patterns detected in this time range.',
+    error: 'Failed to analyze the chart pattern.',
+    analyzeFailed: 'Chart analysis failed. Please try again.',
+    confidence: 'Confidence',
+    recommendations: 'Recommendations'
+  },
+  // Personalized Advice
+  personalizedAdvice: {
+    title: 'Personalized Trading Advice',
+    description: 'Custom insights based on your trading history and performance.',
+    attention: 'Attention',
+    error: 'Could not retrieve personalized advice.',
+    fetchFailed: 'Failed to fetch personalized advice. Please try again.',
+    disclaimer: 'This advice is generated based on your historical trading data and should be used as a reference only. Always conduct your own research before making trading decisions.'
+  },
+  // General
+  error: 'Error',
+  loading: 'Loading...',
+  refresh: 'Refresh',
   // Footer
   footer: {
     description: 'Advanced trading education for aspiring and experienced traders. Learn, practice, and master the markets.',
@@ -379,6 +426,53 @@ const heTranslations = {
   'Rectangle': 'מלבן',
   'Fibonacci': 'פיבונאצ\'י',
   'Add Position': 'הוסף פוזיציה',
+  // AI Assistant
+  aiAssistant: {
+    title: 'עוזר מסחר חכם',
+    description: 'שאל שאלות על מסחר, ניתוח שוק, או שיטת ווייקוף.',
+    placeholder: 'שאל שאלה על מסחר או ניתוח שוק...',
+    emptyState: 'שאל את השאלה הראשונה שלך לקבלת תובנות מסחר מותאמות אישית.',
+    you: 'אתה',
+    assistant: 'העוזר',
+    sources: 'מקורות',
+    error: 'לא ניתן לעבד את השאלה שלך. נא לנסות שוב.'
+  },
+  // Chart Analysis
+  chartAnalysis: {
+    title: 'ניתוח תבניות בגרף',
+    description: 'גלה תבניות ווייקוף בנתוני הגרף שלך.',
+    timeframe: 'מסגרת זמן',
+    timeframes: {
+      '1m': 'דקה',
+      '5m': '5 דקות',
+      '15m': '15 דקות',
+      '1h': 'שעה',
+      '4h': '4 שעות',
+      '1d': 'יום'
+    },
+    analyze: 'נתח גרף',
+    analyzing: 'מנתח...',
+    attention: 'שים לב',
+    noData: 'אין נתוני גרף זמינים לניתוח.',
+    noPatterns: 'לא זוהו תבניות משמעותיות בטווח זמן זה.',
+    error: 'ניתוח הגרף נכשל.',
+    analyzeFailed: 'ניתוח הגרף נכשל. נא לנסות שוב.',
+    confidence: 'מידת ביטחון',
+    recommendations: 'המלצות'
+  },
+  // Personalized Advice
+  personalizedAdvice: {
+    title: 'ייעוץ מסחר מותאם אישית',
+    description: 'תובנות מותאמות בהתבסס על היסטוריית המסחר והביצועים שלך.',
+    attention: 'שים לב',
+    error: 'לא ניתן לקבל ייעוץ מותאם אישית.',
+    fetchFailed: 'לא ניתן לקבל ייעוץ מותאם אישית. נא לנסות שוב.',
+    disclaimer: 'ייעוץ זה נוצר על בסיס נתוני המסחר ההיסטוריים שלך ויש להשתמש בו כמקור התייחסות בלבד. תמיד בצע את המחקר שלך לפני קבלת החלטות מסחר.'
+  },
+  // General
+  error: 'שגיאה',
+  loading: 'טוען...',
+  refresh: 'רענן',
   // Footer
   footer: {
     description: 'הכשרת מסחר מתקדמת לסוחרים שאפתניים ומנוסים. למד, התאמן ושלוט בשווקים.',
