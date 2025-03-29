@@ -1,242 +1,306 @@
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Loader2, AlertTriangle, CheckCircle, BarChart2 } from 'lucide-react';
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { Button } from "@/components/ui/button";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { Separator } from "@/components/ui/separator";
-import { Progress } from "@/components/ui/progress";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { toast } from "@/hooks/use-toast";
-import { aiService, type PatternRecognitionResult } from '../services/aiService';
+import { 
+  Card, 
+  CardContent, 
+  CardDescription, 
+  CardHeader, 
+  CardTitle 
+} from "@/components/ui/card";
+import { 
+  Separator 
+} from "@/components/ui/separator";
+import { 
+  Tabs, 
+  TabsContent, 
+  TabsList, 
+  TabsTrigger 
+} from "@/components/ui/tabs";
+import { 
+  Badge 
+} from "@/components/ui/badge";
+import { 
+  Button 
+} from "@/components/ui/button";
+import { 
+  Loader2, 
+  RefreshCw,
+  TrendingUp,
+  TrendingDown,
+  MoveHorizontal,
+  Target
+} from 'lucide-react';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import aiService from '@/services/aiService';
+import { ChartPatternRecognitionResult } from '@/types/trading';
+import { OHLCV } from '@/services/enhancedMarketService';
 
 interface ChartPatternAnalysisProps {
   symbol: string;
-  chartData: any; // This will be the OHLCV data
-  onPatternClick?: (pattern: PatternRecognitionResult) => void;
+  chartData: OHLCV[]; // This will be the OHLCV data
+  onPatternClick?: (pattern: ChartPatternRecognitionResult) => void;
 }
 
 export function ChartPatternAnalysis({ symbol, chartData, onPatternClick }: ChartPatternAnalysisProps) {
   const { t } = useTranslation();
   const [loading, setLoading] = useState(false);
-  const [patterns, setPatterns] = useState<PatternRecognitionResult[]>([]);
-  const [timeframe, setTimeframe] = useState('1h');
-  const [error, setError] = useState('');
+  const [activeTab, setActiveTab] = useState('patterns');
+  const [analysis, setAnalysis] = useState<any>(null);
+  const [error, setError] = useState<string | null>(null);
 
-  // Simple pattern detection with mock data to demonstrate functionality
-  // This is used when the API call fails or for demonstration purposes
-  const detectSimplePatterns = (data: any[]): PatternRecognitionResult[] => {
-    if (!data || data.length < 10) return [];
-    
-    const mockPatterns: PatternRecognitionResult[] = [];
-    
-    // Add a sample pattern - for demo purposes
-    mockPatterns.push({
-      pattern: "Double Bottom",
-      confidence: 0.78,
-      description: "A bullish reversal pattern that forms after a downtrend, creating two price lows at approximately the same level.",
-      recommendations: [
-        "Consider long positions if price breaks above the middle peak.",
-        "Set stop loss below the second bottom.",
-        "Target the height of the pattern for profit taking."
-      ],
-      areas: [{
-        start: 3,
-        end: 8,
-        type: "reversal"
-      }]
-    });
-
-    // Check for uptrend
-    let uptrends = 0;
-    for (let i = 3; i < data.length; i++) {
-      if (data[i].close > data[i-1].close && 
-          data[i-1].close > data[i-2].close && 
-          data[i-2].close > data[i-3].close) {
-        uptrends++;
-      }
+  // Request analysis on mount or when chart data changes
+  useEffect(() => {
+    if (chartData && chartData.length > 0) {
+      analyzeChart();
     }
-    
-    if (uptrends > 3) {
-      mockPatterns.push({
-        pattern: "Strong Uptrend",
-        confidence: 0.85,
-        description: "Price is moving consistently upward, indicating strong bullish momentum.",
-        recommendations: [
-          "Consider trend-following strategies.",
-          "Look for pullbacks to enter long positions.",
-          "Use trailing stops to protect profits while riding the trend."
-        ],
-        areas: [{
-          start: 0,
-          end: data.length - 1,
-          type: "trend"
-        }]
-      });
-    }
-    
-    return mockPatterns;
-  };
+  }, [symbol]);
 
   const analyzeChart = async () => {
-    if (!chartData || chartData.length === 0) {
-      setError(t('chartAnalysis.noData'));
-      return;
-    }
-
     setLoading(true);
-    setError('');
-
+    setError(null);
+    
     try {
-      // Try to get patterns from AI service
-      const results = await aiService.analyzeChart(symbol, timeframe, chartData);
-      setPatterns(results);
-      
-      if (results.length === 0) {
-        // If no patterns found via API, try simple local detection
-        const localPatterns = detectSimplePatterns(chartData);
-        setPatterns(localPatterns);
-        
-        if (localPatterns.length === 0) {
-          setError(t('chartAnalysis.noPatterns'));
-        }
+      // Make sure we have enough data for analysis
+      if (!chartData || chartData.length < 10) {
+        setError('Not enough data for pattern analysis.');
+        return;
       }
-    } catch (error) {
-      console.error('Error analyzing chart:', error);
       
-      // Fall back to local pattern detection on API error
-      const localPatterns = detectSimplePatterns(chartData);
-      setPatterns(localPatterns);
-      
-      if (localPatterns.length === 0) {
-        setError(t('chartAnalysis.error'));
-        toast({
-          title: t('error'),
-          description: t('chartAnalysis.analyzeFailed'),
-          variant: 'destructive'
-        });
-      }
+      const result = await aiService.analyzeChart(symbol, chartData, '1d');
+      setAnalysis(result);
+    } catch (err) {
+      console.error('Error analyzing chart:', err);
+      setError('Failed to analyze chart patterns. Please try again.');
     } finally {
       setLoading(false);
     }
   };
 
-  // Analyze on mount, but with a small delay
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      analyzeChart();
-    }, 1000);
-    
-    return () => clearTimeout(timer);
-  }, []);
-
-  const getConfidenceColor = (confidence: number) => {
-    if (confidence >= 0.7) return 'bg-green-500';
-    if (confidence >= 0.4) return 'bg-yellow-500';
-    return 'bg-red-500';
+  // Handle pattern click to display details
+  const handlePatternClick = (pattern: ChartPatternRecognitionResult) => {
+    if (onPatternClick) {
+      onPatternClick(pattern);
+    }
   };
 
+  // Display loading state
+  if (loading) {
+    return (
+      <Card className="w-full h-full">
+        <CardHeader>
+          <CardTitle>{t('Pattern Analysis')}</CardTitle>
+          <CardDescription>{t('Analyzing chart patterns and market structure')}</CardDescription>
+        </CardHeader>
+        <CardContent className="flex flex-col items-center justify-center h-56">
+          <Loader2 className="h-10 w-10 animate-spin text-primary mb-4" />
+          <p className="text-muted-foreground">{t('Analyzing market patterns...')}</p>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  // Display error state
+  if (error) {
+    return (
+      <Card className="w-full h-full">
+        <CardHeader>
+          <CardTitle>{t('Pattern Analysis')}</CardTitle>
+          <CardDescription>{t('Analyzing chart patterns and market structure')}</CardDescription>
+        </CardHeader>
+        <CardContent className="flex flex-col items-center justify-center h-56">
+          <p className="text-red-500 mb-4">{error}</p>
+          <Button onClick={analyzeChart} variant="outline" size="sm">
+            <RefreshCw className="mr-2 h-4 w-4" />
+            {t('Try Again')}
+          </Button>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  // If no analysis yet
+  if (!analysis) {
+    return (
+      <Card className="w-full h-full">
+        <CardHeader>
+          <CardTitle>{t('Pattern Analysis')}</CardTitle>
+          <CardDescription>{t('Analyze chart patterns and market structure')}</CardDescription>
+        </CardHeader>
+        <CardContent className="flex flex-col items-center justify-center h-56">
+          <Button onClick={analyzeChart} className="mb-4">
+            <Target className="mr-2 h-4 w-4" />
+            {t('Analyze Chart')}
+          </Button>
+          <p className="text-muted-foreground text-sm text-center">
+            {t('AI-powered analysis can identify patterns, support/resistance levels, and market structure')}
+          </p>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  // Get direction icon based on market structure
+  const getDirectionIcon = () => {
+    if (!analysis.marketStructure) return <MoveHorizontal />;
+    
+    switch (analysis.marketStructure.toLowerCase()) {
+      case 'bullish':
+        return <TrendingUp className="text-green-500" />;
+      case 'bearish':
+        return <TrendingDown className="text-red-500" />;
+      default:
+        return <MoveHorizontal className="text-yellow-500" />;
+    }
+  };
+
+  // Get color based on pattern direction
+  const getPatternColor = (direction: string) => {
+    switch (direction.toLowerCase()) {
+      case 'bullish':
+        return 'bg-green-500/10 text-green-500 border-green-500/20';
+      case 'bearish':
+        return 'bg-red-500/10 text-red-500 border-red-500/20';
+      default:
+        return 'bg-yellow-500/10 text-yellow-500 border-yellow-500/20';
+    }
+  };
+
+  // Main component render with analysis results
   return (
-    <div className="w-full h-full">
-      <div className="flex items-center gap-2 mb-4">
-        <Select value={timeframe} onValueChange={setTimeframe}>
-          <SelectTrigger className="w-[120px]">
-            <SelectValue placeholder={t('chartAnalysis.timeframe')} />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="1m">{t('chartAnalysis.timeframes.1m')}</SelectItem>
-            <SelectItem value="5m">{t('chartAnalysis.timeframes.5m')}</SelectItem>
-            <SelectItem value="15m">{t('chartAnalysis.timeframes.15m')}</SelectItem>
-            <SelectItem value="1h">{t('chartAnalysis.timeframes.1h')}</SelectItem>
-            <SelectItem value="4h">{t('chartAnalysis.timeframes.4h')}</SelectItem>
-            <SelectItem value="1d">{t('chartAnalysis.timeframes.1d')}</SelectItem>
-          </SelectContent>
-        </Select>
-        
-        <Button onClick={analyzeChart} disabled={loading}>
-          {loading ? (
-            <>
-              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              {t('chartAnalysis.analyzing')}
-            </>
-          ) : (
-            t('chartAnalysis.analyze')
-          )}
-        </Button>
-      </div>
-      
-      {error && (
-        <Alert variant="destructive" className="mb-4">
-          <AlertTriangle className="h-4 w-4" />
-          <AlertTitle>{t('chartAnalysis.attention')}</AlertTitle>
-          <AlertDescription>{error}</AlertDescription>
-        </Alert>
-      )}
-      
-      {loading ? (
-        <div className="flex flex-col items-center justify-center p-8 h-[300px]">
-          <Loader2 className="h-8 w-8 animate-spin mb-4 text-primary" />
-          <p className="text-muted-foreground">{t('chartAnalysis.analyzing')}</p>
-        </div>
-      ) : patterns.length > 0 ? (
-        <ScrollArea className="h-[300px] pr-4">
-          <div className="space-y-3">
-            {patterns.map((pattern, index) => (
-              <Card key={index} className="p-4 cursor-pointer hover:bg-accent/50 transition-colors border-primary/10"
-                onClick={() => onPatternClick?.(pattern)}>
-                <div className="flex justify-between items-start mb-2">
-                  <div className="flex items-center gap-2">
-                    <CheckCircle size={16} className="text-primary" />
-                    <h4 className="font-medium">{pattern.pattern}</h4>
-                  </div>
-                  <div className="flex flex-col items-end">
-                    <span className="text-xs text-muted-foreground mb-1">
-                      {t('chartAnalysis.confidence')}
-                    </span>
-                    <div className="w-24 flex items-center gap-2">
-                      <Progress value={pattern.confidence * 100} 
-                        className={`h-2 ${getConfidenceColor(pattern.confidence)}`} />
-                      <span className="text-xs font-mono">
-                        {Math.round(pattern.confidence * 100)}%
-                      </span>
-                    </div>
-                  </div>
-                </div>
-                
-                <p className="text-sm text-muted-foreground mb-3">
-                  {pattern.description}
-                </p>
-                
-                <Separator className="my-2" />
-                
-                <div className="pt-2">
-                  <h5 className="text-xs font-medium mb-1">
-                    {t('chartAnalysis.recommendations')}:
-                  </h5>
-                  <ul className="list-disc pl-5 text-sm space-y-1">
-                    {pattern.recommendations.map((rec, i) => (
-                      <li key={i}>{rec}</li>
-                    ))}
-                  </ul>
-                </div>
-              </Card>
-            ))}
+    <Card className="w-full h-full">
+      <CardHeader className="pb-2">
+        <div className="flex justify-between items-center">
+          <div>
+            <CardTitle>{t('Pattern Analysis')}</CardTitle>
+            <CardDescription>{t('AI-powered chart analysis')}</CardDescription>
           </div>
-        </ScrollArea>
-      ) : (
-        <div className="flex flex-col items-center justify-center p-8 h-[300px] border rounded-md border-dashed">
-          <BarChart2 className="h-8 w-8 text-muted-foreground mb-4" />
-          <p className="text-muted-foreground text-center mb-2">{t('chartAnalysis.noPatterns')}</p>
-          <Button 
-            variant="outline" 
-            size="sm" 
-            onClick={analyzeChart}
-          >
-            {t('chartAnalysis.analyze')}
+          <Button variant="ghost" size="icon" onClick={analyzeChart} title={t('Refresh Analysis')}>
+            <RefreshCw className="h-4 w-4" />
           </Button>
         </div>
-      )}
-    </div>
+      </CardHeader>
+      <CardContent>
+        <Tabs defaultValue={activeTab} onValueChange={setActiveTab}>
+          <TabsList className="mb-4">
+            <TabsTrigger value="patterns">{t('Patterns')}</TabsTrigger>
+            <TabsTrigger value="structure">{t('Structure')}</TabsTrigger>
+            <TabsTrigger value="levels">{t('Key Levels')}</TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="patterns" className="mt-0">
+            <ScrollArea className="h-[220px] pr-4">
+              {analysis.patterns && analysis.patterns.length > 0 ? (
+                <div className="space-y-3">
+                  {analysis.patterns.map((pattern: ChartPatternRecognitionResult, index: number) => (
+                    <div 
+                      key={index} 
+                      className={`p-3 rounded-md border cursor-pointer hover:bg-accent transition-colors ${getPatternColor(pattern.direction)}`}
+                      onClick={() => handlePatternClick(pattern)}
+                    >
+                      <div className="flex justify-between items-start mb-1">
+                        <h4 className="font-medium">{pattern.pattern}</h4>
+                        <Badge variant="outline" className={getPatternColor(pattern.direction)}>
+                          {pattern.direction}
+                        </Badge>
+                      </div>
+                      <p className="text-sm opacity-80 line-clamp-2">{pattern.description}</p>
+                      <div className="mt-2 flex items-center text-xs">
+                        <span className="opacity-70">Confidence: </span>
+                        <div className="w-full h-1.5 bg-gray-300 dark:bg-gray-700 rounded-full ml-2 mr-1">
+                          <div 
+                            className="h-full bg-primary rounded-full" 
+                            style={{ width: `${pattern.confidence * 100}%` }}
+                          />
+                        </div>
+                        <span>{Math.round(pattern.confidence * 100)}%</span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center p-4 text-muted-foreground">
+                  {t('No significant patterns detected in current timeframe')}
+                </div>
+              )}
+            </ScrollArea>
+          </TabsContent>
+
+          <TabsContent value="structure" className="mt-0">
+            <div className="space-y-4">
+              <div className="flex items-center space-x-2">
+                <div className="p-2 rounded-full bg-muted">
+                  {getDirectionIcon()}
+                </div>
+                <div>
+                  <h3 className="font-medium">
+                    {analysis.marketStructure || t('Neutral')} {t('Market Structure')}
+                  </h3>
+                  <p className="text-sm text-muted-foreground">
+                    {analysis.wyckoffPhase 
+                      ? t('Wyckoff Phase') + ': ' + analysis.wyckoffPhase
+                      : t('No clear Wyckoff phase identified')}
+                  </p>
+                </div>
+              </div>
+              
+              <Separator />
+              
+              <div>
+                <h3 className="font-medium mb-2">{t('Summary')}</h3>
+                <p className="text-sm text-muted-foreground">{analysis.summary}</p>
+              </div>
+              
+              {analysis.recommendation && (
+                <>
+                  <Separator />
+                  <div>
+                    <h3 className="font-medium mb-2">{t('Recommendation')}</h3>
+                    <p className="text-sm text-muted-foreground">{analysis.recommendation}</p>
+                  </div>
+                </>
+              )}
+            </div>
+          </TabsContent>
+
+          <TabsContent value="levels" className="mt-0">
+            <div className="space-y-4">
+              <div>
+                <h3 className="font-medium mb-2">{t('Support Levels')}</h3>
+                {analysis.keyLevels?.support && analysis.keyLevels.support.length > 0 ? (
+                  <div className="grid grid-cols-2 gap-2">
+                    {analysis.keyLevels.support.map((level: number, index: number) => (
+                      <Badge key={index} variant="outline" className="bg-green-500/5 border-green-500/20 p-2 flex justify-center">
+                        {level.toFixed(2)}
+                      </Badge>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-sm text-muted-foreground">{t('No clear support levels identified')}</p>
+                )}
+              </div>
+              
+              <Separator />
+              
+              <div>
+                <h3 className="font-medium mb-2">{t('Resistance Levels')}</h3>
+                {analysis.keyLevels?.resistance && analysis.keyLevels.resistance.length > 0 ? (
+                  <div className="grid grid-cols-2 gap-2">
+                    {analysis.keyLevels.resistance.map((level: number, index: number) => (
+                      <Badge key={index} variant="outline" className="bg-red-500/5 border-red-500/20 p-2 flex justify-center">
+                        {level.toFixed(2)}
+                      </Badge>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-sm text-muted-foreground">{t('No clear resistance levels identified')}</p>
+                )}
+              </div>
+            </div>
+          </TabsContent>
+        </Tabs>
+      </CardContent>
+    </Card>
   );
 }
+
+export default ChartPatternAnalysis;

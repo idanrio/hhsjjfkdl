@@ -39,15 +39,18 @@ export function AIAssistant() {
     const defaultResponses: Record<string, AIQuestionResponse> = {
       "wyckoff": {
         answer: "The Wyckoff Method is a technical analysis approach developed by Richard Wyckoff in the early 20th century. It's based on the principle that price movements are driven by supply and demand, which can be observed through price and volume analysis.\n\nWyckoff identified several market cycles and developed a methodology to identify optimal entry and exit points. The key phases in Wyckoff's market cycle are:\n\n1. Accumulation - When institutions begin buying\n2. Markup - When price trends upward\n3. Distribution - When institutions begin selling\n4. Markdown - When price trends downward\n\nTraders use Wyckoff's principles to identify these phases and trade accordingly.",
-        sources: ["Wyckoff Analytics", "Technical Analysis of Stock Trends"]
+        sources: ["Wyckoff Analytics", "Technical Analysis of Stock Trends"],
+        confidence: 0.95
       },
       "double bottom": {
         answer: "A double bottom is a bullish reversal pattern that forms after a downtrend and signals a potential change in trend from bearish to bullish.\n\nHow to identify a double bottom pattern:\n\n1. Look for two distinct lows that are roughly equal in price.\n2. The two lows should be separated by a moderate peak (the neckline).\n3. Volume typically decreases on the second bottom compared to the first.\n4. Confirmation occurs when the price breaks above the intermediate peak.\n\nTrading strategy:\n- Enter a long position when price breaks above the neckline with increased volume.\n- Set a stop loss below the second bottom.\n- Target a price move equal to the height of the pattern.",
-        sources: ["Chart Pattern Analysis", "Technical Trading Principles"]
+        sources: ["Chart Pattern Analysis", "Technical Trading Principles"],
+        confidence: 0.9
       },
       "risk management": {
         answer: "Effective risk management is crucial for long-term trading success. Here are key principles to improve your risk management:\n\n1. Position Sizing: Never risk more than 1-2% of your capital on a single trade.\n\n2. Stop Loss Orders: Always use stop losses to define your risk before entering a trade.\n\n3. Risk/Reward Ratio: Aim for trades with at least a 1:2 risk-to-reward ratio, preferably 1:3 or higher.\n\n4. Correlation: Be aware of correlation between positions to avoid overexposure to similar market movements.\n\n5. Maximum Drawdown: Define the maximum account drawdown you're willing to accept and take a break if you reach it.\n\n6. Trading Journal: Document all trades to analyze what works and what doesn't.\n\n7. Plan Before Trading: Determine entry, exit, and risk management rules before placing any trade.",
-        sources: ["Risk Management for Traders", "Trading Psychology"]
+        sources: ["Risk Management for Traders", "Trading Psychology"],
+        confidence: 0.95
       }
     };
 
@@ -62,7 +65,8 @@ export function AIAssistant() {
     // Default response if no keyword matches
     return {
       answer: "Trading success requires a combination of technical analysis, fundamental understanding, and proper risk management. To improve your trading, focus on developing a consistent methodology, controlling your emotions, and continuously learning from both winning and losing trades.\n\nRemember that markets evolve, so strategies that work today may need adjustment in the future. The most successful traders maintain flexibility while following their trading plans.",
-      sources: ["Trading Fundamentals", "Market Analysis Principles"]
+      sources: ["Trading Fundamentals", "Market Analysis Principles"],
+      confidence: 0.8
     };
   };
 
