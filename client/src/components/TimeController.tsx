@@ -321,12 +321,12 @@ const TimeController: React.FC<TimeControllerProps> = ({
         
         <div className="flex items-center justify-between space-x-2">
           <Button 
-            variant="outline" 
+            variant="default" 
             size="sm" 
-            className="text-blue-500 border-blue-500 hover:bg-blue-50 dark:hover:bg-blue-950"
+            className="bg-primary text-primary-foreground hover:bg-primary/90 font-medium"
             onClick={() => setReplayDialogOpen(true)}
           >
-            <Play className="h-4 w-4 mr-2 text-blue-500" />
+            <Play className="h-4 w-4 mr-2" />
             {t("Replay")}
           </Button>
           
@@ -461,7 +461,11 @@ const TimeController: React.FC<TimeControllerProps> = ({
             <Button variant="outline" onClick={() => setReplayDialogOpen(false)}>
               {t("Cancel")}
             </Button>
-            <Button onClick={startReplay} className="bg-blue-600 hover:bg-blue-700 text-white">
+            <Button 
+              onClick={startReplay} 
+              className="bg-primary hover:bg-primary/90 text-primary-foreground font-medium"
+            >
+              <Play className="h-4 w-4 mr-2" />
               {t("Start Replay")}
             </Button>
           </DialogFooter>

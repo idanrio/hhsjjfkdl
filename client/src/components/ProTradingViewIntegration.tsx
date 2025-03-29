@@ -19,6 +19,17 @@ import {
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
+import { 
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Calendar } from "@/components/ui/calendar";
 import { Position } from '@/types/trading';
 import { 
   ArrowLeft, 
@@ -37,7 +48,8 @@ import {
   Search,
   Star,
   BookMarked,
-  TrendingUp
+  TrendingUp,
+  Play
 } from 'lucide-react';
 
 interface ProTradingViewIntegrationProps {
@@ -307,6 +319,8 @@ export function ProTradingViewIntegration({
   const [alertDialogOpen, setAlertDialogOpen] = useState(false);
   // State for indicators dialog - separate from the sidebar panel
   const [indicatorsDialogOpen, setIndicatorsDialogOpen] = useState(false);
+  // State for replay dialog
+  const [replayDialogOpen, setReplayDialogOpen] = useState(false);
   
   // Alert settings
   const [alertSettings, setAlertSettings] = useState({
@@ -384,16 +398,7 @@ export function ProTradingViewIntegration({
               <ChevronDown className="h-3 w-3" />
             </Button>
             
-            {/* TradingView-style Alert Button */}
-            <Button 
-              variant="ghost" 
-              size="sm" 
-              className="flex items-center gap-1"
-              onClick={() => setAlertDialogOpen(true)}
-            >
-              <Bell className="h-4 w-4" />
-              {t('Alert')}
-            </Button>
+
           </div>
           
           <div className="flex items-center gap-2">
@@ -401,12 +406,30 @@ export function ProTradingViewIntegration({
               <PanelTop className="h-4 w-4" />
             </Button>
             
+            <Button 
+              variant="outline" 
+              size="sm" 
+              className="bg-primary text-primary-foreground hover:bg-primary/90 transition-colors"
+              onClick={() => setReplayDialogOpen(true)} 
+              title={t('Replay Mode')}
+            >
+              <Play className="h-4 w-4 mr-1" />
+              {t('Replay')}
+            </Button>
+            
             <Button variant="ghost" size="sm" onClick={() => setShowInfo(!showInfo)} title={t('Information')}>
               <PanelBottom className="h-4 w-4" />
             </Button>
             
-            <Button variant="ghost" size="sm" onClick={toggleFullScreen} title={fullScreen ? t('Exit Full Screen') : t('Full Screen')}>
-              {fullScreen ? <Minimize2 className="h-4 w-4" /> : <Maximize2 className="h-4 w-4" />}
+            <Button 
+              variant="outline" 
+              size="sm" 
+              className="bg-primary/10 border-primary/20 text-primary hover:bg-primary/20" 
+              onClick={toggleFullScreen} 
+              title={fullScreen ? t('Exit Full Screen') : t('Full Screen')}
+            >
+              {fullScreen ? <Minimize2 className="h-4 w-4 mr-1" /> : <Maximize2 className="h-4 w-4 mr-1" />}
+              {fullScreen ? t('Exit Full Screen') : t('Full Screen')}
             </Button>
             
             <div className="flex items-center ml-2">
@@ -547,6 +570,193 @@ export function ProTradingViewIntegration({
             </Tabs>
           </div>
         )}
+        
+        {/* Indicators Dialog */}
+        <Dialog open={indicatorsDialogOpen} onOpenChange={setIndicatorsDialogOpen}>
+          <DialogContent className="sm:max-w-md">
+            <DialogHeader>
+              <DialogTitle>{t('Indicators')}</DialogTitle>
+              <DialogDescription>
+                {t('Add technical indicators to your chart')}
+              </DialogDescription>
+            </DialogHeader>
+            
+            <div className="flex items-center py-4">
+              <div className="relative w-full">
+                <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+                <Input
+                  placeholder={t('Search indicators...')}
+                  className="pl-8"
+                  value={indicatorSearch}
+                  onChange={(e) => setIndicatorSearch(e.target.value)}
+                />
+              </div>
+            </div>
+            
+            <ScrollArea className="h-[300px] pr-4">
+              <div className="space-y-0.5">
+                {filteredIndicators.map(indicator => (
+                  <div 
+                    key={indicator.id} 
+                    className="flex items-center justify-between p-2 rounded-md hover:bg-accent cursor-pointer"
+                    onClick={() => {
+                      if (selectedIndicators.includes(indicator.id)) {
+                        setSelectedIndicators(selectedIndicators.filter(id => id !== indicator.id));
+                      } else {
+                        setSelectedIndicators([...selectedIndicators, indicator.id]);
+                      }
+                    }}
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className={`w-4 h-4 flex items-center justify-center rounded-sm border ${selectedIndicators.includes(indicator.id) ? 'bg-primary border-primary text-primary-foreground' : 'border-input'}`}>
+                        {selectedIndicators.includes(indicator.id) && <TrendingUp className="h-3 w-3" />}
+                      </div>
+                      <div className="flex flex-col">
+                        <span className="text-sm font-medium">{indicator.name}</span>
+                        <span className="text-xs text-muted-foreground capitalize">{indicator.category}</span>
+                      </div>
+                    </div>
+                    {selectedIndicators.includes(indicator.id) && (
+                      <Star className="h-4 w-4 text-yellow-500" />
+                    )}
+                  </div>
+                ))}
+              </div>
+            </ScrollArea>
+            
+            <DialogFooter className="flex justify-between items-center">
+              <div className="text-sm text-muted-foreground">
+                {selectedIndicators.length} {t('indicators selected')}
+              </div>
+              <Button type="submit" onClick={() => setIndicatorsDialogOpen(false)}>
+                {t('Apply')}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+        
+        {/* Replay Mode Dialog */}
+        <Dialog open={replayDialogOpen} onOpenChange={setReplayDialogOpen}>
+          <DialogContent className="sm:max-w-md">
+            <DialogHeader>
+              <DialogTitle>{t('Start Replay Session')}</DialogTitle>
+              <DialogDescription>
+                {t('Choose a time range to replay market data for')} {symbol}
+              </DialogDescription>
+            </DialogHeader>
+            
+            <Tabs defaultValue="preset" className="mt-4">
+              <TabsList className="grid w-full grid-cols-2">
+                <TabsTrigger value="preset">{t('Preset Ranges')}</TabsTrigger>
+                <TabsTrigger value="custom">{t('Custom Range')}</TabsTrigger>
+              </TabsList>
+              
+              <TabsContent value="preset" className="space-y-4 py-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <Button 
+                    variant="outline" 
+                    onClick={() => {
+                      // Last 7 days
+                      const end = new Date();
+                      const start = new Date();
+                      start.setDate(end.getDate() - 7);
+                      // Handle replay start
+                    }}
+                  >
+                    {t('Last 7 Days')}
+                  </Button>
+                  
+                  <Button 
+                    variant="outline"
+                    onClick={() => {
+                      // Last 30 days
+                      const end = new Date();
+                      const start = new Date();
+                      start.setDate(end.getDate() - 30);
+                      // Handle replay start
+                    }}
+                  >
+                    {t('Last 30 Days')}
+                  </Button>
+                  
+                  <Button 
+                    variant="outline"
+                    onClick={() => {
+                      // Last 3 months
+                      const end = new Date();
+                      const start = new Date();
+                      start.setMonth(end.getMonth() - 3);
+                      // Handle replay start
+                    }}
+                  >
+                    {t('Last 3 Months')}
+                  </Button>
+                  
+                  <Button 
+                    variant="outline"
+                    onClick={() => {
+                      // Last year
+                      const end = new Date();
+                      const start = new Date();
+                      start.setFullYear(end.getFullYear() - 1);
+                      // Handle replay start
+                    }}
+                  >
+                    {t('Last Year')}
+                  </Button>
+                </div>
+              </TabsContent>
+              
+              <TabsContent value="custom" className="py-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <h4 className="mb-2 text-sm font-medium">{t('Start Date')}</h4>
+                    <Calendar
+                      mode="single"
+                      selected={new Date(new Date().setMonth(new Date().getMonth() - 3))}
+                      onSelect={(date) => {
+                        // Handle start date selection
+                      }}
+                      disabled={(date) => date > new Date()}
+                    />
+                  </div>
+                  
+                  <div>
+                    <h4 className="mb-2 text-sm font-medium">{t('End Date')}</h4>
+                    <Calendar
+                      mode="single"
+                      selected={new Date()}
+                      onSelect={(date) => {
+                        // Handle end date selection
+                      }}
+                      disabled={(date) => date > new Date()}
+                    />
+                  </div>
+                </div>
+              </TabsContent>
+            </Tabs>
+            
+            <DialogFooter className="flex space-x-2 justify-end">
+              <Button variant="outline" onClick={() => setReplayDialogOpen(false)}>
+                {t('Cancel')}
+              </Button>
+              <Button 
+                onClick={() => {
+                  // Start replay mode here
+                  setReplayDialogOpen(false);
+                  
+                  // Open TimeController dialog or switch to replay mode
+                  // This would typically navigate to a replay interface
+                  window.location.href = '/replay?symbol=' + encodeURIComponent(symbol);
+                }} 
+                className="bg-primary hover:bg-primary/90 text-primary-foreground font-medium"
+              >
+                <Play className="h-4 w-4 mr-2" />
+                {t('Start Replay')}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </div>
     </div>
   );
