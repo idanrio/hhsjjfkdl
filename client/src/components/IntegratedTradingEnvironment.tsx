@@ -437,6 +437,17 @@ const IntegratedTradingEnvironment: React.FC<IntegratedTradingEnvironmentProps> 
                       timeControllerDate={timeControllerDate}
                       isPlaying={isPlaying}
                       playbackSpeed={playbackSpeed}
+                      enableDrawingTools={activeDrawingTool !== 'cursor'}
+                      enablePatternRecognition={true}
+                      onPatternDetected={(patterns) => {
+                        if (patterns.length > 0) {
+                          toast({
+                            title: t("Patterns Detected"),
+                            description: t("{{count}} pattern(s) found in the chart", { count: patterns.length }),
+                          });
+                          console.log("Detected patterns:", patterns);
+                        }
+                      }}
                     />
                   </div>
                   
