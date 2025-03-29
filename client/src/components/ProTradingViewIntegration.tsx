@@ -250,32 +250,84 @@ export function ProTradingViewIntegration({
     { id: '4', name: t('Area'), icon: <AreaChart size={16} /> },
   ];
   
-  // All available indicators for trading
+  // All available indicators for trading (comprehensive list from TradingView Pro)
   const allIndicators = [
+    // Trend Indicators
     { id: 'MASimple@tv-basicstudies', name: 'Moving Average', category: 'trend' },
     { id: 'MAExp@tv-basicstudies', name: 'EMA', category: 'trend' },
     { id: 'MAWeighted@tv-basicstudies', name: 'WMA', category: 'trend' },
+    { id: 'VWAP@tv-basicstudies', name: 'VWAP', category: 'trend' },
+    { id: 'IchimokuCloud@tv-basicstudies', name: 'Ichimoku Cloud', category: 'trend' },
+    { id: 'ParabolicSAR@tv-basicstudies', name: 'Parabolic SAR', category: 'trend' },
+    { id: 'ZigZag@tv-basicstudies', name: 'Zig Zag', category: 'trend' },
+    { id: 'LinearRegression@tv-basicstudies', name: 'Linear Regression', category: 'trend' },
+    { id: 'SuperTrend@tv-basicstudies', name: 'SuperTrend', category: 'trend' },
+    { id: 'HullMA@tv-basicstudies', name: 'Hull MA', category: 'trend' },
+    { id: 'ADX@tv-basicstudies', name: 'ADX (Directional Movement)', category: 'trend' },
+    
+    // Momentum Indicators
     { id: 'RSI@tv-basicstudies', name: 'RSI', category: 'momentum' },
     { id: 'MACD@tv-basicstudies', name: 'MACD', category: 'momentum' },
-    { id: 'BB@tv-basicstudies', name: 'Bollinger Bands', category: 'volatility' },
     { id: 'Stochastic@tv-basicstudies', name: 'Stochastic', category: 'momentum' },
     { id: 'StochasticRSI@tv-basicstudies', name: 'Stochastic RSI', category: 'momentum' },
-    { id: 'IchimokuCloud@tv-basicstudies', name: 'Ichimoku Cloud', category: 'trend' },
-    { id: 'ADX@tv-basicstudies', name: 'ADX', category: 'trend' },
-    { id: 'ATR@tv-basicstudies', name: 'ATR', category: 'volatility' },
-    { id: 'OBV@tv-basicstudies', name: 'On Balance Volume', category: 'volume' },
-    { id: 'MFI@tv-basicstudies', name: 'Money Flow Index', category: 'volume' },
     { id: 'CCI@tv-basicstudies', name: 'CCI', category: 'momentum' },
     { id: 'WilliamsR@tv-basicstudies', name: 'Williams %R', category: 'momentum' },
+    { id: 'UltimateOscillator@tv-basicstudies', name: 'Ultimate Oscillator', category: 'momentum' },
+    { id: 'ROC@tv-basicstudies', name: 'Rate of Change', category: 'momentum' },
+    { id: 'AwesomeOscillator@tv-basicstudies', name: 'Awesome Oscillator', category: 'momentum' },
+    { id: 'MomentumIndicator@tv-basicstudies', name: 'Momentum', category: 'momentum' },
+    
+    // Volatility Indicators
+    { id: 'BB@tv-basicstudies', name: 'Bollinger Bands', category: 'volatility' },
+    { id: 'KeltnerChannels@tv-basicstudies', name: 'Keltner Channels', category: 'volatility' },
+    { id: 'DonchianChannels@tv-basicstudies', name: 'Donchian Channels', category: 'volatility' },
+    { id: 'ATR@tv-basicstudies', name: 'Average True Range', category: 'volatility' },
     { id: 'HV@tv-basicstudies', name: 'Historical Volatility', category: 'volatility' },
-    { id: 'VWAP@tv-basicstudies', name: 'VWAP', category: 'trend' },
-    { id: 'ZigZag@tv-basicstudies', name: 'Zig Zag', category: 'pattern' },
-    { id: 'PSAR@tv-basicstudies', name: 'Parabolic SAR', category: 'trend' },
-    { id: 'SuperTrend@tv-basicstudies', name: 'SuperTrend', category: 'trend' },
-    { id: 'Pivot@tv-basicstudies', name: 'Pivot Points', category: 'levels' },
+    { id: 'StandardDeviation@tv-basicstudies', name: 'Standard Deviation', category: 'volatility' },
+    
+    // Volume Indicators
     { id: 'Volume@tv-basicstudies', name: 'Volume', category: 'volume' },
+    { id: 'OBV@tv-basicstudies', name: 'On Balance Volume', category: 'volume' },
+    { id: 'MFI@tv-basicstudies', name: 'Money Flow Index', category: 'volume' },
     { id: 'VolumeProfile@tv-basicstudies', name: 'Volume Profile', category: 'volume' },
-    { id: 'Fibonacci@tv-basicstudies', name: 'Fibonacci Retracement', category: 'fibonacci' }
+    { id: 'ChaikinMoneyFlow@tv-basicstudies', name: 'Chaikin Money Flow', category: 'volume' },
+    { id: 'AccumulationDistribution@tv-basicstudies', name: 'Accumulation/Distribution', category: 'volume' },
+    { id: 'EaseOfMovement@tv-basicstudies', name: 'Ease of Movement', category: 'volume' },
+    { id: 'ForceIndex@tv-basicstudies', name: 'Force Index', category: 'volume' },
+    { id: 'VolumeOscillator@tv-basicstudies', name: 'Volume Oscillator', category: 'volume' },
+    { id: 'VWMA@tv-basicstudies', name: 'Volume Weighted MA', category: 'volume' },
+    { id: 'PVT@tv-basicstudies', name: 'Price Volume Trend', category: 'volume' },
+    
+    // Price Action & Patterns
+    { id: 'PivotPointsStandard@tv-basicstudies', name: 'Pivot Points Standard', category: 'price_levels' },
+    { id: 'PivotPointsFibonacci@tv-basicstudies', name: 'Pivot Points Fibonacci', category: 'price_levels' },
+    { id: 'PriceOscillator@tv-basicstudies', name: 'Price Oscillator', category: 'price_action' },
+    { id: 'PriceVolumeTrend@tv-basicstudies', name: 'Price Volume Trend', category: 'price_action' },
+    
+    // Fibonacci Tools
+    { id: 'FibonacciRetracement@tv-basicstudies', name: 'Fibonacci Retracement', category: 'fibonacci' },
+    { id: 'FibonacciExtension@tv-basicstudies', name: 'Fibonacci Extension', category: 'fibonacci' },
+    { id: 'FibonacciCircles@tv-basicstudies', name: 'Fibonacci Circles', category: 'fibonacci' },
+    { id: 'FibonacciSpeedResistanceFan@tv-basicstudies', name: 'Fibonacci Speed Resistance Fan', category: 'fibonacci' },
+    { id: 'FibonacciTimezones@tv-basicstudies', name: 'Fibonacci Timezones', category: 'fibonacci' },
+    
+    // Bill Williams Indicators
+    { id: 'Alligator@tv-basicstudies', name: 'Alligator', category: 'bill_williams' },
+    { id: 'Fractals@tv-basicstudies', name: 'Fractals', category: 'bill_williams' },
+    { id: 'GatorOscillator@tv-basicstudies', name: 'Gator Oscillator', category: 'bill_williams' },
+    { id: 'MarketFacilitationIndex@tv-basicstudies', name: 'Market Facilitation Index', category: 'bill_williams' },
+    
+    // Other Technical Indicators
+    { id: 'RegressionChannel@tv-basicstudies', name: 'Regression Channel', category: 'regression' },
+    { id: 'CommittmentOfTraders@tv-basicstudies', name: 'COT (Commitment of Traders)', category: 'sentiment' },
+    { id: 'ChaikinOscillator@tv-basicstudies', name: 'Chaikin Oscillator', category: 'oscillator' },
+    { id: 'ElderRay@tv-basicstudies', name: 'Elder Ray Index', category: 'other' },
+    { id: 'EnvelopesIndicator@tv-basicstudies', name: 'Envelopes', category: 'other' },
+    { id: 'KlingerOscillator@tv-basicstudies', name: 'Klinger Oscillator', category: 'oscillator' },
+    { id: 'MACross@tv-basicstudies', name: 'Moving Average Cross', category: 'signal' },
+    { id: 'TRIX@tv-basicstudies', name: 'TRIX', category: 'oscillator' },
+    { id: 'TrueStrengthIndex@tv-basicstudies', name: 'True Strength Index', category: 'other' },
+    { id: 'WaveTrend@tv-basicstudies', name: 'WaveTrend Oscillator', category: 'oscillator' }
   ];
   
   // Selected indicators
@@ -406,17 +458,6 @@ export function ProTradingViewIntegration({
               <PanelTop className="h-4 w-4" />
             </Button>
             
-            <Button 
-              variant="outline" 
-              size="sm" 
-              className="bg-primary text-primary-foreground hover:bg-primary/90 transition-colors"
-              onClick={() => setReplayDialogOpen(true)} 
-              title={t('Replay Mode')}
-            >
-              <Play className="h-4 w-4 mr-1" />
-              {t('Replay')}
-            </Button>
-            
             <Button variant="ghost" size="sm" onClick={() => setShowInfo(!showInfo)} title={t('Information')}>
               <PanelBottom className="h-4 w-4" />
             </Button>
@@ -424,7 +465,7 @@ export function ProTradingViewIntegration({
             <Button 
               variant="outline" 
               size="sm" 
-              className="bg-primary/10 border-primary/20 text-primary hover:bg-primary/20" 
+              className="bg-primary text-primary-foreground hover:bg-primary/90 border-primary" 
               onClick={toggleFullScreen} 
               title={fullScreen ? t('Exit Full Screen') : t('Full Screen')}
             >
