@@ -83,6 +83,20 @@ export default function BacktestDashboard() {
       status: trade.status
     };
   }) || [];
+  
+  // Prepare sample chart data for AI analysis when no trades exist
+  const sampleChartData = [
+    { time: '2024-03-01', open: 64800, high: 65200, low: 64500, close: 65000, volume: 1200 },
+    { time: '2024-03-02', open: 65000, high: 66500, low: 64800, close: 66300, volume: 1500 },
+    { time: '2024-03-03', open: 66300, high: 67000, low: 65800, close: 66100, volume: 1300 },
+    { time: '2024-03-04', open: 66100, high: 67200, low: 65900, close: 67000, volume: 1800 },
+    { time: '2024-03-05', open: 67000, high: 68500, low: 66800, close: 68200, volume: 2200 },
+    { time: '2024-03-06', open: 68200, high: 69000, low: 67800, close: 68500, volume: 1700 },
+    { time: '2024-03-07', open: 68500, high: 68700, low: 67200, close: 67500, volume: 1600 },
+    { time: '2024-03-08', open: 67500, high: 67800, low: 66000, close: 66200, volume: 1900 },
+    { time: '2024-03-09', open: 66200, high: 66800, low: 65500, close: 66700, volume: 1400 },
+    { time: '2024-03-10', open: 66700, high: 68000, low: 66500, close: 67900, volume: 1600 },
+  ];
 
   // If user is not logged in, show login page
   if (!userLoading && !userData) {
@@ -643,12 +657,12 @@ export default function BacktestDashboard() {
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-6">
                 {/* Chart Pattern Analysis */}
                 <ChartPatternAnalysis 
-                  symbol={selectedTrade?.pair || 'BTC/USD'}
-                  chartData={tradeChartData || []}
+                  symbol={'BTC/USD'}
+                  chartData={tradeChartData.length > 0 ? tradeChartData : sampleChartData}
                 />
                 
                 {/* Personalized Trading Advice */}
-                <PersonalizedAdvice userId={1} />
+                <PersonalizedAdvice userId={userData?.id || 1} />
                 
                 {/* AI Trading Assistant */}
                 <div className="lg:col-span-2 mt-4">
