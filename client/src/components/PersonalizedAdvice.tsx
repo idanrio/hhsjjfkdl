@@ -48,10 +48,10 @@ export function PersonalizedAdvice({ trades, positions = [], onRefresh }: Person
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (trades && trades.length > 0) {
+    if (trades && Array.isArray(trades) && trades.length > 0) {
       getPersonalizedAdvice();
     }
-  }, [trades.length]);
+  }, [trades]);
 
   const getPersonalizedAdvice = async () => {
     setLoading(true);
@@ -127,11 +127,11 @@ export function PersonalizedAdvice({ trades, positions = [], onRefresh }: Person
           <CardDescription>{t('Personalized trading advice')}</CardDescription>
         </CardHeader>
         <CardContent className="flex flex-col items-center justify-center h-56">
-          {trades.length < 3 ? (
+          {Array.isArray(trades) && trades.length < 3 ? (
             <div className="text-center">
               <AlertCircle className="h-10 w-10 text-yellow-500 mx-auto mb-4" />
               <p className="text-muted-foreground mb-2">{t('Complete at least 3 trades to receive personalized advice')}</p>
-              <p className="text-xs text-muted-foreground">{t('Current trades')}: {trades.length}/3</p>
+              <p className="text-xs text-muted-foreground">{t('Current trades')}: {Array.isArray(trades) ? trades.length : 0}/3</p>
             </div>
           ) : (
             <>
@@ -271,6 +271,8 @@ export function PersonalizedAdvice({ trades, positions = [], onRefresh }: Person
 
 // Helper function to calculate win rate
 function calculateWinRate(trades: Trade[]): string {
+  if (!Array.isArray(trades) || trades.length === 0) return '0.00';
+  
   const completedTrades = trades.filter(t => t.status === 'completed');
   if (completedTrades.length === 0) return '0.00';
   
@@ -282,6 +284,8 @@ function calculateWinRate(trades: Trade[]): string {
 
 // Helper function to calculate average profit/loss
 function calculateAvgProfitLoss(trades: Trade[]): string {
+  if (!Array.isArray(trades) || trades.length === 0) return '0.00';
+  
   const completedTrades = trades.filter(t => t.status === 'completed');
   if (completedTrades.length === 0) return '0.00';
   
@@ -294,10 +298,14 @@ function calculateAvgProfitLoss(trades: Trade[]): string {
 
 // Helper function to get most traded pair
 function getMostTradedPair(trades: Trade[]): string {
+  if (!Array.isArray(trades) || trades.length === 0) return 'N/A';
+  
   const pairCounts: Record<string, number> = {};
   
   trades.forEach(trade => {
-    pairCounts[trade.pair] = (pairCounts[trade.pair] || 0) + 1;
+    if (trade && trade.pair) {
+      pairCounts[trade.pair] = (pairCounts[trade.pair] || 0) + 1;
+    }
   });
   
   if (Object.keys(pairCounts).length === 0) return 'N/A';
@@ -310,8 +318,10 @@ function getMostTradedPair(trades: Trade[]): string {
 
 // Helper function to determine trade style (long-biased, short-biased, balanced)
 function getTradeStyle(trades: Trade[]): string {
-  const longTrades = trades.filter(t => t.tradeType === 'long').length;
-  const shortTrades = trades.filter(t => t.tradeType === 'short').length;
+  if (!Array.isArray(trades) || trades.length === 0) return 'N/A';
+  
+  const longTrades = trades.filter(t => t && t.tradeType === 'long').length;
+  const shortTrades = trades.filter(t => t && t.tradeType === 'short').length;
   
   if (longTrades === 0 && shortTrades === 0) return 'N/A';
   
