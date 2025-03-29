@@ -31,7 +31,13 @@ import {
   CandlestickChart,
   BarChart,
   PanelTop, 
-  PanelBottom
+  PanelBottom,
+  Bell,
+  ChevronDown,
+  Search,
+  Star,
+  BookMarked,
+  TrendingUp
 } from 'lucide-react';
 
 interface ProTradingViewIntegrationProps {
@@ -297,6 +303,30 @@ export function ProTradingViewIntegration({
     'show_trading_notifications_history'
   ];
   
+  // State for alert dialog
+  const [alertDialogOpen, setAlertDialogOpen] = useState(false);
+  // State for indicators dialog - separate from the sidebar panel
+  const [indicatorsDialogOpen, setIndicatorsDialogOpen] = useState(false);
+  
+  // Alert settings
+  const [alertSettings, setAlertSettings] = useState({
+    condition: 'price_crosses',
+    value: '',
+    frequency: 'once',
+    notification: 'sound',
+    expiration: '1d',
+  });
+  
+  // Alert conditions based on TradingView
+  const alertConditions = [
+    { value: 'price_crosses', label: t('Price Crosses') },
+    { value: 'price_greater', label: t('Price Rises Above') },
+    { value: 'price_less', label: t('Price Falls Below') },
+    { value: 'moving_avg_cross', label: t('Moving Average Cross') },
+    { value: 'vol_greater', label: t('Volume Greater Than') },
+    { value: 'high_low', label: t('New High/Low') },
+  ];
+  
   return (
     <div className={`pro-tradingview-integration ${fullScreen ? 'fixed inset-0 z-50 bg-background' : ''} ${className}`}
          style={{ height: fullScreen ? '100vh' : height }}
@@ -341,10 +371,33 @@ export function ProTradingViewIntegration({
                 </Button>
               ))}
             </div>
+            
+            {/* TradingView-style Indicators Button */}
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              className="flex items-center gap-1"
+              onClick={() => setIndicatorsDialogOpen(true)}
+            >
+              <LineChart className="h-4 w-4" />
+              {t('Indicators')}
+              <ChevronDown className="h-3 w-3" />
+            </Button>
+            
+            {/* TradingView-style Alert Button */}
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              className="flex items-center gap-1"
+              onClick={() => setAlertDialogOpen(true)}
+            >
+              <Bell className="h-4 w-4" />
+              {t('Alert')}
+            </Button>
           </div>
           
           <div className="flex items-center gap-2">
-            <Button variant="ghost" size="sm" onClick={() => setShowStudiesPanel(!showStudiesPanel)} title={t('Indicators')}>
+            <Button variant="ghost" size="sm" onClick={() => setShowStudiesPanel(!showStudiesPanel)} title={t('Studies Panel')}>
               <PanelTop className="h-4 w-4" />
             </Button>
             
