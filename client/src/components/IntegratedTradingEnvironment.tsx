@@ -20,26 +20,12 @@ import {
   RotateCcw, PencilRuler, CircleDollarSign, Info, LayoutDashboard
 } from "lucide-react";
 
-import TradingViewChart from './TradingViewChart';
+import ProTradingViewIntegration from './ProTradingViewIntegration';
 import TimeController from './TimeController';
 import { useQuery } from '@tanstack/react-query';
 import { getStockData, getCryptoData, getForexData, getGoldData, getMultipleMarketData } from '@/services/marketService';
 import { Trade } from '@shared/schema';
-
-interface Position {
-  id: string;
-  type: 'long' | 'short';
-  entryPrice: number;
-  entryTime: string | number;
-  stopLoss: number | null;
-  takeProfit: number | null;
-  amount: number;
-  leverage: number;
-  status: 'active' | 'closed';
-  exitPrice?: number;
-  exitTime?: string | number;
-  profitLoss?: number;
-}
+import { Position } from '@/types/trading';
 
 interface IntegratedTradingEnvironmentProps {
   onClose?: () => void;
@@ -424,30 +410,30 @@ const IntegratedTradingEnvironment: React.FC<IntegratedTradingEnvironmentProps> 
               <div className="flex-grow">
                 <div className="flex h-full">
                   <div className="h-full w-full">
-                    <TradingViewChart 
+                    <ProTradingViewIntegration
                       symbol={selectedPair.symbol}
-                      initialPrice={selectedPair.initialPrice}
-                      className="h-full w-full"
                       initialPositions={positions}
-                      showArea={chartType === 'line'}
-                      activeIndicators={activeIndicators}
-                      activeRange={selectedTimeframe.toLowerCase()}
-                      showVolume={showVolume}
-                      simulateRealTime={true}
-                      timeControllerDate={timeControllerDate}
-                      isPlaying={isPlaying}
-                      playbackSpeed={playbackSpeed}
-                      enableDrawingTools={activeDrawingTool !== 'cursor'}
-                      enablePatternRecognition={true}
-                      onPatternDetected={(patterns) => {
-                        if (patterns.length > 0) {
-                          toast({
-                            title: t("Patterns Detected"),
-                            description: t("{{count}} pattern(s) found in the chart", { count: patterns.length }),
-                          });
-                          console.log("Detected patterns:", patterns);
+                      onPositionCreated={(position) => {
+                        setPositions([...positions, position]);
+                      }}
+                      onPositionClosed={(position) => {
+                        const updatedPositions = positions.map(p => 
+                          p.id === position.id ? position : p
+                        );
+                        setPositions(updatedPositions);
+                        
+                        if (onPositionClose) {
+                          onPositionClose(position);
                         }
                       }}
+                      onPositionModified={(position) => {
+                        const updatedPositions = positions.map(p => 
+                          p.id === position.id ? position : p
+                        );
+                        setPositions(updatedPositions);
+                      }}
+                      fullScreen={fullScreen}
+                      className="h-full w-full"
                     />
                   </div>
                   
