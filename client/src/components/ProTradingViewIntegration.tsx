@@ -124,12 +124,92 @@ export function ProTradingViewIntegration({
     }
   };
   
-  // Toggle fullscreen
+  // Toggle fullscreen with browser API
   const toggleFullScreen = () => {
-    if (onFullScreenChange) {
-      onFullScreenChange(!fullScreen);
+    const elem = document.documentElement;
+    
+    // Define a type for browsers with vendor prefixes
+    type HTMLElementWithFullscreen = HTMLElement & {
+      webkitRequestFullscreen?: () => Promise<void>;
+      msRequestFullscreen?: () => Promise<void>;
+    };
+    
+    type DocumentWithFullscreen = Document & {
+      webkitFullscreenElement?: Element;
+      msFullscreenElement?: Element;
+      webkitExitFullscreen?: () => Promise<void>;
+      msExitFullscreen?: () => Promise<void>;
+    };
+    
+    const docWithPrefix = document as DocumentWithFullscreen;
+    const elemWithPrefix = elem as HTMLElementWithFullscreen;
+    
+    if (!docWithPrefix.fullscreenElement && 
+        !docWithPrefix.webkitFullscreenElement && 
+        !docWithPrefix.msFullscreenElement) {
+      // Enter fullscreen
+      if (elemWithPrefix.requestFullscreen) {
+        elemWithPrefix.requestFullscreen();
+      } else if (elemWithPrefix.webkitRequestFullscreen) { /* Safari */
+        elemWithPrefix.webkitRequestFullscreen();
+      } else if (elemWithPrefix.msRequestFullscreen) { /* IE11 */
+        elemWithPrefix.msRequestFullscreen();
+      }
+      
+      if (onFullScreenChange) {
+        onFullScreenChange(true);
+      }
+    } else {
+      // Exit fullscreen
+      if (docWithPrefix.exitFullscreen) {
+        docWithPrefix.exitFullscreen();
+      } else if (docWithPrefix.webkitExitFullscreen) { /* Safari */
+        docWithPrefix.webkitExitFullscreen();
+      } else if (docWithPrefix.msExitFullscreen) { /* IE11 */
+        docWithPrefix.msExitFullscreen();
+      }
+      
+      if (onFullScreenChange) {
+        onFullScreenChange(false);
+      }
     }
   };
+  
+  // Listen for fullscreen change events
+  useEffect(() => {
+    // Using the same cross-browser type definition
+    type DocumentWithFullscreen = Document & {
+      webkitFullscreenElement?: Element;
+      msFullscreenElement?: Element;
+      mozFullscreenElement?: Element;
+    };
+    
+    const handleFullscreenChange = () => {
+      const doc = document as DocumentWithFullscreen;
+      const isFullScreenNow = !!(
+        doc.fullscreenElement || 
+        doc.webkitFullscreenElement || 
+        doc.msFullscreenElement || 
+        doc.mozFullscreenElement
+      );
+      
+      if (onFullScreenChange && isFullScreenNow !== fullScreen) {
+        onFullScreenChange(isFullScreenNow);
+      }
+    };
+    
+    document.addEventListener('fullscreenchange', handleFullscreenChange);
+    document.addEventListener('webkitfullscreenchange', handleFullscreenChange);
+    document.addEventListener('mozfullscreenchange', handleFullscreenChange);
+    document.addEventListener('MSFullscreenChange', handleFullscreenChange);
+    
+    return () => {
+      document.removeEventListener('fullscreenchange', handleFullscreenChange);
+      document.removeEventListener('webkitfullscreenchange', handleFullscreenChange);
+      document.removeEventListener('mozfullscreenchange', handleFullscreenChange);
+      document.removeEventListener('MSFullscreenChange', handleFullscreenChange);
+    };
+  }, [fullScreen, onFullScreenChange]);
   
   // Available timeframes
   const intervals = [
@@ -152,14 +232,52 @@ export function ProTradingViewIntegration({
     { id: '4', name: t('Area'), icon: <AreaChart size={16} /> },
   ];
   
-  // Common indicators for trading
-  const commonStudies = [
+  // All available indicators for trading
+  const allIndicators = [
+    { id: 'MASimple@tv-basicstudies', name: 'Moving Average', category: 'trend' },
+    { id: 'MAExp@tv-basicstudies', name: 'EMA', category: 'trend' },
+    { id: 'MAWeighted@tv-basicstudies', name: 'WMA', category: 'trend' },
+    { id: 'RSI@tv-basicstudies', name: 'RSI', category: 'momentum' },
+    { id: 'MACD@tv-basicstudies', name: 'MACD', category: 'momentum' },
+    { id: 'BB@tv-basicstudies', name: 'Bollinger Bands', category: 'volatility' },
+    { id: 'Stochastic@tv-basicstudies', name: 'Stochastic', category: 'momentum' },
+    { id: 'StochasticRSI@tv-basicstudies', name: 'Stochastic RSI', category: 'momentum' },
+    { id: 'IchimokuCloud@tv-basicstudies', name: 'Ichimoku Cloud', category: 'trend' },
+    { id: 'ADX@tv-basicstudies', name: 'ADX', category: 'trend' },
+    { id: 'ATR@tv-basicstudies', name: 'ATR', category: 'volatility' },
+    { id: 'OBV@tv-basicstudies', name: 'On Balance Volume', category: 'volume' },
+    { id: 'MFI@tv-basicstudies', name: 'Money Flow Index', category: 'volume' },
+    { id: 'CCI@tv-basicstudies', name: 'CCI', category: 'momentum' },
+    { id: 'WilliamsR@tv-basicstudies', name: 'Williams %R', category: 'momentum' },
+    { id: 'HV@tv-basicstudies', name: 'Historical Volatility', category: 'volatility' },
+    { id: 'VWAP@tv-basicstudies', name: 'VWAP', category: 'trend' },
+    { id: 'ZigZag@tv-basicstudies', name: 'Zig Zag', category: 'pattern' },
+    { id: 'PSAR@tv-basicstudies', name: 'Parabolic SAR', category: 'trend' },
+    { id: 'SuperTrend@tv-basicstudies', name: 'SuperTrend', category: 'trend' },
+    { id: 'Pivot@tv-basicstudies', name: 'Pivot Points', category: 'levels' },
+    { id: 'Volume@tv-basicstudies', name: 'Volume', category: 'volume' },
+    { id: 'VolumeProfile@tv-basicstudies', name: 'Volume Profile', category: 'volume' },
+    { id: 'Fibonacci@tv-basicstudies', name: 'Fibonacci Retracement', category: 'fibonacci' }
+  ];
+  
+  // Selected indicators
+  const [selectedIndicators, setSelectedIndicators] = useState<string[]>([
     'MASimple@tv-basicstudies',
-    'MAExp@tv-basicstudies',
     'RSI@tv-basicstudies',
     'MACD@tv-basicstudies',
-    'BB@tv-basicstudies'  // Bollinger Bands
-  ];
+    'BB@tv-basicstudies'
+  ]);
+  
+  // Indicator search
+  const [indicatorSearch, setIndicatorSearch] = useState('');
+  
+  // Filtered indicators based on search
+  const filteredIndicators = indicatorSearch 
+    ? allIndicators.filter(ind => 
+        ind.name.toLowerCase().includes(indicatorSearch.toLowerCase()) ||
+        ind.category.toLowerCase().includes(indicatorSearch.toLowerCase())
+      )
+    : allIndicators;
   
   // Disabled features to customize the TradingView widget
   const disabledFeatures = [
@@ -251,23 +369,70 @@ export function ProTradingViewIntegration({
           </div>
         </div>
         
-        {/* Main Chart Area */}
-        <div className="flex-grow relative">
-          <TradingViewWidget
-            symbol={formatSymbol(symbol)}
-            interval={selectedInterval}
-            theme={selectedTheme}
-            style={selectedStyle}
-            toolbar_bg="#1c3d86"
-            hide_side_toolbar={!showStudiesPanel}
-            studies={commonStudies}
-            autosize={true}
-            save_image={true}
-            disabled_features={disabledFeatures}
-            enabled_features={enabledFeatures}
-            width="100%"
-            height="100%"
-          />
+        {/* Main Chart Area with indicators panel */}
+        <div className="flex-grow relative flex">
+          {/* Indicators Panel (optional) */}
+          {showStudiesPanel && (
+            <div className="w-64 bg-card border-r overflow-y-auto flex flex-col h-full">
+              <div className="p-3 border-b">
+                <h3 className="font-medium mb-2">{t('Indicators')}</h3>
+                <div className="relative">
+                  <input
+                    type="text"
+                    className="w-full rounded-md border border-input px-3 py-1 text-sm shadow-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary"
+                    placeholder={t('Search indicators...')}
+                    value={indicatorSearch}
+                    onChange={(e) => setIndicatorSearch(e.target.value)}
+                  />
+                </div>
+              </div>
+              
+              <div className="flex-grow overflow-y-auto">
+                {filteredIndicators.map(indicator => (
+                  <div key={indicator.id} className="px-3 py-1.5 border-b hover:bg-accent/50 flex items-center">
+                    <input
+                      type="checkbox"
+                      id={`indicator-${indicator.id}`}
+                      checked={selectedIndicators.includes(indicator.id)}
+                      onChange={(e) => {
+                        if (e.target.checked) {
+                          setSelectedIndicators([...selectedIndicators, indicator.id]);
+                        } else {
+                          setSelectedIndicators(selectedIndicators.filter(id => id !== indicator.id));
+                        }
+                      }}
+                      className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary"
+                    />
+                    <label htmlFor={`indicator-${indicator.id}`} className="ml-2 block text-sm">
+                      {indicator.name}
+                    </label>
+                    <span className="ml-auto text-xs text-muted-foreground rounded-full px-2 py-0.5 bg-muted">
+                      {indicator.category}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+          
+          {/* Main Chart */}
+          <div className="flex-grow">
+            <TradingViewWidget
+              symbol={formatSymbol(symbol)}
+              interval={selectedInterval}
+              theme={selectedTheme}
+              style={selectedStyle}
+              toolbar_bg="#1c3d86"
+              hide_side_toolbar={false}
+              studies={selectedIndicators}
+              autosize={true}
+              save_image={true}
+              disabled_features={disabledFeatures}
+              enabled_features={enabledFeatures}
+              width="100%"
+              height="100%"
+            />
+          </div>
         </div>
         
         {/* Position Information Panel (optional) */}
