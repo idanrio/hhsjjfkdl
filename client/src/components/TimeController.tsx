@@ -15,7 +15,8 @@ import {
   ChevronLeft, 
   ChevronRight,
   Calendar,
-  AlertTriangle
+  AlertTriangle,
+  X
 } from "lucide-react";
 import { 
   Dialog,
@@ -230,67 +231,89 @@ const TimeController: React.FC<TimeControllerProps> = ({
   }, [isPlaying, currentDate, playbackSpeed, replayMode, replayRange]);
 
   if (replayMode) {
-    // Render TradingView-style replay controller
+    // Render exact TradingView-style replay controller as shown in screenshots
     return (
-      <div className="bg-card p-4 rounded-lg shadow-md border border-border">
-        <div className="flex flex-col space-y-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-2">
-              <Play className="h-5 w-5 text-blue-500" />
-              <h3 className="font-medium text-blue-500">{t("Replay")} - {symbol}</h3>
-            </div>
-            <div className="flex items-center gap-2">
-              <Badge variant="outline" className="text-blue-500 border-blue-500">
-                {format(currentDate, 'PPP HH:mm')}
-              </Badge>
-              <Button variant="outline" size="sm" onClick={exitReplay}>
-                {t("Exit Replay")}
-              </Button>
-            </div>
+      <div className="fixed bottom-0 left-0 right-0 bg-background border-t border-border flex items-center justify-between px-2 py-1 z-50">
+        <div className="flex items-center">
+          <div className="bg-primary/10 text-primary rounded px-2 py-0.5 text-xs font-medium mr-3">
+            {format(currentDate, 'MMM dd HH:mm')}
           </div>
-          
-          <div className="flex items-center justify-between">
-            <div className="flex space-x-1">
-              <Button variant="ghost" size="icon" onClick={goToStart} title={t("Go to Start")}>
-                <SkipBack className="h-4 w-4" />
-              </Button>
-              <Button variant="ghost" size="icon" onClick={skipBackward} title={t("Skip Back 10 Bars")}>
-                <Rewind className="h-4 w-4" />
-              </Button>
-              <Button variant="ghost" size="icon" onClick={stepBackward} title={t("Previous Bar")}>
-                <ChevronLeft className="h-4 w-4" />
-              </Button>
-              <Button 
-                variant={isPlaying ? "default" : "outline"} 
-                size="sm" 
-                onClick={togglePlay} 
-                className="flex items-center px-4"
-              >
-                {isPlaying ? <Pause className="h-4 w-4 mr-2" /> : <Play className="h-4 w-4 mr-2" />}
-                {isPlaying ? t("Pause") : t("Play")}
-              </Button>
-              <Button variant="ghost" size="icon" onClick={stepForward} title={t("Next Bar")}>
-                <ChevronRight className="h-4 w-4" />
-              </Button>
-              <Button variant="ghost" size="icon" onClick={skipForward} title={t("Skip Forward 10 Bars")}>
-                <FastForward className="h-4 w-4" />
-              </Button>
+
+          <div className="flex space-x-1 items-center">
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              className="h-7 w-7 p-0 rounded-sm hover:bg-accent text-muted-foreground" 
+              onClick={() => setReplayDialogOpen(true)}
+            >
+              <span className="text-xs">Select bar</span>
+            </Button>
+
+            <Button 
+              variant="ghost" 
+              size="icon" 
+              className="h-7 w-7 p-0 rounded-sm hover:bg-accent" 
+              onClick={goToStart} 
+              title={t("Go to Start")}
+            >
+              <SkipBack className="h-3.5 w-3.5" />
+            </Button>
+
+            <Button 
+              variant="ghost" 
+              size="icon" 
+              className="h-7 w-7 p-0 rounded-sm hover:bg-accent" 
+              onClick={stepBackward} 
+              title={t("Previous Bar")}
+            >
+              <ChevronLeft className="h-3.5 w-3.5" />
+            </Button>
+
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-7 w-7 p-0 rounded-sm hover:bg-accent"
+              onClick={togglePlay}
+              title={isPlaying ? t("Pause") : t("Play")}
+            >
+              {isPlaying ? <Pause className="h-3.5 w-3.5" /> : <Play className="h-3.5 w-3.5" />}
+            </Button>
+
+            <Button 
+              variant="ghost" 
+              size="icon" 
+              className="h-7 w-7 p-0 rounded-sm hover:bg-accent" 
+              onClick={stepForward} 
+              title={t("Next Bar")}
+            >
+              <ChevronRight className="h-3.5 w-3.5" />
+            </Button>
+
+            <div className="flex items-center border border-border rounded px-1">
+              <span className="text-xs text-muted-foreground">10x</span>
             </div>
-            
-            <div className="flex items-center space-x-3">
-              <span className="text-sm text-muted-foreground">{t("Speed")}</span>
-              <Slider 
-                className="w-24"
-                defaultValue={[1]} 
-                min={0.5} 
-                max={5} 
-                step={0.5} 
-                value={[playbackSpeed]}
-                onValueChange={handleSpeedChange}
-              />
-              <Badge variant="outline">{playbackSpeed}x</Badge>
-            </div>
+
+            <div className="text-xs text-primary ml-1">15m</div>
           </div>
+        </div>
+
+        <div className="flex items-center space-x-2">
+          <Button 
+            variant="outline" 
+            size="sm" 
+            className="h-7 rounded-sm bg-transparent hover:bg-accent"
+            onClick={exitReplay}
+          >
+            {t("Exit")}
+          </Button>
+          <Button
+            size="sm"
+            className="h-7 w-7 p-0 rounded-sm text-muted-foreground"
+            variant="ghost"
+            onClick={() => {}}
+          >
+            <X className="h-3.5 w-3.5" />
+          </Button>
         </div>
       </div>
     );
