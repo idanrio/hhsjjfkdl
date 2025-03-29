@@ -654,20 +654,40 @@ export default function BacktestDashboard() {
               </Card>
 
               {/* AI Analytics Components */}
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-6">
+              <div className="grid grid-cols-1 gap-6 mt-6">
                 {/* Chart Pattern Analysis */}
-                <ChartPatternAnalysis 
-                  symbol={'BTC/USD'}
-                  chartData={tradeChartData.length > 0 ? tradeChartData : sampleChartData}
-                />
-                
-                {/* Personalized Trading Advice */}
-                <PersonalizedAdvice userId={userData?.id || 1} />
+                <Card className="bg-card shadow-sm border-primary/10">
+                  <CardHeader>
+                    <CardTitle>{t("Advanced Chart Analysis")}</CardTitle>
+                    <CardDescription>
+                      {t("Analyze and detect patterns in your trading data")}
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                      <ChartPatternAnalysis 
+                        symbol={'BTC/USD'}
+                        chartData={tradeChartData.length > 0 ? tradeChartData : sampleChartData}
+                      />
+                    
+                      {/* Personalized Trading Advice */}
+                      <PersonalizedAdvice userId={userData?.id || 1} />
+                    </div>
+                  </CardContent>
+                </Card>
                 
                 {/* AI Trading Assistant */}
-                <div className="lg:col-span-2 mt-4">
-                  <AIAssistant />
-                </div>
+                <Card className="bg-card shadow-sm border-primary/10">
+                  <CardHeader>
+                    <CardTitle>{t("AI Trading Assistant")}</CardTitle>
+                    <CardDescription>
+                      {t("Get answers to your trading questions and learn about market analysis")}
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent className="py-4">
+                    <AIAssistant />
+                  </CardContent>
+                </Card>
               </div>
             </div>
           )}
