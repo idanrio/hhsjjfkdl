@@ -244,60 +244,84 @@ export const aiService = {
     notes?: string
   ): Promise<AIChartImageAnalysisResponse> {
     try {
-      // Check if the OpenAI API is available
+      console.log('Starting chart image analysis...');
+      
+      // Check if the OpenAI API is available (log result for debugging)
       const isAvailable = await isOpenAIAvailable();
+      console.log('OpenAI API availability check result:', isAvailable);
+      
+      // We'll continue with the request even if isAvailable is false,
+      // as the server might have access to the API even if client detection fails
       if (!isAvailable) {
-        console.error('OpenAI API key is missing or unavailable');
-        return {
-          success: false,
-          error: 'OpenAI API key is missing or unavailable',
-          wyckoffPhase: '',
-          confidence: 0
-        };
+        console.warn('OpenAI API key might be missing or unavailable based on client check');
       }
 
       if (!imageBase64) {
+        console.error('No image data provided for analysis');
         return {
           success: false,
-          error: 'No image provided for analysis',
+          error: 'Please provide a chart image for analysis',
           wyckoffPhase: '',
           confidence: 0
         };
       }
 
-      // Send the image to the server-side API
-      const response = await apiRequest('POST', '/api/ai/analyze-chart-image', {
-        imageBase64,
-        notes: notes || ''
-      });
+      // Make sure the image data isn't too large
+      if (imageBase64.length > 1000000) {
+        console.warn('Image is very large, might cause issues with API limits');
+      }
+
+      console.log('Sending chart image for analysis', notes ? 'with notes' : 'without notes');
       
-      const analysisResult = await response.json();
-      
-      if (!analysisResult.success) {
+      // Send the image to the server-side API with improved error handling
+      try {
+        const response = await apiRequest('POST', '/api/ai/analyze-chart-image', {
+          imageBase64,
+          notes: notes || ''
+        });
+        
+        const analysisResult = await response.json();
+        console.log('Received analysis response:', analysisResult.success ? 'success' : 'failure');
+        
+        if (!analysisResult.success) {
+          console.error('Analysis failed with server error:', analysisResult.error);
+          return {
+            success: false,
+            error: analysisResult.error || 'The analysis could not be completed. Please try again.',
+            wyckoffPhase: '',
+            confidence: 0
+          };
+        }
+        
+        // Construct a properly structured response
+        const result: AIChartImageAnalysisResponse = {
+          success: true,
+          wyckoffPhase: analysisResult.wyckoffPhase || 'Unknown',
+          confidence: analysisResult.confidence || 0.5,
+          phaseDescription: analysisResult.phaseDescription || 'No phase description available',
+          feedback: analysisResult.feedback || 'No feedback available',
+          tradingRecommendations: analysisResult.tradingRecommendations || [],
+          enhancedImage: analysisResult.enhancedImage,
+          events: analysisResult.events || [],
+          learningResources: analysisResult.learningResources || []
+        };
+        
+        console.log('Chart analysis completed successfully');
+        return result;
+      } catch (responseError) {
+        console.error('Error in API response handling:', responseError);
         return {
           success: false,
-          error: analysisResult.error || 'Failed to analyze image',
+          error: 'Unable to communicate with the analysis service. Please try again later.',
           wyckoffPhase: '',
           confidence: 0
         };
       }
-      
-      return {
-        success: true,
-        wyckoffPhase: analysisResult.wyckoffPhase || 'Unknown',
-        confidence: analysisResult.confidence || 0.5,
-        phaseDescription: analysisResult.phaseDescription,
-        feedback: analysisResult.feedback,
-        tradingRecommendations: analysisResult.tradingRecommendations,
-        enhancedImage: analysisResult.enhancedImage,
-        events: analysisResult.events || [],
-        learningResources: analysisResult.learningResources || []
-      };
     } catch (error) {
-      console.error('Error analyzing chart image with AI:', error);
+      console.error('Unexpected error during chart image analysis:', error);
       return {
         success: false,
-        error: 'Error processing the image analysis',
+        error: 'An unexpected error occurred during analysis. Please try again.',
         wyckoffPhase: '',
         confidence: 0
       };

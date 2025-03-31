@@ -2,8 +2,19 @@ import OpenAI from "openai";
 import { storage } from "../storage";
 import { Trade } from "../../shared/schema";
 
-// Initialize the OpenAI API client
-const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+// Initialize the OpenAI API client with improved error handling
+const openai = new OpenAI({ 
+  apiKey: process.env.OPENAI_API_KEY,
+  dangerouslyAllowBrowser: true // Allow usage in browser environments if needed
+});
+
+// Debug message for startup API status
+console.log(`OpenAI API key status: ${process.env.OPENAI_API_KEY ? 'Available' : 'Missing'}`);
+
+// Helper function to safely validate OpenAI API key
+const isOpenAIKeyValid = () => {
+  return !!process.env.OPENAI_API_KEY && process.env.OPENAI_API_KEY.length > 10;
+};
 
 // Comprehensive Wyckoff methodology knowledge base
 const tradingKnowledgeBase = {
@@ -93,6 +104,15 @@ export const aiService = {
    */
   processQuestion: async (question: string): Promise<{ answer: string, sources?: string[] }> => {
     try {
+      // Check if OpenAI API key is valid before making request
+      if (!isOpenAIKeyValid()) {
+        console.warn("OpenAI API key is missing or invalid");
+        return {
+          answer: "I'm currently unable to process your question due to a configuration issue. Please contact support for assistance.",
+          sources: determineSourcesFromQuestion(question)
+        };
+      }
+      
       // the newest OpenAI model is "gpt-4o" which was released May 13, 2024. do not change this unless explicitly requested by the user
       const response = await openai.chat.completions.create({
         model: "gpt-4o",
@@ -118,7 +138,12 @@ export const aiService = {
       };
     } catch (error) {
       console.error("Error processing question:", error);
-      throw new Error("Failed to process your question. Please try again later.");
+      
+      // Return a user-friendly error rather than throwing
+      return {
+        answer: "I experienced a technical difficulty processing your question. This might be due to a temporary issue. Please try again in a moment.",
+        sources: determineSourcesFromQuestion(question)
+      };
     }
   },
 
@@ -127,6 +152,25 @@ export const aiService = {
    */
   analyzeChart: async (chartData: any, symbol: string, timeframe: string) => {
     try {
+      // Check if OpenAI API key is valid before making request
+      if (!isOpenAIKeyValid()) {
+        console.warn("OpenAI API key is missing or invalid");
+        return {
+          patterns: [],
+          summary: "Chart analysis is currently unavailable due to a configuration issue. Please contact support for assistance.",
+          keyLevels: { support: [], resistance: [] }
+        };
+      }
+      
+      // Validate chart data
+      if (!chartData || chartData.length === 0) {
+        return {
+          patterns: [],
+          summary: "No chart data provided for analysis.",
+          keyLevels: { support: [], resistance: [] }
+        };
+      }
+      
       // Format the chart data for analysis
       const formattedData = formatChartDataForAnalysis(chartData);
       
@@ -155,7 +199,12 @@ export const aiService = {
                     }
                   ]
                 }
-              ]
+              ],
+              "summary": "Overall analysis summary",
+              "keyLevels": {
+                "support": [list of support prices],
+                "resistance": [list of resistance prices]
+              }
             }`
           },
           {
@@ -169,24 +218,64 @@ export const aiService = {
 
       const content = response.choices[0].message.content || "{}";
       const result = JSON.parse(content);
+      
+      // Ensure minimal required structure is present
+      if (!result.patterns) result.patterns = [];
+      if (!result.summary) result.summary = "Analysis completed";
+      if (!result.keyLevels) result.keyLevels = { support: [], resistance: [] };
+      
       return result;
     } catch (error) {
       console.error("Error analyzing chart:", error);
-      throw new Error("Failed to analyze the chart. Please try again later.");
+      // Return a valid object with an error message instead of throwing
+      return {
+        patterns: [],
+        summary: "An error occurred during chart analysis. Please try again later.",
+        keyLevels: { support: [], resistance: [] },
+        error: true
+      };
     }
   },
 
   /**
    * Generates personalized trading advice based on user's history
    */
-  getPersonalizedAdvice: async (userId: number): Promise<string> => {
+  getPersonalizedAdvice: async (userId: number): Promise<string | {
+    advice: string;
+    riskAnalysis?: string;
+    improvementAreas?: string[];
+    suggestedStrategies?: string[];
+  }> => {
     try {
+      // Check if OpenAI API key is valid before making request
+      if (!isOpenAIKeyValid()) {
+        console.warn("OpenAI API key is missing or invalid");
+        return {
+          advice: "Personalized advice is currently unavailable due to a configuration issue. Please contact support for assistance.",
+          improvementAreas: ["Ensure API configuration is correct"],
+          suggestedStrategies: ["Contact support for assistance"]
+        };
+      }
+      
       // Get user's trade history
       const trades = await storage.getTrades(userId);
       const user = await storage.getUser(userId);
       
       if (!user) {
-        throw new Error("User not found");
+        return {
+          advice: "User profile not found. Please ensure you're logged in correctly.",
+          improvementAreas: ["Complete user profile setup"],
+          suggestedStrategies: ["Log in with the correct credentials"]
+        };
+      }
+      
+      // Check if there's enough trading history
+      if (trades.length === 0) {
+        return {
+          advice: "You don't have any trading history yet. Start by recording some trades to receive personalized advice.",
+          improvementAreas: ["Create a trading history"],
+          suggestedStrategies: ["Record your first trades", "Try paper trading to build history"]
+        };
       }
       
       // Generate a summary of the user's trading performance
@@ -201,7 +290,15 @@ export const aiService = {
             content: `You are a personalized trading coach. Based on the user's trading history,
             provide specific and actionable advice to improve their trading performance.
             Focus on pattern recognition, risk management, and psychological aspects.
-            Be encouraging but realistic.`
+            Be encouraging but realistic.
+            
+            Format your response as a JSON object with these fields:
+            {
+              "advice": "Main advice paragraph",
+              "riskAnalysis": "Risk management analysis",
+              "improvementAreas": ["Area 1", "Area 2", ...],
+              "suggestedStrategies": ["Strategy 1", "Strategy 2", ...]
+            }`
           },
           {
             role: "user",
@@ -212,14 +309,36 @@ export const aiService = {
             Focus on how I can improve my trading strategy and avoid common mistakes.`
           }
         ],
-        max_tokens: 800,
+        response_format: { type: "json_object" },
+        max_tokens: 1200,
       });
 
-      const adviceText = response.choices[0].message.content || "Unable to generate personalized advice at this time.";
-      return adviceText;
+      try {
+        // Try to parse as JSON first (preferred structured format)
+        const jsonResponse = JSON.parse(response.choices[0].message.content || "{}");
+        return {
+          advice: jsonResponse.advice || "Unable to generate specific advice at this time.",
+          riskAnalysis: jsonResponse.riskAnalysis,
+          improvementAreas: jsonResponse.improvementAreas || [],
+          suggestedStrategies: jsonResponse.suggestedStrategies || []
+        };
+      } catch (parseError) {
+        // Fall back to raw text response if JSON parsing fails
+        const adviceText = response.choices[0].message.content || "Unable to generate personalized advice at this time.";
+        return {
+          advice: adviceText,
+          improvementAreas: ["Review your trading patterns", "Maintain consistent risk management"],
+          suggestedStrategies: ["Analyze your most successful trades", "Learn more about market structure"]
+        };
+      }
     } catch (error) {
       console.error("Error getting personalized advice:", error);
-      throw new Error("Failed to generate personalized advice. Please try again later.");
+      // Return user-friendly error message instead of throwing
+      return {
+        advice: "Unable to generate personalized advice due to a technical issue. Please try again later.",
+        improvementAreas: ["Continue recording your trades for future analysis"],
+        suggestedStrategies: ["Review your trading journal while waiting for the analysis system to be restored"]
+      };
     }
   },
   
@@ -228,8 +347,25 @@ export const aiService = {
    */
   analyzeChartImage: async (imageBase64: string, notes?: string): Promise<any> => {
     try {
+      // Check if OpenAI API key is valid before making request
+      if (!isOpenAIKeyValid()) {
+        console.warn("OpenAI API key is missing or invalid");
+        return {
+          success: false,
+          error: "Chart image analysis is currently unavailable due to a configuration issue. Please contact support for assistance.",
+          wyckoffPhase: "unknown",
+          confidence: 0
+        };
+      }
+      
+      // Validate image data
       if (!imageBase64) {
-        throw new Error("No image provided for analysis");
+        return {
+          success: false,
+          error: "No chart image provided for analysis. Please upload a valid chart image.",
+          wyckoffPhase: "unknown",
+          confidence: 0
+        };
       }
       
       // Format the notes if provided
@@ -237,116 +373,161 @@ export const aiService = {
         `The user provided these notes about their own analysis of the chart: ${notes}` :
         "The user did not provide any notes about their analysis.";
       
-      // the newest OpenAI model is "gpt-4o" which was released May 13, 2024. do not change this unless explicitly requested by the user
-      const response = await openai.chat.completions.create({
-        model: "gpt-4o",
-        messages: [
-          {
-            role: "system",
-            content: `You are Richard Wyckoff himself, a legendary market analyst and educator with decades of experience analyzing price charts.
-            
-            Analyze the uploaded chart image according to your developed Wyckoff Method principles, focusing on:
-            
-            1. MARKET STRUCTURE: Identify whether the chart is in Accumulation, Distribution, Markup, or Markdown phase.
-               - Accumulation: Look for trading ranges after downtrends, PS, SC, AR, ST, Springs, BU, SOS, LPS
-               - Distribution: Look for trading ranges after uptrends, PSY, BC, AR, ST, Upthrusts, SOW, LPSY
-               - Markup: Look for rising trends with higher highs and higher lows
-               - Markdown: Look for falling trends with lower highs and lower lows
-            
-            2. SPECIFIC WYCKOFF EVENTS: Identify technical events like:
-               - Springs and Upthrusts (false breakouts)
-               - Tests of support/resistance
-               - Signs of Strength (SOS) or Weakness (SOW)
-               - Selling Climax (SC) or Buying Climax (BC)
-               - Last Point of Support (LPS) or Last Point of Supply (LPSY)
-               - Backup to Edge of Creek (BEC)
-               - Compare volume with price movement (Effort vs. Result)
-            
-            3. VOLUME ANALYSIS: Examine how volume confirms or contradicts price movement
-               - High volume on advances in markup indicates strength
-               - Low volume on declines in markup indicates strength
-               - High volume on declines in markdown indicates weakness
-               - Low volume on rallies in markdown indicates weakness
-            
-            4. COMPARE USER ANALYSIS: If the user provided notes about their own analysis, comment on:
-               - What they correctly identified according to Wyckoff principles
-               - What they missed or misinterpreted
-               - How they could improve their Wyckoff analysis
-            
-            5. PROVIDE BOTH EDUCATIONAL AND PRACTICAL VALUE:
-               - Explain the reasoning behind your analysis in detail
-               - Offer specific trading recommendations based on Wyckoff principles
-               - Suggest what might happen next according to typical Wyckoff scenarios
-               - Include educational resources to help them improve
-
-            Your response must be formatted as a JSON object with the following structure:
-            
+      // Log analysis attempt for debugging
+      console.log(`Attempting Wyckoff analysis on provided chart image${notes ? ' with user notes' : ''}`);
+      
+      try {
+        // the newest OpenAI model is "gpt-4o" which was released May 13, 2024. do not change this unless explicitly requested by the user
+        const response = await openai.chat.completions.create({
+          model: "gpt-4o",
+          messages: [
             {
-              "wyckoffPhase": "current phase (accumulation, markup, distribution, markdown)",
-              "confidence": float between 0-1 representing confidence in analysis,
-              "phaseDescription": "detailed description of the current Wyckoff phase",
-              "events": [
+              role: "system",
+              content: `You are Richard Wyckoff himself, a legendary market analyst and educator with decades of experience analyzing price charts.
+              
+              Analyze the uploaded chart image according to your developed Wyckoff Method principles, focusing on:
+              
+              1. MARKET STRUCTURE: Identify whether the chart is in Accumulation, Distribution, Markup, or Markdown phase.
+                 - Accumulation: Look for trading ranges after downtrends, PS, SC, AR, ST, Springs, BU, SOS, LPS
+                 - Distribution: Look for trading ranges after uptrends, PSY, BC, AR, ST, Upthrusts, SOW, LPSY
+                 - Markup: Look for rising trends with higher highs and higher lows
+                 - Markdown: Look for falling trends with lower highs and lower lows
+              
+              2. SPECIFIC WYCKOFF EVENTS: Identify technical events like:
+                 - Springs and Upthrusts (false breakouts)
+                 - Tests of support/resistance
+                 - Signs of Strength (SOS) or Weakness (SOW)
+                 - Selling Climax (SC) or Buying Climax (BC)
+                 - Last Point of Support (LPS) or Last Point of Supply (LPSY)
+                 - Backup to Edge of Creek (BEC)
+                 - Compare volume with price movement (Effort vs. Result)
+              
+              3. VOLUME ANALYSIS: Examine how volume confirms or contradicts price movement
+                 - High volume on advances in markup indicates strength
+                 - Low volume on declines in markup indicates strength
+                 - High volume on declines in markdown indicates weakness
+                 - Low volume on rallies in markdown indicates weakness
+              
+              4. COMPARE USER ANALYSIS: If the user provided notes about their own analysis, comment on:
+                 - What they correctly identified according to Wyckoff principles
+                 - What they missed or misinterpreted
+                 - How they could improve their Wyckoff analysis
+              
+              5. PROVIDE BOTH EDUCATIONAL AND PRACTICAL VALUE:
+                 - Explain the reasoning behind your analysis in detail
+                 - Offer specific trading recommendations based on Wyckoff principles
+                 - Suggest what might happen next according to typical Wyckoff scenarios
+                 - Include educational resources to help them improve
+  
+              Your response must be formatted as a JSON object with the following structure:
+              
+              {
+                "wyckoffPhase": "current phase (accumulation, markup, distribution, markdown)",
+                "confidence": float between 0-1 representing confidence in analysis,
+                "phaseDescription": "detailed description of the current Wyckoff phase",
+                "events": [
+                  {
+                    "type": "event type (spring, upthrust, test, etc.)",
+                    "location": "description of where on the chart",
+                    "description": "explanation of the event significance"
+                  }
+                ],
+                "feedback": "detailed feedback on the chart analysis, including assessment of user's notes if provided",
+                "tradingRecommendations": [
+                  "specific actionable trading recommendation 1",
+                  "specific actionable trading recommendation 2"
+                ],
+                "learningResources": [
+                  {
+                    "title": "resource title",
+                    "url": "optional URL to resource",
+                    "type": "article/video/book",
+                    "description": "brief description of the resource"
+                  }
+                ]
+              }`
+            },
+            {
+              role: "user",
+              content: [
                 {
-                  "type": "event type (spring, upthrust, test, etc.)",
-                  "location": "description of where on the chart",
-                  "description": "explanation of the event significance"
+                  type: "text",
+                  text: `Please analyze this chart image using your Wyckoff methodology. Based on your expert analysis, identify the market phase, significant events, and provide detailed recommendations for traders.
+                  
+                  ${userNotes}
+                  
+                  Please be thorough in your analysis so I can learn how to properly apply Wyckoff methodology to my trading decisions.`
+                },
+                {
+                  type: "image_url",
+                  image_url: {
+                    url: `data:image/jpeg;base64,${imageBase64}`
+                  }
                 }
               ],
-              "feedback": "detailed feedback on the chart analysis, including assessment of user's notes if provided",
-              "tradingRecommendations": [
-                "specific actionable trading recommendation 1",
-                "specific actionable trading recommendation 2"
-              ],
-              "learningResources": [
-                {
-                  "title": "resource title",
-                  "url": "optional URL to resource",
-                  "type": "article/video/book",
-                  "description": "brief description of the resource"
-                }
-              ]
-            }`
-          },
-          {
-            role: "user",
-            content: [
-              {
-                type: "text",
-                text: `Please analyze this chart image using your Wyckoff methodology. Based on your expert analysis, identify the market phase, significant events, and provide detailed recommendations for traders.
-                
-                ${userNotes}
-                
-                Please be thorough in your analysis so I can learn how to properly apply Wyckoff methodology to my trading decisions.`
-              },
-              {
-                type: "image_url",
-                image_url: {
-                  url: `data:image/jpeg;base64,${imageBase64}`
-                }
-              }
-            ],
+            }
+          ],
+          response_format: { type: "json_object" },
+          max_tokens: 3000,
+        });
+  
+        const content = response.choices[0].message.content || "{}";
+        
+        // Parse the response with error handling
+        try {
+          const result = JSON.parse(content);
+          
+          if (!result.wyckoffPhase) {
+            console.warn("Wyckoff phase missing from analysis result");
+            result.wyckoffPhase = "undetermined";
           }
-        ],
-        response_format: { type: "json_object" },
-        max_tokens: 3000,
-      });
-
-      const content = response.choices[0].message.content || "{}";
-      const result = JSON.parse(content);
-      
-      // Generate enhanced image with annotations based on analysis
-      const enhancedImageResult = await generateEnhancedImage(imageBase64, result);
-      
-      return {
-        success: true,
-        ...result,
-        enhancedImage: enhancedImageResult.enhancedImage
-      };
+          
+          if (!result.confidence) {
+            result.confidence = 0.5;
+          }
+          
+          if (!result.events) {
+            result.events = [];
+          }
+          
+          if (!result.tradingRecommendations) {
+            result.tradingRecommendations = [];
+          }
+          
+          // Generate enhanced image with annotations based on analysis
+          console.log("Analysis successful, generating enhanced image");
+          const enhancedImageResult = await generateEnhancedImage(imageBase64, result);
+          
+          return {
+            success: true,
+            ...result,
+            enhancedImage: enhancedImageResult.enhancedImage
+          };
+        } catch (parseError) {
+          console.error("Error parsing chart analysis JSON response:", parseError);
+          return {
+            success: false,
+            error: "Failed to process the analysis results. Please try again.",
+            wyckoffPhase: "unknown",
+            confidence: 0
+          };
+        }
+      } catch (apiError) {
+        console.error("OpenAI API error during chart analysis:", apiError);
+        return {
+          success: false,
+          error: "The AI service encountered an error analyzing your chart. Please try again later.",
+          wyckoffPhase: "unknown",
+          confidence: 0
+        };
+      }
     } catch (error) {
-      console.error("Error analyzing chart image:", error);
+      console.error("Unexpected error analyzing chart image:", error);
       return {
         success: false,
-        error: "Failed to analyze the chart image. Please try again later."
+        error: "An unexpected error occurred during analysis. Please try again later.",
+        wyckoffPhase: "unknown",
+        confidence: 0
       };
     }
   }
