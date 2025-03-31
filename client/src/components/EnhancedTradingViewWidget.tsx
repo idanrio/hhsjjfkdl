@@ -158,9 +158,20 @@ const EnhancedTradingViewWidgetComponent: ForwardRefRenderFunction<
   const widgetRef = useRef<any>(null);
   const [currentPrice, setCurrentPrice] = useState<number>(0);
   
+  // Reference for the price update interval
+  const priceUpdateIntervalRef = useRef<number | null>(null);
+  
   // Create unique container ID for each instance
   const uniqueId = useRef(`tradingview_widget_${Math.random().toString(36).substring(2, 9)}`);
   
+  // Helper function to clean up intervals
+  const cleanupIntervals = () => {
+    if (priceUpdateIntervalRef.current !== null) {
+      clearInterval(priceUpdateIntervalRef.current);
+      priceUpdateIntervalRef.current = null;
+    }
+  };
+
   useEffect(() => {
     if (container.current) {
       const script = document.createElement('script');
@@ -172,6 +183,9 @@ const EnhancedTradingViewWidgetComponent: ForwardRefRenderFunction<
       scriptRef.current = script;
 
       return () => {
+        // Clean up intervals when component unmounts
+        cleanupIntervals();
+        
         if (scriptRef.current) {
           document.body.removeChild(scriptRef.current);
         }
@@ -182,7 +196,15 @@ const EnhancedTradingViewWidgetComponent: ForwardRefRenderFunction<
   useEffect(() => {
     // Update the widget if key properties change
     if (widgetRef.current) {
-      widgetRef.current.setSymbol(symbol, interval);
+      try {
+        // Clean up existing intervals before changing symbol
+        cleanupIntervals();
+        
+        // Update the symbol
+        widgetRef.current.setSymbol(symbol, interval);
+      } catch (error) {
+        console.error("Error updating symbol:", error);
+      }
     }
   }, [symbol, interval]);
   
@@ -191,6 +213,9 @@ const EnhancedTradingViewWidgetComponent: ForwardRefRenderFunction<
     if (widgetRef.current && i18n.language) {
       const tvLocale = i18n.language === 'he' ? 'he_IL' : 'en';
       if (tvLocale !== locale) {
+        // Clean up before reinitializing
+        cleanupIntervals();
+        
         // Reinitialize widget with new locale
         if (container.current) {
           container.current.innerHTML = '';
@@ -282,56 +307,59 @@ const EnhancedTradingViewWidgetComponent: ForwardRefRenderFunction<
       if (preset) widgetOptions.preset = preset;
       if (session) widgetOptions.session = session;
       
-      // Initialize widget
-      const widget = new window.TradingView.widget(widgetOptions);
-      widgetRef.current = widget;
-      
-      // Add the studies once the widget is ready
-      if (studies && studies.length > 0) {
-        widget.onChartReady(() => {
+      // Add onChartReady callback to the widget options
+      widgetOptions.onChartReady = function() {
+        // Add the studies
+        if (studies && studies.length > 0) {
           studies.forEach(study => {
             widget.chart().createStudy(study);
           });
-          
-          // Set up price updates if callback is provided
-          if (onPriceUpdate) {
-            const updatePrice = () => {
-              try {
-                const chart = widget.chart();
-                const symbolInfo = chart.symbol();
-                const lastPrice = chart.getLastPrice(symbolInfo);
-                
-                if (lastPrice && lastPrice !== currentPrice) {
-                  setCurrentPrice(lastPrice);
-                  onPriceUpdate(lastPrice);
-                }
-              } catch (error) {
-                console.error("Error getting price update:", error);
+        }
+        
+        // Set up price updates if callback is provided
+        if (onPriceUpdate) {
+          const updatePrice = () => {
+            try {
+              const chart = widget.chart();
+              const symbolInfo = chart.symbol();
+              const lastPrice = chart.lastBar().close || chart.getLastPrice(symbolInfo);
+              
+              if (lastPrice && lastPrice !== currentPrice) {
+                setCurrentPrice(lastPrice);
+                onPriceUpdate(lastPrice);
               }
-            };
-            
-            // Update price every second
-            const interval = setInterval(updatePrice, 1000);
-            return () => clearInterval(interval);
-          }
+            } catch (error) {
+              console.error("Error getting price update:", error);
+            }
+          };
           
-          // Load custom indicators if provided
-          if (customIndicators && customIndicators.length > 0) {
-            customIndicators.forEach(indicator => {
-              try {
-                widget.chart().createStudy(
-                  indicator.id,
-                  false,
-                  false,
-                  indicator.metainfo.defaults
-                );
-              } catch (error) {
-                console.error(`Error loading custom indicator ${indicator.id}:`, error);
-              }
-            });
-          }
-        });
-      }
+          // Clean up any existing interval before creating a new one
+          cleanupIntervals();
+          
+          // Update price every second
+          priceUpdateIntervalRef.current = window.setInterval(updatePrice, 1000);
+        }
+        
+        // Load custom indicators if provided
+        if (customIndicators && customIndicators.length > 0) {
+          customIndicators.forEach(indicator => {
+            try {
+              widget.chart().createStudy(
+                indicator.id,
+                false,
+                false,
+                indicator.metainfo.defaults
+              );
+            } catch (error) {
+              console.error(`Error loading custom indicator ${indicator.id}:`, error);
+            }
+          });
+        }
+      };
+      
+      // Initialize widget
+      const widget = new window.TradingView.widget(widgetOptions);
+      widgetRef.current = widget;
     }
   };
   
