@@ -548,6 +548,21 @@ export function ProTradingViewIntegration({
               enabled_features={enabledFeatures}
               width="100%"
               height="100%"
+              // Position and Orders functionality
+              positions={positions}
+              onPositionCreated={handlePositionCreated}
+              onPositionClosed={(positionId) => handlePositionClosed(positionId)}
+              onPositionModified={(position) => {
+                if (onPositionModified) {
+                  onPositionModified(position);
+                }
+                // Update local state
+                setPositions(prev => 
+                  prev.map(p => p.id === position.id ? position : p)
+                );
+              }}
+              enableBrokerIntegration={true}
+              proaccount={true}
             />
           </div>
         </div>

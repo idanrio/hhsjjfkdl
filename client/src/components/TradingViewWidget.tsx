@@ -73,7 +73,13 @@ export function TradingViewWidget({
   disabled_features = [],
   enabled_features = [],
   proaccount = true,
-  className = ''
+  className = '',
+  // Positions and orders props
+  positions = [],
+  onPositionCreated,
+  onPositionClosed,
+  onPositionModified,
+  enableBrokerIntegration = false
 }: TradingViewWidgetProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const scriptRef = useRef<HTMLScriptElement | null>(null);
@@ -81,6 +87,9 @@ export function TradingViewWidget({
   
   // Set locale based on current application language
   const currentLocale = i18n.language === 'he' ? 'he_IL' : 'en';
+  
+  // Store widget instance reference
+  const widgetInstanceRef = useRef<any>(null);
   
   // Load TradingView widget script
   useEffect(() => {
@@ -95,8 +104,8 @@ export function TradingViewWidget({
     const loadTradingViewWidget = () => {
       // Check if the TradingView object already exists
       if (window.TradingView) {
-        // Create new widget
-        new window.TradingView.widget({
+        // Create new widget with enhanced configuration
+        const widgetOptions = {
           "autosize": autosize,
           "symbol": symbol,
           "interval": interval,
@@ -117,9 +126,38 @@ export function TradingViewWidget({
           "studies": studies,
           "fullscreen": fullscreen,
           "studies_overrides": studies_overrides,
-          "disabled_features": disabled_features,
-          "enabled_features": enabled_features
-        });
+          "disabled_features": disabled_features.concat([
+            // Disable features that might conflict with broker integration
+            ...(enableBrokerIntegration ? ['header_compare', 'header_symbol_search'] : [])
+          ]),
+          "enabled_features": enabled_features.concat([
+            // Enable trading features for TradingView Pro
+            ...(enableBrokerIntegration ? [
+              'trading_account_manager',
+              'header_chart_type',
+              'order_panel',
+              'trading_notifications',
+              'buy_sell_buttons',
+              'show_trading_notifications_history'
+            ] : [])
+          ]),
+          
+          // Add broker configuration if enabled
+          ...(enableBrokerIntegration ? {
+            "broker_config": {
+              "configFlags": {
+                "supportOrderBrackets": true,
+                "supportPositions": true,
+                "supportClosePosition": true,
+                "supportPLUpdate": true,
+                "supportLevel2Data": true
+              }
+            }
+          } : {})
+        };
+        
+        // Create the widget
+        widgetInstanceRef.current = new window.TradingView.widget(widgetOptions);
         
         return;
       }
@@ -131,8 +169,8 @@ export function TradingViewWidget({
         script.async = true;
         script.onload = () => {
           if (window.TradingView) {
-            // Create new widget after script loads
-            new window.TradingView.widget({
+            // Create new widget after script loads with the same enhanced configuration
+            const widgetOptions = {
               "autosize": autosize,
               "symbol": symbol,
               "interval": interval,
@@ -153,9 +191,38 @@ export function TradingViewWidget({
               "studies": studies,
               "fullscreen": fullscreen,
               "studies_overrides": studies_overrides,
-              "disabled_features": disabled_features,
-              "enabled_features": enabled_features
-            });
+              "disabled_features": disabled_features.concat([
+                // Disable features that might conflict with broker integration
+                ...(enableBrokerIntegration ? ['header_compare', 'header_symbol_search'] : [])
+              ]),
+              "enabled_features": enabled_features.concat([
+                // Enable trading features for TradingView Pro
+                ...(enableBrokerIntegration ? [
+                  'trading_account_manager',
+                  'header_chart_type',
+                  'order_panel',
+                  'trading_notifications',
+                  'buy_sell_buttons',
+                  'show_trading_notifications_history'
+                ] : [])
+              ]),
+              
+              // Add broker configuration if enabled
+              ...(enableBrokerIntegration ? {
+                "broker_config": {
+                  "configFlags": {
+                    "supportOrderBrackets": true,
+                    "supportPositions": true,
+                    "supportClosePosition": true,
+                    "supportPLUpdate": true,
+                    "supportLevel2Data": true
+                  }
+                }
+              } : {})
+            };
+            
+            // Create the widget
+            widgetInstanceRef.current = new window.TradingView.widget(widgetOptions);
           }
         };
         
@@ -172,6 +239,7 @@ export function TradingViewWidget({
         // Don't remove the script on unmount as it might be used by other widget instances
         // Just clean up references
         scriptRef.current = null;
+        widgetInstanceRef.current = null;
       }
     };
   }, [
@@ -196,7 +264,8 @@ export function TradingViewWidget({
     studies_overrides,
     disabled_features,
     enabled_features,
-    autosize
+    autosize,
+    enableBrokerIntegration
   ]);
   
   // Set advanced features for TradingView Pro
@@ -222,6 +291,107 @@ export function TradingViewWidget({
       }
     }
   }, [proaccount]);
+  
+  // Handle position creation, modification, and closing
+  useEffect(() => {
+    if (!enableBrokerIntegration || !widgetInstanceRef.current) return;
+    
+    // Wait for the widget to be ready
+    const widget = widgetInstanceRef.current;
+    
+    const onReady = () => {
+      if (!widget || !widget.chart) return;
+      
+      // Set up chart event listeners for positions and orders
+      if (widget.chart && widget.chart().onChartReady) {
+        widget.chart().onChartReady(() => {
+          console.log('TradingView chart is ready for trading operations');
+          
+          // Set up custom broker interface for handling positions
+          if (widget.chart().createPositionBroker) {
+            const broker = widget.chart().createPositionBroker();
+            
+            // Set positions if any were provided
+            if (positions && positions.length > 0) {
+              // Convert our positions to TradingView format
+              const tvPositions = positions.map(position => ({
+                id: position.id,
+                symbol: symbol,
+                side: position.type === 'long' ? 'buy' : 'sell',
+                qty: position.amount,
+                entryPrice: position.entryPrice,
+                stopLoss: position.stopLoss || undefined,
+                takeProfit: position.takeProfit || undefined,
+                entryTime: new Date(position.entryTime).getTime(),
+                profit: position.profitLoss || 0,
+                status: position.status
+              }));
+              
+              // Add positions to chart
+              broker.setPositions(tvPositions);
+            }
+            
+            // Set up event listeners for position changes
+            if (broker.on) {
+              // Listen for position created events
+              broker.on('positionCreated', (params: any) => {
+                if (onPositionCreated) {
+                  // Convert TradingView position to our format
+                  const newPosition: Position = {
+                    id: params.id || `pos-${Date.now()}`,
+                    type: params.side === 'buy' ? 'long' : 'short',
+                    entryPrice: params.entryPrice,
+                    entryTime: params.entryTime || Date.now(),
+                    stopLoss: params.stopLoss || null,
+                    takeProfit: params.takeProfit || null,
+                    amount: params.qty,
+                    leverage: params.leverage || 1,
+                    status: 'active'
+                  };
+                  
+                  onPositionCreated(newPosition);
+                }
+              });
+              
+              // Listen for position closed events
+              broker.on('positionClosed', (params: any) => {
+                if (onPositionClosed && params.id) {
+                  onPositionClosed(params.id);
+                }
+              });
+              
+              // Listen for position modified events
+              broker.on('positionModified', (params: any) => {
+                if (onPositionModified) {
+                  // Find the existing position
+                  const existingPosition = positions.find(p => p.id === params.id);
+                  if (!existingPosition) return;
+                  
+                  // Create modified position with updated values
+                  const modifiedPosition: Position = {
+                    ...existingPosition,
+                    stopLoss: params.stopLoss || existingPosition.stopLoss,
+                    takeProfit: params.takeProfit || existingPosition.takeProfit,
+                    amount: params.qty || existingPosition.amount
+                  };
+                  
+                  onPositionModified(modifiedPosition);
+                }
+              });
+            }
+          }
+        });
+      }
+    };
+    
+    // Check if widget is ready or wait for it
+    if (widget.iframe && widget.iframe.contentWindow) {
+      onReady();
+    } else if (widget.onChartReady) {
+      widget.onChartReady(onReady);
+    }
+    
+  }, [widgetInstanceRef.current, enableBrokerIntegration, positions, symbol, onPositionCreated, onPositionClosed, onPositionModified]);
   
   return (
     <div 
