@@ -1,5 +1,6 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { Position } from '@/types/trading';
 
 // Define TradingView widget configuration properties
 interface TradingViewWidgetProps {
@@ -30,6 +31,13 @@ interface TradingViewWidgetProps {
   enabled_features?: string[];
   proaccount?: boolean; // Whether to use pro account features
   className?: string;
+  
+  // Positions and Orders related props
+  positions?: Position[];
+  onPositionCreated?: (position: Position) => void;
+  onPositionClosed?: (positionId: string) => void;
+  onPositionModified?: (position: Position) => void;
+  enableBrokerIntegration?: boolean; // Enable TradingView broker integration
 }
 
 /**
