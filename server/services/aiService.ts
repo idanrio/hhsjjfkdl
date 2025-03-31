@@ -5,20 +5,70 @@ import { Trade } from "../../shared/schema";
 // Initialize the OpenAI API client
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
-// Knowledge base for trading terms and concepts
+// Comprehensive Wyckoff methodology knowledge base
 const tradingKnowledgeBase = {
   wyckoff: {
-    accumulation: "The Wyckoff Accumulation phase is where large operators begin to buy an asset after a prolonged downtrend. It's characterized by decreased volatility and trading range bound activity.",
-    distribution: "The Wyckoff Distribution phase is where large operators begin to sell an asset after a prolonged uptrend. It's marked by decreased momentum and trading range bound activity before a reversal.",
-    spring: "A Spring in Wyckoff methodology is a price move that briefly penetrates the lower boundary of the trading range, only to reverse quickly. It's designed to trigger stop losses and create liquidity for large operators.",
-    upthrust: "An Upthrust in Wyckoff methodology is a price move that briefly penetrates the upper boundary of the trading range, only to reverse quickly. It's designed to trap buyers before a move down.",
-    tests: "In Wyckoff methodology, tests refer to price revisiting a previous support or resistance level to confirm its strength or weakness.",
+    // Core Wyckoff concepts
+    overview: "The Wyckoff Method is a comprehensive approach to trading and investing developed by Richard D. Wyckoff in the early 20th century. It focuses on the relationship between supply and demand to determine price direction, using price action, volume, and time. The methodology aims to identify the intentions and activities of 'smart money' or large institutional investors.",
+    
+    // Market cycles
+    accumulation: "The Wyckoff Accumulation phase occurs after a prolonged downtrend when large operators begin to buy an asset. It's characterized by decreased volatility, trading range bound activity, and specific events such as Preliminary Support (PS), Selling Climax (SC), Automatic Rally (AR), Secondary Test (ST), and Spring. Volume typically diminishes throughout this phase except during key events. The phase concludes with a Sign of Strength (SOS) and a Last Point of Support (LPS) before a markup phase begins.",
+    
+    markup: "The Wyckoff Markup phase follows successful accumulation and represents the uptrend where prices rise steadily. It's characterized by higher highs and higher lows, with healthy pullbacks to the previous resistance (now support). Volume typically increases during strong advances and diminishes during reactions. Backup to Edge of Creek (BEC) and Last Point of Support (LPS) are common before continuation moves.",
+    
+    distribution: "The Wyckoff Distribution phase occurs after a prolonged uptrend when large operators begin to sell their positions. Key events include Preliminary Supply (PSY), Buying Climax (BC), Automatic Reaction (AR), Secondary Test (ST), and Upthrust. Volume patterns show increasing supply (selling) pressure, particularly on rallies. The phase concludes with Signs of Weakness (SOW) and a Last Point of Supply (LPSY) before a markdown phase begins.",
+    
+    markdown: "The Wyckoff Markdown phase follows distribution and represents the downtrend. Prices make lower highs and lower lows, with rallies that fail at previous support (now resistance). Volume typically increases during strong declines and diminishes during technical bounces. This phase continues until signs of accumulation appear again.",
+    
+    // Key Wyckoff events
+    spring: "A Spring in Wyckoff methodology is a price move that briefly penetrates the lower boundary of the trading range, only to reverse quickly. It's designed to trigger stop losses and create liquidity for large operators. It often occurs near the end of an accumulation phase and represents a final test of supply before markup begins. Springs are typically accompanied by diminishing volume and followed by increased buying pressure.",
+    
+    upthrust: "An Upthrust in Wyckoff methodology is a price move that briefly penetrates the upper boundary of the trading range, only to reverse quickly. It's designed to trap buyers before a move down. It often occurs during the distribution phase and represents a final test of demand before markdown begins. Upthrusts are typically accompanied by increased volume initially, followed by strong selling pressure.",
+    
+    tests: "In Wyckoff methodology, tests refer to price revisiting a previous support or resistance level to confirm its strength or weakness. Secondary tests (ST) often occur after climactic action (selling climax or buying climax) and help establish the trading range. Tests with decreasing volume often suggest successful tests, while increased volume may signal failure of support or resistance.",
+    
+    compositeMan: "The 'Composite Man' is Wyckoff's conceptual model representing the collective actions of large operators who manipulate the markets to their advantage. Understanding the Composite Man's operations is central to the Wyckoff Method, as it helps traders align themselves with smart money rather than being caught in market manipulations.",
+    
+    // Additional key concepts
+    sellingClimaxSC: "The Selling Climax (SC) occurs at the end of a downtrend with a significant price drop on exceptionally high volume. It represents panic selling and capitulation, often creating a Preliminary Support (PS). It's a key signal that smart money is absorbing the selling from the public.",
+    
+    buyingClimaxBC: "The Buying Climax (BC) occurs after a sustained uptrend with a significant price surge on exceptionally high volume. It represents euphoric buying, often creating a Preliminary Supply (PSY). It signals that smart money is distributing positions to the public.",
+    
+    signOfStrengthSOS: "A Sign of Strength (SOS) is a price advance on increased volume, often breaking out of the trading range after a successful spring. It confirms that accumulation is complete and markup is beginning.",
+    
+    signOfWeaknessSOW: "A Sign of Weakness (SOW) is a price decline on increased volume, often breaking below the trading range after an upthrust. It confirms that distribution is complete and markdown is beginning.",
+    
+    lastPointOfSupportLPS: "The Last Point of Support (LPS) is the final pullback in price before a substantial move up. It often tests the breakout level with reduced volume, providing a low-risk entry opportunity before continuation of the uptrend.",
+    
+    lastPointOfSupplyLPSY: "The Last Point of Supply (LPSY) is the final rally before a substantial move down. It often tests the breakdown level with reduced volume, providing a low-risk short entry opportunity before continuation of the downtrend.",
+    
+    effort_vs_result: "The Effort vs. Result principle compares volume (effort) with the price movement it produces (result). When large effort (high volume) produces minimal price change, it suggests a potential reversal. Conversely, when small effort produces significant price change, it suggests strength in the prevailing direction.",
+    
+    strengthAndWeakness: "In Wyckoff analysis, strength and weakness are determined by comparing price action to volume. Strength shows as rising prices on increased volume and reactions on decreased volume. Weakness appears as falling prices on increased volume and rallies on decreased volume.",
   },
+  
+  // Technical analysis principles supporting Wyckoff methodology
   technicalAnalysis: {
-    supportResistance: "Support and resistance are price levels where the asset has historically struggled to move beyond. Support prevents prices from falling lower, while resistance prevents prices from rising higher.",
-    trendlines: "Trendlines are drawn by connecting at least two price points and then extending the line to identify potential future areas of support or resistance.",
-    movingAverages: "Moving averages smooth out price data to create a single flowing line, making it easier to identify the direction of the trend.",
-    volumeAnalysis: "Volume analysis examines the strength of price movements based on the trading volume that accompanies them.",
+    supportResistance: "Support and resistance are price levels where an asset has historically struggled to move beyond. Support prevents prices from falling lower, while resistance prevents prices from rising higher. In Wyckoff analysis, these levels often correspond to important phases of accumulation and distribution.",
+    
+    trendlines: "Trendlines are drawn by connecting at least two price points and extending the line to identify potential future areas of support or resistance. In Wyckoff analysis, trendlines help identify the overall market structure and important breakout or breakdown levels.",
+    
+    movingAverages: "Moving averages smooth out price data to create a single flowing line, making it easier to identify the direction of the trend. While not explicitly part of Wyckoff's original teachings, moving averages can complement Wyckoff analysis by confirming trend direction and potential reversal points.",
+    
+    volumeAnalysis: "Volume analysis examines the strength of price movements based on the trading volume that accompanies them. In Wyckoff methodology, volume is crucial for confirming price action and identifying potential reversal points or continuation patterns.",
+    
+    pricePatterns: "Price patterns refer to specific formations that appear on charts, such as double tops/bottoms, head and shoulders, and flags. In Wyckoff analysis, these patterns often align with specific phases of accumulation or distribution.",
+  },
+  
+  // Wyckoff trading strategies
+  tradingStrategies: {
+    entryPoints: "Optimal entry points in Wyckoff methodology include: after a successful Spring in accumulation, at the Last Point of Support (LPS) after a breakout, or during a backup to the Edge of the Creek (BEC). For short positions, entries include after a successful Upthrust in distribution or at the Last Point of Supply (LPSY) after a breakdown.",
+    
+    exitPoints: "Wyckoff suggests taking profits when signs of distribution appear after a markup phase, or when signs of accumulation appear after a markdown phase. Partial profits can be taken at resistance levels during markup or support levels during markdown.",
+    
+    stopLoss: "Stop-loss placement in Wyckoff trading depends on the specific trade setup. For longs after a Spring, stops are typically placed just below the Spring low. For shorts after an Upthrust, stops are typically placed just above the Upthrust high.",
+    
+    riskManagement: "Wyckoff emphasized the importance of risk management, suggesting position sizing based on the distance to stop-loss and maintaining a favorable risk-to-reward ratio. He recommended not risking more than a small percentage of total capital on any single trade.",
   }
 };
 
@@ -193,13 +243,44 @@ export const aiService = {
         messages: [
           {
             role: "system",
-            content: `You are a Wyckoff Method expert analyzing chart images. 
-            Provide detailed analysis of the chart according to Wyckoff principles.
-            Identify the current phase (accumulation, markup, distribution, markdown), 
-            key events (springs, upthrusts, tests, etc.), and provide trading recommendations.
-            Your analysis should be educational and help traders improve their Wyckoff analysis skills.
+            content: `You are Richard Wyckoff himself, a legendary market analyst and educator with decades of experience analyzing price charts.
             
-            Respond with a JSON object containing:
+            Analyze the uploaded chart image according to your developed Wyckoff Method principles, focusing on:
+            
+            1. MARKET STRUCTURE: Identify whether the chart is in Accumulation, Distribution, Markup, or Markdown phase.
+               - Accumulation: Look for trading ranges after downtrends, PS, SC, AR, ST, Springs, BU, SOS, LPS
+               - Distribution: Look for trading ranges after uptrends, PSY, BC, AR, ST, Upthrusts, SOW, LPSY
+               - Markup: Look for rising trends with higher highs and higher lows
+               - Markdown: Look for falling trends with lower highs and lower lows
+            
+            2. SPECIFIC WYCKOFF EVENTS: Identify technical events like:
+               - Springs and Upthrusts (false breakouts)
+               - Tests of support/resistance
+               - Signs of Strength (SOS) or Weakness (SOW)
+               - Selling Climax (SC) or Buying Climax (BC)
+               - Last Point of Support (LPS) or Last Point of Supply (LPSY)
+               - Backup to Edge of Creek (BEC)
+               - Compare volume with price movement (Effort vs. Result)
+            
+            3. VOLUME ANALYSIS: Examine how volume confirms or contradicts price movement
+               - High volume on advances in markup indicates strength
+               - Low volume on declines in markup indicates strength
+               - High volume on declines in markdown indicates weakness
+               - Low volume on rallies in markdown indicates weakness
+            
+            4. COMPARE USER ANALYSIS: If the user provided notes about their own analysis, comment on:
+               - What they correctly identified according to Wyckoff principles
+               - What they missed or misinterpreted
+               - How they could improve their Wyckoff analysis
+            
+            5. PROVIDE BOTH EDUCATIONAL AND PRACTICAL VALUE:
+               - Explain the reasoning behind your analysis in detail
+               - Offer specific trading recommendations based on Wyckoff principles
+               - Suggest what might happen next according to typical Wyckoff scenarios
+               - Include educational resources to help them improve
+
+            Your response must be formatted as a JSON object with the following structure:
+            
             {
               "wyckoffPhase": "current phase (accumulation, markup, distribution, markdown)",
               "confidence": float between 0-1 representing confidence in analysis,
@@ -211,8 +292,11 @@ export const aiService = {
                   "description": "explanation of the event significance"
                 }
               ],
-              "feedback": "feedback on what the chart is showing and potential market direction",
-              "tradingRecommendations": ["specific actionable recommendations based on analysis"],
+              "feedback": "detailed feedback on the chart analysis, including assessment of user's notes if provided",
+              "tradingRecommendations": [
+                "specific actionable trading recommendation 1",
+                "specific actionable trading recommendation 2"
+              ],
               "learningResources": [
                 {
                   "title": "resource title",
@@ -228,7 +312,11 @@ export const aiService = {
             content: [
               {
                 type: "text",
-                text: `Please analyze this chart using Wyckoff methodology. ${userNotes}`
+                text: `Please analyze this chart image using your Wyckoff methodology. Based on your expert analysis, identify the market phase, significant events, and provide detailed recommendations for traders.
+                
+                ${userNotes}
+                
+                Please be thorough in your analysis so I can learn how to properly apply Wyckoff methodology to my trading decisions.`
               },
               {
                 type: "image_url",
@@ -240,7 +328,7 @@ export const aiService = {
           }
         ],
         response_format: { type: "json_object" },
-        max_tokens: 2000,
+        max_tokens: 3000,
       });
 
       const content = response.choices[0].message.content || "{}";
@@ -327,41 +415,73 @@ function formatChartDataForAnalysis(chartData: any): string {
  */
 async function generateEnhancedImage(imageBase64: string, analysis: any): Promise<{ enhancedImage: string }> {
   try {
+    if (!process.env.OPENAI_API_KEY) {
+      console.warn("OpenAI API key missing. Cannot generate enhanced image.");
+      return { enhancedImage: `data:image/jpeg;base64,${imageBase64}` };
+    }
+    
     // Prepare a description of the Wyckoff analysis to guide image enhancement
     const wyckoffPhase = analysis.wyckoffPhase || "unknown phase";
     const events = analysis.events || [];
     const eventsText = events.map((event: any) => 
       `${event.type} at ${event.location}`
     ).join(", ");
-
-    // Create a prompt for the image generation
+    
+    // Generate detailed prompt for DALL-E
     const prompt = `
-    Create an enhanced version of this financial chart with clear Wyckoff methodology annotations. 
-    This chart is in a ${wyckoffPhase} phase. 
+    Create an enhanced version of this financial chart with Wyckoff methodology annotations. 
+    This chart is in a ${wyckoffPhase.toUpperCase()} phase.
     
-    Add the following elements to the chart:
-    1. Clear labels for all key Wyckoff events: ${eventsText}
-    2. Mark support and resistance levels with horizontal lines
-    3. Add phase labels (accumulation, markup, distribution, markdown)
-    4. Circle and annotate important price action points
-    5. Add arrows to show the expected price direction based on Wyckoff analysis
-    6. Include a small legend explaining the annotations
+    ADD THESE ANNOTATIONS:
+    ${events.map((event: any, index: number) => 
+      `${index + 1}. Label "${event.type}" at ${event.location}`
+    ).join("\n")}
     
-    Make all annotations clearly visible with high contrast colors. Use professional financial chart styling.
-    Do not add any text that isn't on the original chart except for the annotations.
+    ADDITIONAL ELEMENTS:
+    - Add horizontal lines for support and resistance levels
+    - Add clear label "${wyckoffPhase.toUpperCase()} PHASE" in a visible location
+    - Circle and annotate important price action points
+    - Add arrows showing expected price direction based on Wyckoff analysis
+    - Include a small legend explaining the annotations
+    - Mark any Springs, Upthrusts, Tests, Signs of Strength, or Signs of Weakness
+    
+    STYLING:
+    - Use contrasting colors for annotations (red for resistance/distribution, green for support/accumulation)
+    - Make all text annotations readable
+    - Use professional financial charting style
+    - Do not remove or alter any original chart data
     `;
-
-    // Modified approach using text-to-text description of what would be enhanced
-    // since we don't have direct image generation capabilities
     
-    // Instead, we'll return the original image with a base64 prefix for now
-    // In a production environment, you would use DALL-E or another image generation service
+    try {
+      // the newest OpenAI model is "dall-e-3", do not change this unless explicitly requested by the user
+      const imageResponse = await openai.images.generate({
+        model: "dall-e-3",
+        prompt: prompt,
+        n: 1,
+        size: "1024x1024",
+        quality: "standard",
+        response_format: "b64_json"
+      });
+      
+      if (imageResponse.data[0].b64_json) {
+        return {
+          enhancedImage: `data:image/jpeg;base64,${imageResponse.data[0].b64_json}`
+        };
+      } else if (imageResponse.data[0].url) {
+        // In case the response comes with URL instead of base64
+        return {
+          enhancedImage: imageResponse.data[0].url
+        };
+      }
+    } catch (dallEError) {
+      console.error("Error generating image with DALL-E:", dallEError);
+      // If DALL-E fails, fall back to the original image
+    }
     
-    const result = {
+    // Return the original image if DALL-E generation fails
+    return {
       enhancedImage: `data:image/jpeg;base64,${imageBase64}`
     };
-    
-    return result;
   } catch (error) {
     console.error("Error generating enhanced image:", error);
     // Return the original image if enhancement fails

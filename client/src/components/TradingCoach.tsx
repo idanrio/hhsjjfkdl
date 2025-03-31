@@ -135,28 +135,21 @@ export function TradingCoach({ onAnalysisComplete }: TradingCoachProps) {
       const base64Image = imagePreview?.split(',')[1] || '';
       
       // Call AI service for Wyckoff analysis
-      // Temporary fix until aiService.analyzeChartImage is fully implemented
+      const analysisResponse = await aiService.analyzeChartImage(base64Image, traderNotes);
+      
+      if (!analysisResponse.success) {
+        throw new Error(analysisResponse.error || 'Analysis failed');
+      }
+      
       const result: WyckoffAnalysisResult = { 
-        wyckoffPhase: "accumulation",
-        confidence: 0.85,
-        phaseDescription: "Identified Wyckoff accumulation phase with characteristic price action.",
-        feedback: "The chart shows classic Wyckoff accumulation pattern. There appears to be institutional buying activity.",
-        tradingRecommendations: ["Watch for a spring pattern", "Maintain stop losses below support level"],
-        events: [
-          {
-            type: "Preliminary Support",
-            location: "Left side of chart",
-            description: "Initial support after a downtrend"
-          }
-        ],
-        learningResources: [
-          {
-            title: "Wyckoff Accumulation Explained",
-            url: "#",
-            type: "Article"
-          }
-        ],
-        enhancedImage: imagePreview || undefined // Use the original image for now until the AI service is fully implemented
+        wyckoffPhase: analysisResponse.wyckoffPhase,
+        confidence: analysisResponse.confidence,
+        phaseDescription: analysisResponse.phaseDescription,
+        feedback: analysisResponse.feedback,
+        tradingRecommendations: analysisResponse.tradingRecommendations,
+        events: analysisResponse.events,
+        learningResources: analysisResponse.learningResources,
+        enhancedImage: analysisResponse.enhancedImage
       };
       
       setAnalysisResult(result);

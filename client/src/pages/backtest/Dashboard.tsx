@@ -16,6 +16,7 @@ import IntegratedTradingEnvironment from "@/components/IntegratedTradingEnvironm
 import { AIAssistant } from "@/components/AIAssistant";
 import { ChartPatternAnalysis } from "@/components/ChartPatternAnalysis";
 import { PersonalizedAdvice } from "@/components/PersonalizedAdvice";
+import { TradingCoach } from "@/components/TradingCoach";
 
 export default function BacktestDashboard() {
   const { t } = useTranslation();
@@ -655,6 +656,24 @@ export default function BacktestDashboard() {
 
               {/* AI Analytics Components */}
               <div className="grid grid-cols-1 gap-6 mt-6">
+                {/* Wyckoff Trading Coach - New Component */}
+                <Card className="bg-card shadow-sm border-primary/10">
+                  <CardHeader>
+                    <CardTitle>{t("Wyckoff Trading Coach")}</CardTitle>
+                    <CardDescription>
+                      {t("Upload your chart analysis and get expert Wyckoff methodology feedback")}
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <TradingCoach 
+                      onAnalysisComplete={(analysis) => {
+                        // Optional callback when analysis is complete
+                        console.log("Analysis completed:", analysis);
+                      }} 
+                    />
+                  </CardContent>
+                </Card>
+                
                 {/* Chart Pattern Analysis */}
                 <Card className="bg-card shadow-sm border-primary/10">
                   <CardHeader>
