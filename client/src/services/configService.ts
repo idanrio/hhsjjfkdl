@@ -41,16 +41,10 @@ export const checkServicesAvailability = async (): Promise<ServicesConfig> => {
 export const isOpenAIAvailable = async (): Promise<boolean> => {
   try {
     const services = await checkServicesAvailability();
-    
-    // Add debug information to help troubleshoot
-    console.log('OpenAI service status:', services.openai);
-    
     return services.openai.available;
   } catch (error) {
     console.error('Error checking OpenAI availability:', error);
-    // In case of network error, assume API key might still be available
-    // The actual API calls will still fail appropriately if the key is missing
-    return true;
+    return false;
   }
 };
 

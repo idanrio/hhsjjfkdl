@@ -32,10 +32,8 @@ import {
   LayoutPanelTop,
   ArrowUp,
   ArrowDown,
-  AlertTriangle,
-  Zap
+  AlertTriangle
 } from "lucide-react";
-import { AITestingDashboard } from "@/components/AITestingDashboard";
 
 export default function AdminDashboard() {
   const { t } = useTranslation();
@@ -451,10 +449,6 @@ export default function AdminDashboard() {
           <TabsTrigger value="settings">
             <Settings className="h-4 w-4 mr-2" />
             {t("Settings")}
-          </TabsTrigger>
-          <TabsTrigger value="testing">
-            <Zap className="h-4 w-4 mr-2" />
-            {t("AI Testing")}
           </TabsTrigger>
         </TabsList>
         
@@ -1062,13 +1056,6 @@ export default function AdminDashboard() {
               <Button className="bg-brand-primary hover-glow-primary">{t("Save Settings")}</Button>
             </CardFooter>
           </Card>
-        </TabsContent>
-        
-        {/* AI Testing Tab */}
-        <TabsContent value="testing">
-          <div className="space-y-6">
-            <AITestingDashboard />
-          </div>
         </TabsContent>
       </Tabs>
     </div>

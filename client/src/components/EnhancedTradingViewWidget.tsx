@@ -311,31 +311,9 @@ const EnhancedTradingViewWidgetComponent: ForwardRefRenderFunction<
       widgetOptions.onChartReady = function() {
         // Add the studies
         if (studies && studies.length > 0) {
-          try {
-            const chart = widget.chart();
-            
-            // Standard studies like SMA
-            studies.forEach(study => {
-              const [studyName, optionalParams] = study.split('@');
-              if (studyName === 'MASimple') {
-                // Create SMA 50
-                chart.createStudy('Moving Average', false, false, [50], null, { 'plot.color': 'rgb(255, 152, 0)' });
-                // Create SMA 200
-                chart.createStudy('Moving Average', false, false, [200], null, { 'plot.color': 'rgb(66, 133, 244)' });
-              } else if (studyName === 'BB') {
-                // Bollinger Bands with default settings
-                chart.createStudy('Bollinger Bands', false, false);
-              } else if (studyName === 'MACD') {
-                // MACD with default settings
-                chart.createStudy('MACD', false, false);
-              } else {
-                // For any other study, try to add it directly
-                chart.createStudy(study);
-              }
-            });
-          } catch (error) {
-            console.error("Error adding studies to chart:", error);
-          }
+          studies.forEach(study => {
+            widget.chart().createStudy(study);
+          });
         }
         
         // Set up price updates if callback is provided
