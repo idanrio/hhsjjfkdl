@@ -1,6 +1,6 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Loader2, Send, Book, User, Bot, X } from 'lucide-react';
+import { Loader2, Send, Book, User, Bot, X, AlertCircle } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -8,8 +8,10 @@ import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { toast } from "@/hooks/use-toast";
 import { aiService, type AIQuestionResponse } from '../services/aiService';
+import { isOpenAIAvailable } from '../services/configService';
 
 interface Message {
   role: 'user' | 'bot';
@@ -23,6 +25,23 @@ export function AIAssistant() {
   const [loading, setLoading] = useState(false);
   const [messages, setMessages] = useState<Message[]>([]);
   const [error, setError] = useState<string | null>(null);
+  const [apiKeyAvailable, setApiKeyAvailable] = useState<boolean>(true);
+  
+  // Check if the OpenAI API key is available
+  useEffect(() => {
+    const checkApiKeyStatus = async () => {
+      try {
+        // Check if OpenAI API key is available through the server
+        const isAvailable = await isOpenAIAvailable();
+        setApiKeyAvailable(isAvailable);
+      } catch (error) {
+        console.error('Error checking API key availability:', error);
+        setApiKeyAvailable(false);
+      }
+    };
+    
+    checkApiKeyStatus();
+  }, []);
 
   // Sample trading questions to help guide users
   const sampleQuestions = [
@@ -121,6 +140,17 @@ export function AIAssistant() {
 
   return (
     <div className="w-full h-full flex flex-col">
+      {!apiKeyAvailable && (
+        <Alert variant="destructive" className="mb-4">
+          <AlertCircle className="h-4 w-4" />
+          <AlertTitle>API Key Missing</AlertTitle>
+          <AlertDescription>
+            The OpenAI API key is missing or unavailable. The AI assistant will use fallback responses.
+            Please provide a valid API key to enable full AI functionality.
+          </AlertDescription>
+        </Alert>
+      )}
+      
       <ScrollArea className="flex-1 pr-2">
         {messages.length === 0 ? (
           <div className="flex flex-col items-center justify-center text-center p-8 h-[200px] border rounded-md border-dashed">

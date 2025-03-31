@@ -1,14 +1,7 @@
-import OpenAI from 'openai';
 import { ChartPatternRecognitionResult, Position, Trade } from '../types/trading';
 import { OHLCV } from './enhancedMarketService';
-
-// Initialize OpenAI client with API key from environment
-// the newest OpenAI model is "gpt-4o" which was released May 13, 2024. do not change this unless explicitly requested by the user
-const apiKey = import.meta.env.VITE_OPENAI_API_KEY || import.meta.env.OPENAI_API_KEY || '';
-const openai = new OpenAI({
-  apiKey: apiKey,
-  dangerouslyAllowBrowser: true // Allow usage in browser environment
-});
+import { apiRequest } from '@/lib/queryClient';
+import { isOpenAIAvailable } from './configService';
 
 // Define interfaces for AI responses
 export interface AIQuestionResponse {
@@ -47,52 +40,41 @@ export const aiService = {
    */
   async askQuestion(question: string): Promise<AIQuestionResponse> {
     try {
-      if (!apiKey) {
-        console.error('OpenAI API key is missing');
+      // Check if the OpenAI API is available
+      const isAvailable = await isOpenAIAvailable();
+      if (!isAvailable) {
+        console.error('OpenAI API key is missing or unavailable');
         return {
           answer: 'The AI assistant is currently unavailable. Please check your API key configuration.',
           confidence: 0
         };
       }
 
-      const response = await openai.chat.completions.create({
-        model: 'gpt-4o',
-        messages: [
-          {
-            role: 'system',
-            content: `You are a sophisticated trading and financial markets assistant for Capitulre, a trading education platform. 
-            You specialize in technical analysis, Wyckoff methodology, chart patterns, and trading psychology.
-            Provide concise, accurate responses backed by trading principles.
-            For Wyckoff-related questions, refer to the phases of accumulation, markup, distribution, and markdown.
-            Only provide information you're confident about, and acknowledge uncertainty when appropriate.
-            Your responses should be educational and actionable.`
-          },
-          {
-            role: 'user',
-            content: question
-          }
-        ],
-        temperature: 0.3,
-        max_tokens: 600
+      // Send the question to the server-side API
+      const response = await apiRequest('POST', '/api/ai/ask-question', {
+        question: question
       });
-
-      const answer = response.choices[0].message.content || 'Unable to generate a response';
       
-      // Determine sources based on question content
-      const sources = determineSourcesFromQuestion(question);
+      const result = await response.json();
       
-      // Calculate confidence based on model's finish_reason and other factors
-      const confidence = response.choices[0].finish_reason === 'stop' ? 0.9 : 0.7;
-
+      // If no result from server, determine sources based on question content
+      if (!result.sources) {
+        result.sources = determineSourcesFromQuestion(question);
+      }
+      
       return {
-        answer,
-        sources,
-        confidence
+        answer: result.answer || 'Unable to generate a response',
+        sources: result.sources,
+        confidence: result.confidence || 0.5
       };
     } catch (error) {
       console.error('Error asking AI question:', error);
+      // Determine sources based on question content for fallback
+      const sources = determineSourcesFromQuestion(question);
+      
       return {
         answer: 'Sorry, I encountered an error processing your question. Please try again later.',
+        sources,
         confidence: 0
       };
     }
@@ -107,8 +89,10 @@ export const aiService = {
     timeframe: string
   ): Promise<AIChartAnalysisResponse> {
     try {
-      if (!apiKey) {
-        console.error('OpenAI API key is missing');
+      // Check if the OpenAI API is available
+      const isAvailable = await isOpenAIAvailable();
+      if (!isAvailable) {
+        console.error('OpenAI API key is missing or unavailable');
         return {
           patterns: [],
           summary: 'Chart analysis is currently unavailable. Please check your API key configuration.',
@@ -127,31 +111,14 @@ export const aiService = {
       // Format chart data for AI analysis
       const formattedChartData = formatChartDataForAnalysis(chartData);
 
-      const response = await openai.chat.completions.create({
-        model: 'gpt-4o',
-        messages: [
-          {
-            role: 'system',
-            content: `You are an expert chart analyst specializing in Wyckoff methodology and technical patterns.
-            Analyze the provided OHLCV chart data to identify patterns, market phases, and key price levels.
-            Your response should follow JSON format with: patterns (array of detected patterns with confidence),
-            summary (overview of chart conditions), keyLevels (support and resistance),
-            wyckoffPhase (current Wyckoff phase if identifiable), marketStructure (bullish/bearish/ranging),
-            and recommendation (trading recommendation based on analysis).`
-          },
-          {
-            role: 'user',
-            content: `Analyze this ${timeframe} chart data for ${symbol}:
-            ${formattedChartData}`
-          }
-        ],
-        temperature: 0.2,
-        response_format: { type: 'json_object' },
-        max_tokens: 1000
+      // Send the chart data to the server-side API
+      const response = await apiRequest('POST', '/api/ai/analyze-chart', {
+        symbol,
+        timeframe,
+        chartData: formattedChartData
       });
-
-      // Parse the JSON response
-      const analysisResult = JSON.parse(response.choices[0].message.content || '{}');
+      
+      const analysisResult = await response.json();
       
       return {
         patterns: analysisResult.patterns || [],
@@ -176,8 +143,10 @@ export const aiService = {
    */
   async getPersonalizedAdvice(trades: Trade[], positions: Position[]): Promise<AITradingAdviceResponse> {
     try {
-      if (!apiKey) {
-        console.error('OpenAI API key is missing');
+      // Check if the OpenAI API is available
+      const isAvailable = await isOpenAIAvailable();
+      if (!isAvailable) {
+        console.error('OpenAI API key is missing or unavailable');
         return {
           advice: 'Personalized advice is currently unavailable. Please check your API key configuration.',
           riskAnalysis: '',
@@ -205,32 +174,15 @@ export const aiService = {
         ? `Currently holding ${positions.length} active positions.` 
         : 'No active positions.';
 
-      const response = await openai.chat.completions.create({
-        model: 'gpt-4o',
-        messages: [
-          {
-            role: 'system',
-            content: `You are a professional trading coach for Capitulre, a trading education platform.
-            Analyze the trader's history and provide personalized advice to improve their performance.
-            Focus on pattern recognition in their trading behavior, risk management, emotional discipline, and strategy optimization.
-            Your response should follow JSON format with: advice (main recommendations),
-            riskAnalysis (assessment of risk taking), improvementAreas (array of specific areas to improve),
-            suggestedStrategies (array of strategies that might work for this trader), and confidence (your confidence in the advice).`
-          },
-          {
-            role: 'user',
-            content: `Analyze my trading history and provide personalized advice:
-            ${tradingSummary}
-            ${positionInfo}`
-          }
-        ],
-        temperature: 0.4,
-        response_format: { type: 'json_object' },
-        max_tokens: 800
+      // Send the trading data to the server-side API
+      const response = await apiRequest('POST', '/api/ai/personalized-advice', {
+        trades,
+        positions,
+        tradingSummary,
+        positionInfo
       });
-
-      // Parse the JSON response
-      const adviceResult = JSON.parse(response.choices[0].message.content || '{}');
+      
+      const adviceResult = await response.json();
       
       return {
         advice: adviceResult.advice || 'Unable to generate personalized advice.',
@@ -256,37 +208,21 @@ export const aiService = {
    */
   async explainPattern(patternName: string): Promise<string> {
     try {
-      if (!apiKey) {
-        console.error('OpenAI API key is missing');
+      // Check if the OpenAI API is available
+      const isAvailable = await isOpenAIAvailable();
+      if (!isAvailable) {
+        console.error('OpenAI API key is missing or unavailable');
         return 'Pattern explanations are currently unavailable. Please check your API key configuration.';
       }
 
-      const response = await openai.chat.completions.create({
-        model: 'gpt-4o',
-        messages: [
-          {
-            role: 'system',
-            content: `You are a technical analysis educator for Capitulre, a trading education platform.
-            Provide a comprehensive explanation of the requested chart pattern, including:
-            1. Visual description of how to identify it
-            2. Market psychology behind the pattern
-            3. Traditional interpretation and success rate
-            4. Common entry, stop loss, and take profit strategies
-            5. Risk management considerations
-            6. Example scenarios where the pattern worked and failed
-            Keep your explanation educational, precise, and actionable with approximately 300-400 words.`
-          },
-          {
-            role: 'user',
-            content: `Explain the "${patternName}" chart pattern in detail.`
-          }
-        ],
-        temperature: 0.3,
-        max_tokens: 600
+      // Send the pattern name to the server-side API
+      const response = await apiRequest('POST', '/api/ai/explain-pattern', {
+        patternName
       });
-
-      return response.choices[0].message.content || 
-        'Unable to generate pattern explanation. Please try again.';
+      
+      const result = await response.json();
+      
+      return result.explanation || 'Unable to generate pattern explanation. Please try again.';
     } catch (error) {
       console.error('Error explaining pattern:', error);
       return 'Sorry, I encountered an error generating the pattern explanation. Please try again later.';

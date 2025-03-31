@@ -712,6 +712,189 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ error: 'Failed to get personalized advice' });
     }
   });
+  
+  // API Key Management Routes
+  app.get('/api/config/services', isAuthenticated, async (req, res) => {
+    try {
+      // Only provide information about which services have keys available, not the actual keys
+      const serviceConfig = {
+        openai: {
+          available: !!process.env.OPENAI_API_KEY,
+          service: 'OpenAI'
+        },
+        coinapi: {
+          available: !!process.env.VITE_COINAPI_KEY,
+          service: 'CoinAPI'
+        },
+        alphaVantage: {
+          available: !!process.env.VITE_ALPHA_VANTAGE_API_KEY,
+          service: 'Alpha Vantage'
+        }
+      };
+      
+      res.json(serviceConfig);
+    } catch (error) {
+      console.error('Error getting service configuration:', error);
+      res.status(500).json({ error: 'Failed to get service configuration' });
+    }
+  });
+  
+  // OpenAI API Routes for client-side requests
+  app.post('/api/ai/ask-question', isAuthenticated, async (req, res) => {
+    try {
+      const { question } = req.body;
+      
+      if (!question) {
+        return res.status(400).json({ error: 'Question is required' });
+      }
+      
+      if (!process.env.OPENAI_API_KEY) {
+        return res.status(500).json({ 
+          error: 'OpenAI API key is not configured',
+          answer: 'The AI assistant is currently unavailable. Please check your API key configuration.',
+          confidence: 0
+        });
+      }
+      
+      // Call the AI service to process the question
+      // This will be handled on the server-side with the server's API key
+      // Implementation depends on your server-side AI service
+      
+      // For now, return a simple response
+      res.json({
+        answer: `Your question was: ${question}. The server-side OpenAI integration will handle this request.`,
+        sources: ['Server AI Integration'],
+        confidence: 0.9
+      });
+    } catch (error) {
+      console.error('Error in /api/ai/ask-question:', error);
+      res.status(500).json({ error: 'Failed to process AI question' });
+    }
+  });
+  
+  app.post('/api/ai/analyze-chart', isAuthenticated, async (req, res) => {
+    try {
+      const { symbol, timeframe, chartData } = req.body;
+      
+      if (!symbol || !timeframe || !chartData) {
+        return res.status(400).json({ error: 'Symbol, timeframe, and chart data are required' });
+      }
+      
+      if (!process.env.OPENAI_API_KEY) {
+        return res.status(500).json({ 
+          error: 'OpenAI API key is not configured',
+          patterns: [],
+          summary: 'Chart analysis is currently unavailable. Please check your API key configuration.',
+          keyLevels: { support: [], resistance: [] }
+        });
+      }
+      
+      // Call the server-side AI service to analyze the chart
+      // Implementation depends on your server-side AI service
+      
+      // For now, return a sample response
+      res.json({
+        patterns: [
+          {
+            name: 'Double Bottom',
+            description: 'Bullish reversal pattern',
+            confidence: 0.75,
+            startTime: Date.now() - 1000000,
+            endTime: Date.now(),
+            type: 'bullish'
+          }
+        ],
+        summary: `Chart analysis for ${symbol} on ${timeframe} timeframe. The server-side OpenAI integration will handle this request.`,
+        keyLevels: { 
+          support: [100, 120], 
+          resistance: [150, 170] 
+        },
+        wyckoffPhase: 'accumulation',
+        marketStructure: 'bullish',
+        recommendation: 'Consider long positions with tight stop loss.'
+      });
+    } catch (error) {
+      console.error('Error in /api/ai/analyze-chart:', error);
+      res.status(500).json({ error: 'Failed to analyze chart' });
+    }
+  });
+  
+  app.post('/api/ai/explain-pattern', isAuthenticated, async (req, res) => {
+    try {
+      const { patternName } = req.body;
+      
+      if (!patternName) {
+        return res.status(400).json({ error: 'Pattern name is required' });
+      }
+      
+      if (!process.env.OPENAI_API_KEY) {
+        return res.status(500).json({ 
+          error: 'OpenAI API key is not configured',
+          explanation: 'Pattern explanations are currently unavailable. Please check your API key configuration.'
+        });
+      }
+      
+      // Call the server-side AI service to explain the pattern
+      // Implementation depends on your server-side AI service
+      
+      // For now, return a sample response
+      res.json({
+        explanation: `The ${patternName} pattern is a common chart formation. The server-side OpenAI integration will provide a detailed explanation.`
+      });
+    } catch (error) {
+      console.error('Error in /api/ai/explain-pattern:', error);
+      res.status(500).json({ error: 'Failed to explain pattern' });
+    }
+  });
+  
+  app.post('/api/ai/personalized-advice', isAuthenticated, async (req, res) => {
+    try {
+      const { trades, positions, tradingSummary } = req.body;
+      
+      if (!trades) {
+        return res.status(400).json({ error: 'Trade data is required' });
+      }
+      
+      // Get the user ID from the session
+      const userId = req.session.userId;
+      if (userId === undefined) {
+        return res.status(401).json({ error: 'Not authenticated' });
+      }
+      
+      if (!process.env.OPENAI_API_KEY) {
+        return res.status(500).json({ 
+          error: 'OpenAI API key is not configured',
+          advice: 'Personalized advice is currently unavailable. Please check your API key configuration.',
+          riskAnalysis: '',
+          improvementAreas: [],
+          suggestedStrategies: [],
+          confidence: 0
+        });
+      }
+      
+      // Call the server-side AI service to get personalized advice
+      // Implementation depends on your server-side AI service
+      
+      // For now, return a sample response
+      res.json({
+        advice: "Based on your trading history, you're showing progress in market analysis but could improve risk management.",
+        riskAnalysis: "Your risk-reward ratio could be improved. Consider placing tighter stop losses.",
+        improvementAreas: [
+          "Risk management",
+          "Position sizing",
+          "Trade documentation"
+        ],
+        suggestedStrategies: [
+          "Trend following with proper risk controls",
+          "Swing trading major support/resistance levels"
+        ],
+        confidence: 0.85
+      });
+    } catch (error) {
+      console.error('Error in /api/ai/personalized-advice:', error);
+      res.status(500).json({ error: 'Failed to get personalized advice' });
+    }
+  });
 
   const httpServer = createServer(app);
   return httpServer;

@@ -77,3 +77,28 @@ export interface ChartAnalysisResult {
   resistance?: number[];
   keyLevels?: number[];
 }
+
+/**
+ * Trade interface for backtesting system
+ */
+export interface Trade {
+  id: number;
+  userId: number;
+  pair: string;
+  tradeType: 'long' | 'short';
+  entryPrice: string;
+  entryTime: string;
+  amount: string;
+  status: 'active' | 'completed';
+  exitPrice?: string;
+  exitTime?: string;
+  stopLoss?: string;
+  takeProfit?: string;
+  notes?: string;
+  strategy?: string;
+  profitLoss?: number;
+  volume?: number;
+  leverage?: number;
+  fees?: number;
+  tags?: string[];
+}
