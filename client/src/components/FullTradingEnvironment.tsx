@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
-import { EnhancedTradingViewWidget } from './EnhancedTradingViewWidget';
+import EnhancedTradingViewWidget, { TradingViewRef } from './EnhancedTradingViewWidget';
 import { ProTradingPanel } from './ProTradingPanel';
 import { Position } from '@/types/trading';
 import {
@@ -27,6 +27,9 @@ import {
   DialogTitle,
   DialogFooter,
 } from '@/components/ui/dialog';
+import {
+  Switch
+} from '@/components/ui/switch';
 import {
   Tabs,
   TabsContent,
@@ -201,7 +204,7 @@ export function FullTradingEnvironment({
     showRightAxis: true,
   });
   
-  const tradingViewRef = useRef<any>(null);
+  const tradingViewRef = useRef<TradingViewRef>(null);
   
   // Initialize positions from props
   useEffect(() => {
@@ -703,7 +706,7 @@ export function FullTradingEnvironment({
                     </label>
                     <Switch 
                       checked={tvSettings.showVolume}
-                      onCheckedChange={(checked) => setTVSettings({...tvSettings, showVolume: checked})}
+                      onCheckedChange={(checked: boolean) => setTVSettings({...tvSettings, showVolume: checked})}
                     />
                   </div>
                   
@@ -713,7 +716,7 @@ export function FullTradingEnvironment({
                     </label>
                     <Switch 
                       checked={tvSettings.showGrid}
-                      onCheckedChange={(checked) => setTVSettings({...tvSettings, showGrid: checked})}
+                      onCheckedChange={(checked: boolean) => setTVSettings({...tvSettings, showGrid: checked})}
                     />
                   </div>
                   
@@ -723,7 +726,7 @@ export function FullTradingEnvironment({
                     </label>
                     <Switch 
                       checked={tvSettings.showDateRanges}
-                      onCheckedChange={(checked) => setTVSettings({...tvSettings, showDateRanges: checked})}
+                      onCheckedChange={(checked: boolean) => setTVSettings({...tvSettings, showDateRanges: checked})}
                     />
                   </div>
                   
@@ -733,7 +736,7 @@ export function FullTradingEnvironment({
                     </label>
                     <Switch 
                       checked={tvSettings.autoScale}
-                      onCheckedChange={(checked) => setTVSettings({...tvSettings, autoScale: checked})}
+                      onCheckedChange={(checked: boolean) => setTVSettings({...tvSettings, autoScale: checked})}
                     />
                   </div>
                   
@@ -743,7 +746,7 @@ export function FullTradingEnvironment({
                     </label>
                     <Switch 
                       checked={tvSettings.showWatermark}
-                      onCheckedChange={(checked) => setTVSettings({...tvSettings, showWatermark: checked})}
+                      onCheckedChange={(checked: boolean) => setTVSettings({...tvSettings, showWatermark: checked})}
                     />
                   </div>
                   
@@ -753,7 +756,7 @@ export function FullTradingEnvironment({
                     </label>
                     <Switch 
                       checked={tvSettings.showBorders}
-                      onCheckedChange={(checked) => setTVSettings({...tvSettings, showBorders: checked})}
+                      onCheckedChange={(checked: boolean) => setTVSettings({...tvSettings, showBorders: checked})}
                     />
                   </div>
                   
@@ -763,7 +766,7 @@ export function FullTradingEnvironment({
                     </label>
                     <Switch 
                       checked={tvSettings.showLeftAxis}
-                      onCheckedChange={(checked) => setTVSettings({...tvSettings, showLeftAxis: checked})}
+                      onCheckedChange={(checked: boolean) => setTVSettings({...tvSettings, showLeftAxis: checked})}
                     />
                   </div>
                   
@@ -773,7 +776,7 @@ export function FullTradingEnvironment({
                     </label>
                     <Switch 
                       checked={tvSettings.showRightAxis}
-                      onCheckedChange={(checked) => setTVSettings({...tvSettings, showRightAxis: checked})}
+                      onCheckedChange={(checked: boolean) => setTVSettings({...tvSettings, showRightAxis: checked})}
                     />
                   </div>
                 </div>

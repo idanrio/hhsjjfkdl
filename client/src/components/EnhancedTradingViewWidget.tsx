@@ -1,8 +1,15 @@
-import React, { useRef, useEffect, useState } from 'react';
+import React, { useRef, useEffect, useState, forwardRef, useImperativeHandle, Ref, ForwardRefRenderFunction } from 'react';
 import { useTranslation } from 'react-i18next';
 
+// Define the type for the ref
+export interface TradingViewRef {
+  refreshWidget: () => void;
+  widget: any;
+  getCurrentPrice: () => number;
+}
+
 // Advanced TradingView Widget options interface
-interface AdvancedTradingViewWidgetProps {
+export interface AdvancedTradingViewWidgetProps {
   symbol?: string;
   interval?: string;
   timezone?: string;
@@ -84,61 +91,67 @@ interface AdvancedTradingViewWidgetProps {
   }[];
 }
 
-export const EnhancedTradingViewWidget: React.FC<AdvancedTradingViewWidgetProps> = ({
-  symbol = 'BINANCE:BTCUSDT',
-  interval = '1D',
-  timezone = 'Etc/UTC',
-  theme = 'dark',
-  width = '100%',
-  height = '500',
-  locale = 'en',
-  toolbar_bg = '#f1f3f6',
-  enable_publishing = false,
-  withdateranges = true, 
-  hide_side_toolbar = true,
-  allow_symbol_change = true,
-  save_image = true,
-  show_popup_button = false,
-  popup_width = '1000',
-  popup_height = '650',
-  container_id = 'tradingview_widget',
-  studies = [],
-  autosize = false,
-  hide_top_toolbar = false,
-  details = false,
-  hotlist = false,
-  calendar = false,
-  news = [],
-  alerts = true,
-  hide_legend = false,
-  drawing_access,
-  studies_access,
-  disabled_features = [],
-  enabled_features = [],
-  savedDrawings = true,
-  savedCharts = true,
-  fullscreen = false,
-  charts_storage_url,
-  charts_storage_api_version = '1.1',
-  client_id,
-  user_id,
-  indicators_file_name,
-  loading_screen,
-  custom_css_url,
-  favorites,
-  study_count_limit = 30,
-  symbol_search_request_delay = 500,
-  compare_symbols = [],
-  show_interval_dialog_on_key_press = true,
-  supported_resolutions = ['1', '5', '15', '30', '60', '240', 'D', 'W', 'M'],
-  preset,
-  session,
-  style,
-  debug = false,
-  chartType,
-  onPriceUpdate,
-  customIndicators = [],
-}) => {
+const EnhancedTradingViewWidgetComponent: ForwardRefRenderFunction<
+  TradingViewRef,
+  AdvancedTradingViewWidgetProps
+> = (
+  {
+    symbol = 'BINANCE:BTCUSDT',
+    interval = '1D',
+    timezone = 'Etc/UTC',
+    theme = 'dark',
+    width = '100%',
+    height = '500',
+    locale = 'en',
+    toolbar_bg = '#f1f3f6',
+    enable_publishing = false,
+    withdateranges = true, 
+    hide_side_toolbar = true,
+    allow_symbol_change = true,
+    save_image = true,
+    show_popup_button = false,
+    popup_width = '1000',
+    popup_height = '650',
+    container_id = 'tradingview_widget',
+    studies = [],
+    autosize = false,
+    hide_top_toolbar = false,
+    details = false,
+    hotlist = false,
+    calendar = false,
+    news = [],
+    alerts = true,
+    hide_legend = false,
+    drawing_access,
+    studies_access,
+    disabled_features = [],
+    enabled_features = [],
+    savedDrawings = true,
+    savedCharts = true,
+    fullscreen = false,
+    charts_storage_url,
+    charts_storage_api_version = '1.1',
+    client_id,
+    user_id,
+    indicators_file_name,
+    loading_screen,
+    custom_css_url,
+    favorites,
+    study_count_limit = 30,
+    symbol_search_request_delay = 500,
+    compare_symbols = [],
+    show_interval_dialog_on_key_press = true,
+    supported_resolutions = ['1', '5', '15', '30', '60', '240', 'D', 'W', 'M'],
+    preset,
+    session,
+    style,
+    debug = false,
+    chartType,
+    onPriceUpdate,
+    customIndicators = [],
+  },
+  ref
+) => {
   const { i18n } = useTranslation();
   const container = useRef<HTMLDivElement>(null);
   const scriptRef = useRef<HTMLScriptElement | null>(null);
@@ -330,8 +343,8 @@ export const EnhancedTradingViewWidget: React.FC<AdvancedTradingViewWidgetProps>
   };
 
   // Expose the refresh function and widget reference to parent
-  React.useImperativeHandle(
-    container,
+  useImperativeHandle(
+    ref,
     () => ({
       refreshWidget,
       widget: widgetRef.current,
@@ -349,5 +362,7 @@ export const EnhancedTradingViewWidget: React.FC<AdvancedTradingViewWidgetProps>
     />
   );
 };
+
+export const EnhancedTradingViewWidget = forwardRef(EnhancedTradingViewWidgetComponent);
 
 export default EnhancedTradingViewWidget;
