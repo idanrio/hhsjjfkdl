@@ -2,8 +2,24 @@ import OpenAI from "openai";
 import { storage } from "../storage";
 import { Trade } from "../../shared/schema";
 
-// Initialize the OpenAI API client
-const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+// Initialize the OpenAI API client with better error handling
+const initializeOpenAI = () => {
+  const apiKey = process.env.OPENAI_API_KEY;
+  
+  if (!apiKey) {
+    console.error("OpenAI API key is missing. Please set the OPENAI_API_KEY environment variable.");
+    return null;
+  }
+  
+  try {
+    return new OpenAI({ apiKey });
+  } catch (error) {
+    console.error("Error initializing OpenAI client:", error);
+    return null;
+  }
+};
+
+const openai = initializeOpenAI();
 
 // Comprehensive Wyckoff methodology knowledge base
 const tradingKnowledgeBase = {
@@ -93,6 +109,14 @@ export const aiService = {
    */
   processQuestion: async (question: string): Promise<{ answer: string, sources?: string[] }> => {
     try {
+      if (!openai) {
+        console.error("OpenAI client is not initialized");
+        return {
+          answer: "The AI service is currently unavailable. Please check your API key configuration.",
+          sources: determineSourcesFromQuestion(question)
+        };
+      }
+      
       // the newest OpenAI model is "gpt-4o" which was released May 13, 2024. do not change this unless explicitly requested by the user
       const response = await openai.chat.completions.create({
         model: "gpt-4o",
@@ -127,6 +151,11 @@ export const aiService = {
    */
   analyzeChart: async (chartData: any, symbol: string, timeframe: string) => {
     try {
+      if (!openai) {
+        console.error("OpenAI client is not initialized");
+        return { patterns: [], error: "AI service unavailable" };
+      }
+      
       // Format the chart data for analysis
       const formattedData = formatChartDataForAnalysis(chartData);
       
@@ -189,6 +218,11 @@ export const aiService = {
         throw new Error("User not found");
       }
       
+      if (!openai) {
+        console.error("OpenAI client is not initialized");
+        return "The AI coaching service is currently unavailable. Please check your API key configuration.";
+      }
+      
       // Generate a summary of the user's trading performance
       const tradingSummary = generateTradingSummary(trades);
       
@@ -230,6 +264,14 @@ export const aiService = {
     try {
       if (!imageBase64) {
         throw new Error("No image provided for analysis");
+      }
+      
+      if (!openai) {
+        console.error("OpenAI client is not initialized");
+        return {
+          success: false,
+          error: "The AI analysis service is currently unavailable. Please check your API key configuration."
+        };
       }
       
       // Format the notes if provided
@@ -417,6 +459,11 @@ async function generateEnhancedImage(imageBase64: string, analysis: any): Promis
   try {
     if (!process.env.OPENAI_API_KEY) {
       console.warn("OpenAI API key missing. Cannot generate enhanced image.");
+      return { enhancedImage: `data:image/jpeg;base64,${imageBase64}` };
+    }
+    
+    if (!openai) {
+      console.error("OpenAI client is not initialized");
       return { enhancedImage: `data:image/jpeg;base64,${imageBase64}` };
     }
     

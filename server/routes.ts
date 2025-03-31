@@ -716,10 +716,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // API Key Management Routes
   app.get('/api/config/services', isAuthenticated, async (req, res) => {
     try {
+      // Perform a simple test to check if OpenAI key is not just present but also valid
+      let openaiAvailable = false;
+      if (process.env.OPENAI_API_KEY) {
+        try {
+          const OpenAI = await import('openai');
+          const openai = new OpenAI.default({ apiKey: process.env.OPENAI_API_KEY });
+          // Optional: Could do a basic model list call to verify key works, but we'll skip for performance
+          // await openai.models.list();
+          openaiAvailable = true;
+        } catch (e) {
+          console.error('OpenAI key validation failed:', e);
+          openaiAvailable = false;
+        }
+      }
+      
       // Only provide information about which services have keys available, not the actual keys
       const serviceConfig = {
         openai: {
-          available: !!process.env.OPENAI_API_KEY,
+          available: openaiAvailable,
           service: 'OpenAI'
         },
         coinapi: {

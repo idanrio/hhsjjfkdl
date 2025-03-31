@@ -141,28 +141,102 @@ export function ProTradingPanel({
       return;
     }
     
-    // Create stop loss and take profit values if enabled
-    const stopLoss = enableStopLossFromOrder ? parseFloat(stopLossPrice) : null;
-    const takeProfit = enableTakeProfitFromOrder ? parseFloat(takeProfitPrice) : null;
-    
-    // Create the position based on the order type
-    if (orderType === 'market') {
-      onCreatePosition({
-        type: tradeType,
-        entryPrice: currentPrice,
-        amount,
-        leverage,
-        stopLoss,
-        takeProfit
-      });
-    } else if (orderType === 'limit') {
-      // For limit orders, we would actually create an order, not a position
-      // In a real system, this would go to an order book
-      alert(t('Limit orders are not implemented in this demo'));
-    } else if (orderType === 'stop') {
-      alert(t('Stop orders are not implemented in this demo'));
-    } else if (orderType === 'stop_limit') {
-      alert(t('Stop-limit orders are not implemented in this demo'));
+    try {
+      // Create stop loss and take profit values if enabled
+      let stopLoss = null;
+      let takeProfit = null;
+      
+      if (enableStopLossFromOrder) {
+        if (stopLossPrice) {
+          stopLoss = parseFloat(stopLossPrice);
+        } else {
+          // Default stop loss values if none provided
+          stopLoss = tradeType === 'long' 
+            ? currentPrice * 0.95  // 5% below current price for long
+            : currentPrice * 1.05; // 5% above current price for short
+        }
+      }
+      
+      if (enableTakeProfitFromOrder) {
+        if (takeProfitPrice) {
+          takeProfit = parseFloat(takeProfitPrice);
+        } else {
+          // Default take profit values if none provided
+          takeProfit = tradeType === 'long' 
+            ? currentPrice * 1.1   // 10% above current price for long
+            : currentPrice * 0.9;  // 10% below current price for short
+        }
+      }
+      
+      // Create the position based on the order type
+      if (orderType === 'market') {
+        onCreatePosition({
+          type: tradeType,
+          entryPrice: currentPrice,
+          amount,
+          leverage,
+          stopLoss,
+          takeProfit
+        });
+        
+        // Reset form values after successful creation
+        if (!reductionOnly) {
+          setTradeAmount('0.01');
+          setTakeProfitPrice('');
+          setStopLossPrice('');
+          setEnableTakeProfitFromOrder(false);
+          setEnableStopLossFromOrder(false);
+        }
+      } else if (orderType === 'limit') {
+        // For limit orders, we would actually create an order, not a position
+        // In a real system, this would go to an order book
+        const limitPriceValue = parseFloat(limitPrice);
+        if (isNaN(limitPriceValue)) {
+          alert(t('Please enter a valid limit price'));
+          return;
+        }
+        
+        // In a backtesting environment, we can simulate the limit order immediately
+        // if the price is favorable
+        if ((tradeType === 'long' && currentPrice <= limitPriceValue) || 
+            (tradeType === 'short' && currentPrice >= limitPriceValue)) {
+          onCreatePosition({
+            type: tradeType,
+            entryPrice: limitPriceValue,
+            amount,
+            leverage,
+            stopLoss,
+            takeProfit
+          });
+        } else {
+          alert(t('Limit order would be placed in a real system. For demo purposes, orders execute only if price is already favorable.'));
+        }
+      } else if (orderType === 'stop' || orderType === 'stop_limit') {
+        const stopPriceValue = parseFloat(stopPrice);
+        if (isNaN(stopPriceValue)) {
+          alert(t('Please enter a valid stop price'));
+          return;
+        }
+        
+        // In a backtesting environment, we can simulate the stop order immediately
+        // if the price is favorable
+        if ((tradeType === 'long' && currentPrice >= stopPriceValue) || 
+            (tradeType === 'short' && currentPrice <= stopPriceValue)) {
+          onCreatePosition({
+            type: tradeType,
+            entryPrice: orderType === 'stop_limit' ? parseFloat(limitPrice) : stopPriceValue,
+            amount,
+            leverage,
+            stopLoss,
+            takeProfit
+          });
+        } else {
+          alert(t('Stop order would be placed in a real system. For demo purposes, orders execute only if price is already favorable.'));
+        }
+      }
+    } catch (error) {
+      console.error('Error creating position:', error);
+      alert(t('Error creating position. Please try again.'));
     }
   };
   
@@ -461,9 +535,13 @@ export function ProTradingPanel({
                 <Table>
                   <TableHeader>
                     <TableRow>
+                      <TableHead>{t('Symbol')}</TableHead>
                       <TableHead>{t('Type')}</TableHead>
                       <TableHead className="text-right">{t('Entry')}</TableHead>
-                      <TableHead className="text-right">{t('Amount')}</TableHead>
+                      <TableHead className="text-right">{t('Current')}</TableHead>
+                      <TableHead className="text-right">{t('Size')}</TableHead>
+                      <TableHead className="text-right">{t('Take Profit')}</TableHead>
+                      <TableHead className="text-right">{t('Stop Loss')}</TableHead>
                       <TableHead className="text-right">{t('PnL')}</TableHead>
                       <TableHead></TableHead>
                     </TableRow>
@@ -473,13 +551,18 @@ export function ProTradingPanel({
                       const pnl = calculatePnL(position);
                       const pnlPercent = calculatePnLPercentage(position);
                       const isProfitable = pnl > 0;
+                      const isBreakEven = Math.abs(pnl) < 0.01;
+                      const positionValue = position.amount * position.entryPrice * position.leverage;
                       
                       return (
-                        <TableRow key={position.id}>
+                        <TableRow key={position.id} className="position-row">
+                          <TableCell>
+                            <div className="font-medium">{symbol}</div>
+                          </TableCell>
                           <TableCell>
                             <Badge 
                               variant={position.type === 'long' ? 'outline' : 'destructive'} 
-                              className="flex items-center"
+                              className={`flex items-center ${position.type === 'long' ? 'border-green-500 text-green-600' : 'border-red-500'}`}
                             >
                               {position.type === 'long' ? (
                                 <TrendingUp className="h-3 w-3 mr-1" />
@@ -490,11 +573,31 @@ export function ProTradingPanel({
                               {position.leverage > 1 && <span className="ml-1">{position.leverage}x</span>}
                             </Badge>
                           </TableCell>
-                          <TableCell className="text-right">${position.entryPrice.toFixed(2)}</TableCell>
-                          <TableCell className="text-right">{position.amount}</TableCell>
-                          <TableCell className={`text-right ${isProfitable ? 'text-green-600' : 'text-red-600'}`}>
+                          <TableCell className="text-right font-mono">${position.entryPrice.toFixed(2)}</TableCell>
+                          <TableCell className="text-right font-mono">${currentPrice.toFixed(2)}</TableCell>
+                          <TableCell className="text-right">
                             <div className="flex flex-col items-end">
-                              <span>${Math.abs(pnl).toFixed(2)}</span>
+                              <span>{position.amount}</span>
+                              <span className="text-xs text-muted-foreground">${positionValue.toFixed(2)}</span>
+                            </div>
+                          </TableCell>
+                          <TableCell className="text-right">
+                            {position.takeProfit ? (
+                              <span className="font-mono text-green-500">${position.takeProfit.toFixed(2)}</span>
+                            ) : (
+                              <span className="text-xs text-muted-foreground">—</span>
+                            )}
+                          </TableCell>
+                          <TableCell className="text-right">
+                            {position.stopLoss ? (
+                              <span className="font-mono text-red-500">${position.stopLoss.toFixed(2)}</span>
+                            ) : (
+                              <span className="text-xs text-muted-foreground">—</span>
+                            )}
+                          </TableCell>
+                          <TableCell className={`text-right ${isProfitable ? 'text-green-600' : isBreakEven ? 'text-gray-500' : 'text-red-600'}`}>
+                            <div className="flex flex-col items-end">
+                              <span className="font-mono">${Math.abs(pnl).toFixed(2)}</span>
                               <span className="text-xs">({pnlPercent.toFixed(2)}%)</span>
                             </div>
                           </TableCell>
@@ -505,6 +608,7 @@ export function ProTradingPanel({
                                 size="sm" 
                                 onClick={() => onClosePosition(position.id)}
                                 className="h-8 w-8 p-0"
+                                title={t('Close Position')}
                               >
                                 <X className="h-4 w-4" />
                               </Button>

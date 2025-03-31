@@ -263,8 +263,30 @@ const EnhancedTradingViewWidgetComponent: ForwardRefRenderFunction<
         debug,
         
         // Advanced options
-        disabled_features,
-        enabled_features,
+        disabled_features: [
+          'header_widget_dom_node', // Removes the TradingView logo
+          'use_localstorage_for_settings',
+          'timeframes_toolbar',
+          ...disabled_features
+        ],
+        enabled_features: [
+          'side_toolbar_in_fullscreen_mode',
+          'header_indicators', // Add indicators like TradingView
+          'header_chart_type',
+          'show_interval_dialog_on_key_press',
+          'header_settings',
+          'header_screenshot',
+          'header_symbol_search',
+          'header_compare',
+          'header_undo_redo',
+          'header_saveload',
+          'study_templates',
+          'display_market_status',
+          'use_localstorage_for_settings',
+          'border_around_the_chart',
+          'replay_mode', // Add replay button
+          ...enabled_features
+        ],
         saved_data_meta_info: {
           uid: user_id || 'default_user',
           userName: user_id || 'Default User',
