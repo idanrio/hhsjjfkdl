@@ -136,8 +136,7 @@ export function TradingCoach({ onAnalysisComplete }: TradingCoachProps) {
       
       // Call AI service for Wyckoff analysis
       // Temporary fix until aiService.analyzeChartImage is fully implemented
-      const result = { 
-        success: true,
+      const result: WyckoffAnalysisResult = { 
         wyckoffPhase: "accumulation",
         confidence: 0.85,
         phaseDescription: "Identified Wyckoff accumulation phase with characteristic price action.",
@@ -156,7 +155,8 @@ export function TradingCoach({ onAnalysisComplete }: TradingCoachProps) {
             url: "#",
             type: "Article"
           }
-        ]
+        ],
+        enhancedImage: imagePreview || undefined // Use the original image for now until the AI service is fully implemented
       };
       
       setAnalysisResult(result);
