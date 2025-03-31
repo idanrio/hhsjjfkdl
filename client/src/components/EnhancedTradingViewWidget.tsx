@@ -1,11 +1,30 @@
 import React, { useRef, useEffect, useState, forwardRef, useImperativeHandle, Ref, ForwardRefRenderFunction } from 'react';
 import { useTranslation } from 'react-i18next';
 
+// Extend the window object with TradingView properties
+declare global {
+  interface Window {
+    TradingView: any;
+  }
+}
+
+// Define the replay status interface
+interface ReplayStatus {
+  active: boolean;
+  speed?: number;
+  timer?: any;
+  bufferSize?: number;
+}
+
 // Define the type for the ref
 export interface TradingViewRef {
   refreshWidget: () => void;
   widget: any;
   getCurrentPrice: () => number;
+  toggleReplayMode: () => void;
+  setReplaySpeed: (speed: number) => void;
+  isReplayAvailable: () => boolean;
+  getReplayStatus: () => ReplayStatus;
 }
 
 // Advanced TradingView Widget options interface
@@ -262,9 +281,84 @@ const EnhancedTradingViewWidgetComponent: ForwardRefRenderFunction<
         fullscreen,
         debug,
         
+        // Enhanced features for indicators and replay
+        // Indicator categories matching TradingView Pro
+        preset: "capitulre", // Custom preset to match your company branding
+        
+        // Load the studies specified in props
+        studies: studies || [],
+        
         // Advanced options
-        disabled_features,
-        enabled_features,
+        disabled_features: [
+          ...(disabled_features || []),
+        ],
+        enabled_features: [
+          ...(enabled_features || []),
+          
+          // Advanced features for professional trading
+          "study_templates",
+          "use_localstorage_for_settings",
+          "save_chart_properties_to_local_storage",
+          "right_bar_stays_on_scroll",
+          "header_widget_dom_node",
+          "side_toolbar_in_fullscreen_mode",
+          
+          // Replay mode features
+          "show_replay",
+          "replay_mode",
+          "replay_mode_available",
+          "replay_reset_time_visible",
+          
+          // Study/indicator features
+          "show_chart_property_page",
+          "property_pages",
+          "chart_property_page_style",
+          "chart_property_page_scales",
+          "chart_property_page_background",
+          "chart_property_page_timezone_sessions",
+          "support_multicharts",
+          "header_fullscreen_button",
+          "header_widget",
+          "header_screenshot",
+          "header_saveload",
+          "header_symbol_search",
+          "header_indicators",
+          "header_compare",
+          "header_undo_redo", 
+          "header_settings",
+          "border_around_the_chart",
+          "display_market_status",
+          "timeframes_toolbar",
+          "go_to_date",
+          "property_pages",
+          "show_chart_property_page",
+          "symbol_info",
+          "streaming_high_frequency",
+          "volume_force_overlay",
+          "left_toolbar",
+          "control_bar",
+          "legend_context_menu",
+          "scales_context_menu",
+          "chart_property_page_background",
+          "chart_property_page_scales",
+          "chart_property_page_timezone_sessions",
+          "chart_property_page_trading",
+          "chart_property_page_style",
+          "show_interval_dialog_on_key_press",
+          "caption_buttons_text_if_possible",
+          "show_object_tree",
+          "source_selection_markers",
+          "property_pages",
+          "support_search_bar",
+          "support_multicharts",
+          "drawing_templates",
+          "chart_crosshair_menu",
+          // Replay mode features
+          "show_replay",
+          "replay_mode",
+          "replay_reset_time_visible",
+          "replay_mode_available",
+        ],
         saved_data_meta_info: {
           uid: user_id || 'default_user',
           userName: user_id || 'Default User',
@@ -307,13 +401,77 @@ const EnhancedTradingViewWidgetComponent: ForwardRefRenderFunction<
       if (preset) widgetOptions.preset = preset;
       if (session) widgetOptions.session = session;
       
+      // Define indicator categories for the menu (matching TradingView Pro)
+      widgetOptions.studies_overrides = {
+        "volume.volume.color.0": "#ea3943", // Red for down volume
+        "volume.volume.color.1": "#16c784", // Green for up volume
+        "volume.volume.transparency": 70,
+        "volume.volume ma.color": "#FF9800",
+        "volume.volume ma.transparency": 30,
+        "volume.volume ma.linewidth": 1,
+        "macd.histogram.color": "#22a1e2", // Company light blue 
+        "macd.macd.color": "#1c3d86", // Company dark blue
+        "macd.signal.color": "#FF9800"
+      };
+      
+      // Define indicator categories structure
+      widgetOptions.favorites = {
+        intervals: ["1D", "1W", "1M"],
+        chartTypes: ["Candles", "Bars", "Line"],
+        studies: [
+          "MACD",
+          "RSI",
+          "Bollinger Bands",
+          "Moving Average",
+          "Ichimoku Cloud"
+        ]
+      };
+      
       // Add onChartReady callback to the widget options
       widgetOptions.onChartReady = function() {
+        // Set up custom theme to match Capitulre brand colors
+        widget.applyOverrides({
+          "paneProperties.background": theme === 'dark' ? "#131722" : "#FFFFFF",
+          "paneProperties.vertGridProperties.color": theme === 'dark' ? "#1E3d80" : "#E3F2FD",
+          "paneProperties.horzGridProperties.color": theme === 'dark' ? "#1E3d80" : "#E3F2FD",
+          "scalesProperties.lineColor": theme === 'dark' ? "#22a1e2" : "#1c3d86",
+          "mainSeriesProperties.candleStyle.upColor": "#16c784",
+          "mainSeriesProperties.candleStyle.downColor": "#ea3943",
+          "mainSeriesProperties.candleStyle.borderUpColor": "#16c784",
+          "mainSeriesProperties.candleStyle.borderDownColor": "#ea3943",
+          "mainSeriesProperties.candleStyle.wickUpColor": "#16c784",
+          "mainSeriesProperties.candleStyle.wickDownColor": "#ea3943",
+        });
+        
         // Add the studies
         if (studies && studies.length > 0) {
           studies.forEach(study => {
             widget.chart().createStudy(study);
           });
+        }
+        
+        // Configure Replay mode settings
+        try {
+          const chart = widget.chart();
+          
+          // This enables the replay functionality with proper visual styling
+          chart.onIntervalChanged().subscribe(null, () => {
+            // Refresh replay availability when interval changes
+            if (chart.isReplayAvailable()) {
+              console.log("Replay is available for this symbol and timeframe");
+            }
+          });
+          
+          // Add event listener for replay mode
+          chart.onReplayStateChanged().subscribe(null, (replayState: ReplayStatus) => {
+            if (replayState.active) {
+              console.log("Replay mode is active");
+            } else {
+              console.log("Replay mode is inactive");
+            }
+          });
+        } catch (error) {
+          console.error("Error setting up replay:", error);
         }
         
         // Set up price updates if callback is provided
@@ -355,6 +513,28 @@ const EnhancedTradingViewWidgetComponent: ForwardRefRenderFunction<
             }
           });
         }
+        
+        // Configure popular default indicators for quick access
+        const defaultIndicators = [
+          { name: "Volume", id: "Volume" },
+          { name: "Moving Average", id: "Moving Average", inputs: { length: 50, source: "close" } },
+          { name: "Moving Average", id: "Moving Average", inputs: { length: 200, source: "close" } },
+          { name: "RSI", id: "RSI" }
+        ];
+        
+        // Load default indicators
+        defaultIndicators.forEach(indicator => {
+          try {
+            widget.chart().createStudy(
+              indicator.id,
+              false,
+              false,
+              indicator.inputs
+            );
+          } catch (error) {
+            console.error(`Error loading default indicator ${indicator.id}:`, error);
+          }
+        });
       };
       
       // Initialize widget
@@ -370,13 +550,75 @@ const EnhancedTradingViewWidgetComponent: ForwardRefRenderFunction<
     }
   };
 
-  // Expose the refresh function and widget reference to parent
+  // Function to toggle replay mode
+  const toggleReplayMode = () => {
+    if (widgetRef.current) {
+      try {
+        const chart = widgetRef.current.chart();
+        if (chart.isReplayAvailable()) {
+          if (chart.replayStatus().active) {
+            // If replay is active, stop it
+            chart.stopReplaying();
+          } else {
+            // If replay is not active, start it
+            chart.startReplaying();
+          }
+        } else {
+          console.log("Replay is not available for this symbol/timeframe");
+        }
+      } catch (error) {
+        console.error("Error toggling replay mode:", error);
+      }
+    }
+  };
+
+  // Function to control replay speed
+  const setReplaySpeed = (speed: number) => {
+    if (widgetRef.current) {
+      try {
+        const chart = widgetRef.current.chart();
+        if (chart.replayStatus().active) {
+          chart.setReplaySpeed(speed);
+        }
+      } catch (error) {
+        console.error("Error setting replay speed:", error);
+      }
+    }
+  };
+
+  // Expose functions and widget reference to parent
   useImperativeHandle(
     ref,
     () => ({
       refreshWidget,
       widget: widgetRef.current,
-      getCurrentPrice: () => currentPrice
+      getCurrentPrice: () => currentPrice,
+      toggleReplayMode,
+      setReplaySpeed,
+      // Helper method to check if replay is available
+      isReplayAvailable: () => {
+        if (widgetRef.current) {
+          try {
+            return widgetRef.current.chart().isReplayAvailable();
+          } catch (error) {
+            console.error("Error checking replay availability:", error);
+            return false;
+          }
+        }
+        return false;
+      },
+      // Helper method to get replay status
+      getReplayStatus: () => {
+        if (widgetRef.current) {
+          try {
+            return widgetRef.current.chart().replayStatus();
+          } catch (error) {
+            console.error("Error getting replay status:", error);
+            return { active: false };
+          }
+        }
+        return { active: false };
+      }
     }),
     [widgetRef.current, currentPrice]
   );

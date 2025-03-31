@@ -58,6 +58,9 @@ import {
   Star,
   Clock,
   BarChart3,
+  BarChart,
+  LineChart,
+  Activity,
   Settings,
   List,
   Eye,
@@ -380,9 +383,10 @@ export function FullTradingEnvironment({
   };
   
   // Settings that will be passed to the TradingView widget
+  // We're removing some of the header items since we're implementing our own custom controls
   const disabledFeatures = [
     'header_symbol_search',
-    'header_indicators',
+    'header_indicators', // We implement our own indicators button
     'header_compare',
     'header_undo_redo',
     'header_saveload',
@@ -397,11 +401,38 @@ export function FullTradingEnvironment({
     ...(tvSettings.showRightAxis ? [] : ['right_toolbar']),
   ];
   
+  // Enable features for both indicators and replay functionality
   const enabledFeatures = [
+    // Study/indicator features
     'study_templates',
     'use_localstorage_for_settings',
     'side_toolbar_in_fullscreen_mode',
     'show_trading_notifications_history',
+    'support_multicharts',
+    'chart_property_page_style',
+    'property_pages',
+    'show_chart_property_page',
+    'chart_crosshair_menu',
+    'create_volume_indicator_by_default',
+    
+    // Replay mode features
+    'show_replay',
+    'replay_mode',
+    'replay_reset_time_visible',
+    'replay_mode_available',
+    
+    // General UI improvements
+    'control_bar',
+    'legend_context_menu',
+    'scales_context_menu',
+    'symbol_info',
+    'timeframes_toolbar',
+    'display_market_status',
+    'go_to_date',
+    'header_widget',
+    'save_chart_properties_to_local_storage',
+    'volume_force_overlay',
+    'right_bar_stays_on_scroll'
   ];
   
   // List of TradingView indicators to be loaded when the chart is initialized
@@ -796,6 +827,204 @@ export function FullTradingEnvironment({
           <Badge className="text-sm">
             {currentPrice.toFixed(2)}
           </Badge>
+          
+          {/* Indicators Button */}
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                className="flex items-center gap-1"
+              >
+                <BarChart3 className="h-4 w-4 text-primary" />
+                <span className="text-xs font-medium text-primary">Indicators</span>
+                <ChevronDown className="h-3 w-3 opacity-50" />
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-56 p-3">
+              <div className="flex flex-col gap-3">
+                <h4 className="font-medium text-sm">{t('Indicators')}</h4>
+                
+                <Button 
+                  className="w-full"
+                  onClick={() => {
+                    // Open the native TradingView indicator selection
+                    if (tradingViewRef.current?.widget) {
+                      try {
+                        const chart = tradingViewRef.current.widget.chart();
+                        chart.executeActionById("insertIndicator");
+                      } catch (error) {
+                        console.error("Error opening indicators menu:", error);
+                      }
+                    }
+                  }}
+                >
+                  {t('Add Indicator')}
+                </Button>
+                
+                <div className="space-y-2">
+                  <h5 className="text-xs font-medium">{t('Popular Indicators')}</h5>
+                  <div className="space-y-1">
+                    <Button 
+                      size="sm" 
+                      variant="outline" 
+                      className="w-full justify-between"
+                      onClick={() => {
+                        if (tradingViewRef.current?.widget) {
+                          const chart = tradingViewRef.current.widget.chart();
+                          chart.createStudy('Moving Average', false, false, [50]);
+                        }
+                      }}
+                    >
+                      <span className="text-xs">MA (50)</span>
+                      <LineChart className="h-3 w-3" />
+                    </Button>
+                    <Button 
+                      size="sm" 
+                      variant="outline" 
+                      className="w-full justify-between"
+                      onClick={() => {
+                        if (tradingViewRef.current?.widget) {
+                          const chart = tradingViewRef.current.widget.chart();
+                          chart.createStudy('Moving Average', false, false, [200]);
+                        }
+                      }}
+                    >
+                      <span className="text-xs">MA (200)</span>
+                      <LineChart className="h-3 w-3" />
+                    </Button>
+                    <Button 
+                      size="sm" 
+                      variant="outline" 
+                      className="w-full justify-between"
+                      onClick={() => {
+                        if (tradingViewRef.current?.widget) {
+                          const chart = tradingViewRef.current.widget.chart();
+                          chart.createStudy('MACD', false, false);
+                        }
+                      }}
+                    >
+                      <span className="text-xs">MACD</span>
+                      <BarChart className="h-3 w-3" />
+                    </Button>
+                    <Button 
+                      size="sm" 
+                      variant="outline" 
+                      className="w-full justify-between"
+                      onClick={() => {
+                        if (tradingViewRef.current?.widget) {
+                          const chart = tradingViewRef.current.widget.chart();
+                          chart.createStudy('Bollinger Bands', false, false);
+                        }
+                      }}
+                    >
+                      <span className="text-xs">Bollinger Bands</span>
+                      <Activity className="h-3 w-3" />
+                    </Button>
+                    <Button 
+                      size="sm" 
+                      variant="outline" 
+                      className="w-full justify-between"
+                      onClick={() => {
+                        if (tradingViewRef.current?.widget) {
+                          const chart = tradingViewRef.current.widget.chart();
+                          chart.createStudy('Relative Strength Index', false, false);
+                        }
+                      }}
+                    >
+                      <span className="text-xs">RSI</span>
+                      <Activity className="h-3 w-3" />
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            </PopoverContent>
+          </Popover>
+          
+          {/* Replay Controls */}
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                className="flex items-center gap-1"
+              >
+                <Clock className="h-4 w-4 text-primary" />
+                <span className="text-xs font-medium text-primary">Replay</span>
+                <ChevronDown className="h-3 w-3 opacity-50" />
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-56 p-3">
+              <div className="flex flex-col gap-3">
+                <h4 className="font-medium text-sm">{t('Replay Controls')}</h4>
+                
+                <Button 
+                  className="w-full"
+                  onClick={() => tradingViewRef.current?.toggleReplayMode()}
+                >
+                  {(tradingViewRef.current && tradingViewRef.current.widget) 
+                    ? (tradingViewRef.current.getReplayStatus()?.active 
+                      ? t('Stop Replay') 
+                      : t('Start Replay'))
+                    : t('Start Replay')}
+                </Button>
+                
+                <div className="space-y-2">
+                  <h5 className="text-xs font-medium">{t('Replay Speed')}</h5>
+                  <div className="grid grid-cols-3 gap-1">
+                    <Button 
+                      size="sm" 
+                      variant="outline" 
+                      className="text-xs"
+                      onClick={() => tradingViewRef.current?.setReplaySpeed(0.25)}
+                    >
+                      0.25x
+                    </Button>
+                    <Button 
+                      size="sm" 
+                      variant="outline" 
+                      className="text-xs"
+                      onClick={() => tradingViewRef.current?.setReplaySpeed(0.5)}
+                    >
+                      0.5x
+                    </Button>
+                    <Button 
+                      size="sm" 
+                      variant="outline" 
+                      className="text-xs"
+                      onClick={() => tradingViewRef.current?.setReplaySpeed(1)}
+                    >
+                      1x
+                    </Button>
+                    <Button 
+                      size="sm" 
+                      variant="outline" 
+                      className="text-xs"
+                      onClick={() => tradingViewRef.current?.setReplaySpeed(2)}
+                    >
+                      2x
+                    </Button>
+                    <Button 
+                      size="sm" 
+                      variant="outline" 
+                      className="text-xs"
+                      onClick={() => tradingViewRef.current?.setReplaySpeed(4)}
+                    >
+                      4x
+                    </Button>
+                    <Button 
+                      size="sm" 
+                      variant="outline" 
+                      className="text-xs"
+                      onClick={() => tradingViewRef.current?.setReplaySpeed(8)}
+                    >
+                      8x
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            </PopoverContent>
+          </Popover>
           
           {/* Alerts Button */}
           <Button variant="ghost" size="sm">
