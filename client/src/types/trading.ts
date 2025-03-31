@@ -55,14 +55,23 @@ export enum WyckoffPhase {
  * Wyckoff analysis result type
  */
 export interface WyckoffAnalysisResult {
-  phase: WyckoffPhase;
+  wyckoffPhase: string;
   confidence: number;
   schematic?: string;
-  events: {
-    name: string;
-    time: string | number;
+  phaseDescription?: string;
+  feedback?: string;
+  tradingRecommendations?: string[];
+  enhancedImage?: string;
+  events?: {
+    type: string;
+    location: string;
     description: string;
-    type: 'ps' | 'sc' | 'ar' | 'st' | 'ut' | 'sOS' | 'pBO' | 'lps' | 'spring';
+  }[];
+  learningResources?: {
+    title: string;
+    url?: string;
+    type?: string;
+    description?: string;
   }[];
 }
 

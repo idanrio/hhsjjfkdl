@@ -1,4 +1,4 @@
-import { ChartPatternRecognitionResult, Position, Trade } from '../types/trading';
+import { ChartPatternRecognitionResult, Position, Trade, WyckoffAnalysisResult } from '../types/trading';
 import { OHLCV } from './enhancedMarketService';
 import { apiRequest } from '@/lib/queryClient';
 import { isOpenAIAvailable } from './configService';
@@ -20,6 +20,11 @@ export interface AIChartAnalysisResponse {
   wyckoffPhase?: string;
   marketStructure?: string;
   recommendation?: string;
+}
+
+export interface AIChartImageAnalysisResponse extends WyckoffAnalysisResult {
+  success: boolean;
+  error?: string;
 }
 
 export interface AITradingAdviceResponse {
@@ -226,6 +231,76 @@ export const aiService = {
     } catch (error) {
       console.error('Error explaining pattern:', error);
       return 'Sorry, I encountered an error generating the pattern explanation. Please try again later.';
+    }
+  },
+  
+  /**
+   * Analyze a chart image using Wyckoff methodology
+   * @param imageBase64 Base64 encoded image data
+   * @param notes Optional notes from the trader about their own analysis
+   */
+  async analyzeChartImage(
+    imageBase64: string,
+    notes?: string
+  ): Promise<AIChartImageAnalysisResponse> {
+    try {
+      // Check if the OpenAI API is available
+      const isAvailable = await isOpenAIAvailable();
+      if (!isAvailable) {
+        console.error('OpenAI API key is missing or unavailable');
+        return {
+          success: false,
+          error: 'OpenAI API key is missing or unavailable',
+          wyckoffPhase: '',
+          confidence: 0
+        };
+      }
+
+      if (!imageBase64) {
+        return {
+          success: false,
+          error: 'No image provided for analysis',
+          wyckoffPhase: '',
+          confidence: 0
+        };
+      }
+
+      // Send the image to the server-side API
+      const response = await apiRequest('POST', '/api/ai/analyze-chart-image', {
+        imageBase64,
+        notes: notes || ''
+      });
+      
+      const analysisResult = await response.json();
+      
+      if (!analysisResult.success) {
+        return {
+          success: false,
+          error: analysisResult.error || 'Failed to analyze image',
+          wyckoffPhase: '',
+          confidence: 0
+        };
+      }
+      
+      return {
+        success: true,
+        wyckoffPhase: analysisResult.wyckoffPhase || 'Unknown',
+        confidence: analysisResult.confidence || 0.5,
+        phaseDescription: analysisResult.phaseDescription,
+        feedback: analysisResult.feedback,
+        tradingRecommendations: analysisResult.tradingRecommendations,
+        enhancedImage: analysisResult.enhancedImage,
+        events: analysisResult.events || [],
+        learningResources: analysisResult.learningResources || []
+      };
+    } catch (error) {
+      console.error('Error analyzing chart image with AI:', error);
+      return {
+        success: false,
+        error: 'Error processing the image analysis',
+        wyckoffPhase: '',
+        confidence: 0
+      };
     }
   }
 };

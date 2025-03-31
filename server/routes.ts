@@ -819,6 +819,40 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
+  app.post('/api/ai/analyze-chart-image', isAuthenticated, async (req, res) => {
+    try {
+      const { imageBase64, notes } = req.body;
+      
+      if (!imageBase64) {
+        return res.status(400).json({ 
+          success: false,
+          error: 'Chart image data is required' 
+        });
+      }
+      
+      if (!process.env.OPENAI_API_KEY) {
+        return res.status(500).json({ 
+          success: false,
+          error: 'OpenAI API key is not configured',
+          message: 'Chart image analysis is currently unavailable. Please check your API key configuration.'
+        });
+      }
+      
+      // Call the AI service to analyze the chart image
+      const analysis = await aiService.analyzeChartImage(imageBase64, notes);
+      
+      // Return the analysis results
+      res.json(analysis);
+    } catch (error) {
+      console.error('Error in /api/ai/analyze-chart-image:', error);
+      res.status(500).json({ 
+        success: false,
+        error: 'Failed to analyze chart image',
+        message: 'An unexpected error occurred during analysis. Please try again later.'
+      });
+    }
+  });
+  
   app.post('/api/ai/explain-pattern', isAuthenticated, async (req, res) => {
     try {
       const { patternName } = req.body;

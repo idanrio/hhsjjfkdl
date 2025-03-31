@@ -171,6 +171,96 @@ export const aiService = {
       console.error("Error getting personalized advice:", error);
       throw new Error("Failed to generate personalized advice. Please try again later.");
     }
+  },
+  
+  /**
+   * Analyzes a chart image using Wyckoff methodology and generates enhanced analysis
+   */
+  analyzeChartImage: async (imageBase64: string, notes?: string): Promise<any> => {
+    try {
+      if (!imageBase64) {
+        throw new Error("No image provided for analysis");
+      }
+      
+      // Format the notes if provided
+      const userNotes = notes ? 
+        `The user provided these notes about their own analysis of the chart: ${notes}` :
+        "The user did not provide any notes about their analysis.";
+      
+      // the newest OpenAI model is "gpt-4o" which was released May 13, 2024. do not change this unless explicitly requested by the user
+      const response = await openai.chat.completions.create({
+        model: "gpt-4o",
+        messages: [
+          {
+            role: "system",
+            content: `You are a Wyckoff Method expert analyzing chart images. 
+            Provide detailed analysis of the chart according to Wyckoff principles.
+            Identify the current phase (accumulation, markup, distribution, markdown), 
+            key events (springs, upthrusts, tests, etc.), and provide trading recommendations.
+            Your analysis should be educational and help traders improve their Wyckoff analysis skills.
+            
+            Respond with a JSON object containing:
+            {
+              "wyckoffPhase": "current phase (accumulation, markup, distribution, markdown)",
+              "confidence": float between 0-1 representing confidence in analysis,
+              "phaseDescription": "detailed description of the current Wyckoff phase",
+              "events": [
+                {
+                  "type": "event type (spring, upthrust, test, etc.)",
+                  "location": "description of where on the chart",
+                  "description": "explanation of the event significance"
+                }
+              ],
+              "feedback": "feedback on what the chart is showing and potential market direction",
+              "tradingRecommendations": ["specific actionable recommendations based on analysis"],
+              "learningResources": [
+                {
+                  "title": "resource title",
+                  "url": "optional URL to resource",
+                  "type": "article/video/book",
+                  "description": "brief description of the resource"
+                }
+              ]
+            }`
+          },
+          {
+            role: "user",
+            content: [
+              {
+                type: "text",
+                text: `Please analyze this chart using Wyckoff methodology. ${userNotes}`
+              },
+              {
+                type: "image_url",
+                image_url: {
+                  url: `data:image/jpeg;base64,${imageBase64}`
+                }
+              }
+            ],
+          }
+        ],
+        response_format: { type: "json_object" },
+        max_tokens: 2000,
+      });
+
+      const content = response.choices[0].message.content || "{}";
+      const result = JSON.parse(content);
+      
+      // Generate enhanced image with annotations based on analysis
+      const enhancedImageResult = await generateEnhancedImage(imageBase64, result);
+      
+      return {
+        success: true,
+        ...result,
+        enhancedImage: enhancedImageResult.enhancedImage
+      };
+    } catch (error) {
+      console.error("Error analyzing chart image:", error);
+      return {
+        success: false,
+        error: "Failed to analyze the chart image. Please try again later."
+      };
+    }
   }
 };
 
@@ -230,6 +320,55 @@ function formatChartDataForAnalysis(chartData: any): string {
   }
   
   return formattedData;
+}
+
+/**
+ * Helper function to generate an enhanced image with Wyckoff annotations
+ */
+async function generateEnhancedImage(imageBase64: string, analysis: any): Promise<{ enhancedImage: string }> {
+  try {
+    // Prepare a description of the Wyckoff analysis to guide image enhancement
+    const wyckoffPhase = analysis.wyckoffPhase || "unknown phase";
+    const events = analysis.events || [];
+    const eventsText = events.map((event: any) => 
+      `${event.type} at ${event.location}`
+    ).join(", ");
+
+    // Create a prompt for the image generation
+    const prompt = `
+    Create an enhanced version of this financial chart with clear Wyckoff methodology annotations. 
+    This chart is in a ${wyckoffPhase} phase. 
+    
+    Add the following elements to the chart:
+    1. Clear labels for all key Wyckoff events: ${eventsText}
+    2. Mark support and resistance levels with horizontal lines
+    3. Add phase labels (accumulation, markup, distribution, markdown)
+    4. Circle and annotate important price action points
+    5. Add arrows to show the expected price direction based on Wyckoff analysis
+    6. Include a small legend explaining the annotations
+    
+    Make all annotations clearly visible with high contrast colors. Use professional financial chart styling.
+    Do not add any text that isn't on the original chart except for the annotations.
+    `;
+
+    // Modified approach using text-to-text description of what would be enhanced
+    // since we don't have direct image generation capabilities
+    
+    // Instead, we'll return the original image with a base64 prefix for now
+    // In a production environment, you would use DALL-E or another image generation service
+    
+    const result = {
+      enhancedImage: `data:image/jpeg;base64,${imageBase64}`
+    };
+    
+    return result;
+  } catch (error) {
+    console.error("Error generating enhanced image:", error);
+    // Return the original image if enhancement fails
+    return {
+      enhancedImage: `data:image/jpeg;base64,${imageBase64}`
+    };
+  }
 }
 
 /**
