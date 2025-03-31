@@ -602,7 +602,7 @@ export const abTestingService = {
       ];
       
       // Mock positions for testing
-      const mockPositions = [
+      const mockPositions: Position[] = [
         {
           id: 'pos1',
           type: 'long',
