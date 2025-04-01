@@ -3,7 +3,9 @@ import { useTranslation } from 'react-i18next';
 import EnhancedTradingViewWidget, { TradingViewRef } from './EnhancedTradingViewWidget';
 import { ProTradingPanel } from './ProTradingPanel';
 import { AIWyckoffCoach } from './AIWyckoffCoach';
+import { ChartImageUploader } from './ChartImageUploader';
 import { Position, WyckoffAnalysisResult } from '@/types/trading';
+import aiService from '@/services/aiService';
 import {
   Select,
   SelectContent,
@@ -815,6 +817,21 @@ export function FullTradingEnvironment({
               }}
             />
           </Dialog>
+
+          {/* Chart Image Upload & Analysis */}
+          <ChartImageUploader 
+            onImageAnalysis={async (imageBase64, notes) => {
+              try {
+                // Call the AI service to analyze the chart image
+                const result = await aiService.analyzeChartImage(imageBase64, notes);
+                console.log("Chart image analysis completed:", result);
+                return result;
+              } catch (error) {
+                console.error("Error analyzing chart image:", error);
+                throw error;
+              }
+            }}
+          />
           
           {/* Fullscreen Toggle */}
           <Button variant="ghost" size="sm" onClick={toggleFullScreen}>

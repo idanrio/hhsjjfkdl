@@ -55,6 +55,7 @@ export function AIWyckoffCoach({ tradingViewRef, symbol, timeframe, onAnalysisCo
   const [error, setError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState('capture');
   const [isOpenAIReady, setIsOpenAIReady] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Check if OpenAI is available
   useEffect(() => {
@@ -69,6 +70,39 @@ export function AIWyckoffCoach({ tradingViewRef, symbol, timeframe, onAnalysisCo
     checkOpenAI();
   }, []);
 
+  // Handle file upload for chart analysis
+  const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+    
+    // Check if the file is an image
+    if (!file.type.startsWith('image/')) {
+      setError('Please upload an image file (PNG, JPEG, etc.)');
+      return;
+    }
+    
+    setIsCapturing(true);
+    setError(null);
+    
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const result = e.target?.result;
+      if (typeof result === 'string') {
+        setCapturedImage(result);
+        setActiveTab('analyze');
+        setIsCapturing(false);
+      }
+    };
+    
+    reader.onerror = () => {
+      console.error('Error reading file:', reader.error);
+      setError('Failed to read the image file. Please try again.');
+      setIsCapturing(false);
+    };
+    
+    reader.readAsDataURL(file);
+  };
+  
   // Capture screenshot of the current TradingView chart
   const captureChart = async () => {
     if (!tradingViewRef.current?.widget) {
