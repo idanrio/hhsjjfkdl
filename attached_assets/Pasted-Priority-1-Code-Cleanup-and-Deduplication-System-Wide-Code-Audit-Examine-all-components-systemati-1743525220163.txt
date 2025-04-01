@@ -1,0 +1,75 @@
+Priority 1: Code Cleanup and Deduplication
+
+System-Wide Code Audit
+
+Examine all components systematically to identify duplicated code
+Use grep or static analysis tools to find repeated functions across files
+Document each instance of duplication for methodical removal
+Create a list of all duplicate UI elements (buttons, panels, dialogs)
+
+
+Eliminate Duplicated UI Elements
+
+Remove redundant buttons that perform the same function
+Consolidate duplicated content into single, reusable components
+Ensure each function is represented by only one UI control
+Verify that removal doesn't break existing functionality
+
+
+Refactor Duplicated Functions
+
+Create shared utility functions to replace duplicated code
+Implement proper dependency injection for shared functionality
+Test each refactored function to ensure correct operation
+Document the new centralized approach for future reference
+
+
+
+Priority 2: Fix Critical Functionality Issues
+
+Implement Asset Switching Mechanism
+
+Add functionality to switch between assets (Stocks, Crypto, Indices) via asset name click
+Ensure proper TradingView integration for live, real-time data
+Test switching mechanism with all supported asset types
+Verify that chart data updates correctly after switching
+
+
+Fix Replay Button Functionality
+
+Debug current replay button implementation
+Implement proper integration with TradingView replay functionality
+Ensure timeline controls match TradingView's native behavior
+Test replay with different timeframes and asset types
+
+
+
+Priority 3: Layout and Position Improvements
+
+Reorganize Positions/Orders Layout
+
+Move positions and orders panel to be side-by-side with TradingView chart
+Ensure responsive behavior for different screen sizes
+Maintain data synchronization between positions panel and chart
+Test UI interactions to verify usability improvements
+
+
+Optimize Component Hierarchy
+
+Review entire component structure for logical organization
+Ensure parent-child relationships make sense for data flow
+Simplify overly complex nested components
+Document the new optimized structure for future development
+
+
+
+Implementation Approach
+For each task:
+
+First examine the codebase to understand current implementation
+Create a backup branch before making substantial changes
+Make targeted changes to address the specific issue
+Test thoroughly after each change
+Document changes and architectural improvements
+
+I recommend tackling these in the order presented, as cleanup will make subsequent functional changes easier and reducing duplication will create a more maintainable codebase before adding new features.
