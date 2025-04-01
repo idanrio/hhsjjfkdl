@@ -297,7 +297,7 @@ const EnhancedTradingViewWidgetComponent: ForwardRefRenderFunction<
           'use_localstorage_for_settings',
           'border_around_the_chart',
           
-          // Pro features
+          // Pro features - Removed duplicates
           'replay_mode',
           'drawing_tools_on_chart',
           'multiple_drawing_tools_on_chart',
@@ -305,7 +305,6 @@ const EnhancedTradingViewWidgetComponent: ForwardRefRenderFunction<
           'chart_events',
           'check_scale_sequence_on_new_bar',
           'same_data_requery',
-          'side_toolbar_in_fullscreen_mode',
           'show_chart_property_page',
           'create_volume_indicator_by_default',
           'right_bar_stays_on_scroll',

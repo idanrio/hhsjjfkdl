@@ -406,11 +406,8 @@ export function FullTradingEnvironment({
   ];
   
   // List of TradingView indicators to be loaded when the chart is initialized
-  const defaultStudies = [
-    'MASimple@tv-basicstudies',
-    'BB@tv-basicstudies',
-    'MACD@tv-basicstudies',
-  ];
+  // Removed default studies to prevent duplicates when indicators are added manually
+  const defaultStudies: string[] = [];
   
   return (
     <div 
@@ -804,17 +801,15 @@ export function FullTradingEnvironment({
           </Button>
           
           {/* AI Wyckoff Coach Button */}
-          <Dialog>
-            <AIWyckoffCoach 
-              tradingViewRef={tradingViewRef} 
-              symbol={selectedSymbol}
-              timeframe={selectedTimeframe}
-              onAnalysisComplete={(analysis: WyckoffAnalysisResult) => {
-                console.log("Wyckoff analysis completed:", analysis);
-                // You could save analysis to state or perform other actions
-              }}
-            />
-          </Dialog>
+          <AIWyckoffCoach 
+            tradingViewRef={tradingViewRef} 
+            symbol={selectedSymbol}
+            timeframe={selectedTimeframe}
+            onAnalysisComplete={(analysis: WyckoffAnalysisResult) => {
+              console.log("Wyckoff analysis completed:", analysis);
+              // You could save analysis to state or perform other actions
+            }}
+          />
           
           {/* Fullscreen Toggle */}
           <Button variant="ghost" size="sm" onClick={toggleFullScreen}>
