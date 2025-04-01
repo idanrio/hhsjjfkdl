@@ -29,6 +29,7 @@ import {
   DialogHeader,
   DialogTitle,
   DialogFooter,
+  DialogTrigger,
 } from '@/components/ui/dialog';
 import {
   Switch
@@ -75,6 +76,8 @@ import {
   AlertTriangle,
   TrendingUp,
   TrendingDown,
+  BrainCircuit,
+  ImagePlus,
   ArrowDownToLine,
   ArrowUpToLine,
   ArrowUp,
@@ -456,15 +459,18 @@ export function FullTradingEnvironment({
       className={`full-trading-environment ${isFullScreen ? 'fixed inset-0 z-50 bg-background' : ''} ${className}`}
       style={{ height: isFullScreen ? '100vh' : '800px' }}
     >
-      {/* Top Toolbar */}
-      <div className="flex items-center justify-between border-b p-2">
-        <div className="flex items-center space-x-2">
+      {/* Top Toolbar - Streamlined version based on TradingView */}
+      <div className="flex items-center justify-between border-b bg-slate-900 p-2">
+        <div className="flex items-center space-x-4">
           {/* Symbol Selector */}
           <Popover open={showSymbolSearch} onOpenChange={setShowSymbolSearch}>
             <PopoverTrigger asChild>
-              <Button variant="outline" className="flex items-center space-x-1">
-                <span>{getSymbolDisplayName(selectedSymbol)}</span>
-                <ChevronDown className="h-4 w-4" />
+              <Button 
+                variant="ghost" 
+                className="font-medium text-white hover:bg-slate-800"
+              >
+                {getSymbolDisplayName(selectedSymbol)}
+                <ChevronDown className="h-4 w-4 ml-1" />
               </Button>
             </PopoverTrigger>
             <PopoverContent className="w-80 p-0" align="start">
@@ -552,7 +558,7 @@ export function FullTradingEnvironment({
           
           {/* Timeframe Selector */}
           <Select value={selectedTimeframe} onValueChange={setSelectedTimeframe}>
-            <SelectTrigger className="w-[70px]">
+            <SelectTrigger className="w-[70px] bg-slate-800 border-slate-700">
               <SelectValue placeholder={timeframes.find(t => t.value === selectedTimeframe)?.label || selectedTimeframe} />
             </SelectTrigger>
             <SelectContent>
@@ -566,7 +572,7 @@ export function FullTradingEnvironment({
           
           {/* Chart Style Selector */}
           <Select value={selectedChartStyle} onValueChange={setSelectedChartStyle}>
-            <SelectTrigger className="w-[90px]">
+            <SelectTrigger className="w-[90px] bg-slate-800 border-slate-700">
               <SelectValue placeholder={chartStyles.find(s => s.value === selectedChartStyle)?.label || selectedChartStyle} />
             </SelectTrigger>
             <SelectContent>
@@ -581,7 +587,7 @@ export function FullTradingEnvironment({
           {/* Indicators Button */}
           <Sheet open={showIndicators} onOpenChange={setShowIndicators}>
             <SheetTrigger asChild>
-              <Button variant="outline" size="sm">
+              <Button variant="ghost" className="text-white hover:bg-slate-800">
                 <BarChart3 className="h-4 w-4 mr-1" />
                 {t('Indicators')}
               </Button>
@@ -743,13 +749,55 @@ export function FullTradingEnvironment({
             </SheetContent>
           </Sheet>
           
-          {/* Chart Settings */}
+          {/* Settings button hidden from header toolbar and moved to side panel */}
+        </div>
+        
+        <div className="flex items-center">
+          {/* Price indicator in green/white like TradingView */}
+          <Badge className="bg-cyan-500 hover:bg-cyan-500 text-white font-mono font-medium text-sm">
+            {currentPrice.toFixed(2)}
+          </Badge>
+        </div>
+      </div>
+      
+      {/* Main Content Area */}
+      <div className="grid grid-cols-12 h-[calc(100%-48px)]">
+        {/* Chart Area */}
+        <div className={`${showPositionsPanel ? 'col-span-9' : 'col-span-12'} h-full border-r relative`}>
+          <EnhancedTradingViewWidget
+            ref={tradingViewRef}
+            symbol={selectedSymbol}
+            interval={selectedTimeframe}
+            theme="dark"
+            style={selectedChartStyle}
+            width="100%"
+            height="100%"
+            locale={i18n.language === 'he' ? 'he_IL' : 'en'}
+            toolbar_bg="#1A1C20"
+            hide_side_toolbar={false}
+            allow_symbol_change={false}
+            save_image={true}
+            studies={defaultStudies}
+            disabled_features={disabledFeatures}
+            enabled_features={enabledFeatures}
+            debug={false}
+            onPriceUpdate={handlePriceUpdate}
+          />
+          
+          {/* Chart controls positioned over chart like TradingView */}
+          <div className="absolute top-2 right-2 z-10 flex flex-col space-y-2">
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              className="bg-slate-800/80 hover:bg-slate-700/80 text-slate-200"
+              onClick={() => setShowSettings(true)}
+            >
+              <Settings className="h-4 w-4" />
+            </Button>
+          </div>
+          
+          {/* Hidden Settings Panel */}
           <Sheet open={showSettings} onOpenChange={setShowSettings}>
-            <SheetTrigger asChild>
-              <Button variant="ghost" size="sm">
-                <Settings className="h-4 w-4" />
-              </Button>
-            </SheetTrigger>
             <SheetContent side="right">
               <SheetHeader>
                 <SheetTitle>{t('Chart Settings')}</SheetTitle>
@@ -849,77 +897,18 @@ export function FullTradingEnvironment({
               </SheetFooter>
             </SheetContent>
           </Sheet>
-        </div>
-        
-        <div className="flex items-center space-x-2">
-          {/* Current Price Indicator */}
-          <Badge className="text-sm">
-            {currentPrice.toFixed(2)}
-          </Badge>
           
-          {/* Alerts Button */}
-          <Button variant="ghost" size="sm">
-            <Bell className="h-4 w-4" />
-          </Button>
-          
-          {/* AI Wyckoff Coach Button */}
-          <Dialog>
-            <AIWyckoffCoach 
-              tradingViewRef={tradingViewRef} 
-              symbol={selectedSymbol}
-              timeframe={selectedTimeframe}
-              onAnalysisComplete={(analysis: WyckoffAnalysisResult) => {
-                console.log("Wyckoff analysis completed:", analysis);
-                // You could save analysis to state or perform other actions
-              }}
-            />
-          </Dialog>
-
-          {/* Chart Image Upload & Analysis */}
-          <ChartImageUploader 
-            onImageAnalysis={async (imageBase64, notes) => {
-              try {
-                // Call the AI service to analyze the chart image
-                const result = await aiService.analyzeChartImage(imageBase64, notes);
-                console.log("Chart image analysis completed:", result);
-                return result;
-              } catch (error) {
-                console.error("Error analyzing chart image:", error);
-                throw error;
-              }
-            }}
-          />
-          
-          {/* Fullscreen Toggle */}
-          <Button variant="ghost" size="sm" onClick={toggleFullScreen}>
-            {isFullScreen ? <Minimize2 className="h-4 w-4" /> : <Maximize2 className="h-4 w-4" />}
-          </Button>
-        </div>
-      </div>
-      
-      {/* Main Content Area */}
-      <div className="grid grid-cols-12 h-[calc(100%-48px)]">
-        {/* Chart Area */}
-        <div className={`${showPositionsPanel ? 'col-span-9' : 'col-span-12'} h-full border-r relative`}>
-          <EnhancedTradingViewWidget
-            ref={tradingViewRef}
-            symbol={selectedSymbol}
-            interval={selectedTimeframe}
-            theme="dark"
-            style={selectedChartStyle}
-            width="100%"
-            height="100%"
-            locale={i18n.language === 'he' ? 'he_IL' : 'en'}
-            toolbar_bg="#1E1E1E"
-            hide_side_toolbar={false}
-            allow_symbol_change={false}
-            save_image={true}
-            studies={defaultStudies}
-            disabled_features={disabledFeatures}
-            enabled_features={enabledFeatures}
-            debug={false}
-            onPriceUpdate={handlePriceUpdate}
-          />
+          {/* Fullscreen toggle in bottom right corner of chart */}
+          <div className="absolute bottom-4 right-4 z-10">
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              className="bg-slate-800/80 hover:bg-slate-700/80 text-slate-200"
+              onClick={toggleFullScreen}
+            >
+              {isFullScreen ? <Minimize2 className="h-4 w-4" /> : <Maximize2 className="h-4 w-4" />}
+            </Button>
+          </div>
         </div>
         
         {/* Trading Panel */}
