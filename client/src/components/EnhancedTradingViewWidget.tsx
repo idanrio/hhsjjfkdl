@@ -235,8 +235,8 @@ const EnhancedTradingViewWidgetComponent: ForwardRefRenderFunction<
     }
   }, [i18n.language]);
   
-  // Initialize the TradingView widget
-  const initWidget = (localeOverride?: string) => {
+  // Initialize the TradingView widget with optional saved state
+  const initWidget = (localeOverride?: string, savedState?: any) => {
     if (typeof window === 'undefined' || !window.TradingView) return;
     
     if (container.current) {
@@ -244,11 +244,11 @@ const EnhancedTradingViewWidgetComponent: ForwardRefRenderFunction<
       
       // Set up widget configuration
       const widgetOptions: any = {
-        symbol,
-        interval,
+        symbol: savedState?.symbol || symbol,
+        interval: savedState?.interval || interval,
         timezone,
         theme,
-        style: style || chartType || 1, // Default to candles (1)
+        style: savedState?.chartType || style || chartType || 1, // Default to candles (1)
         locale: localeOverride || locale,
         toolbar_bg,
         enable_publishing,
@@ -275,13 +275,13 @@ const EnhancedTradingViewWidgetComponent: ForwardRefRenderFunction<
         // Advanced options
         disabled_features: [
           'header_widget_dom_node', // Removes the TradingView logo
-          'use_localstorage_for_settings',
           'timeframes_toolbar',
           ...disabled_features
         ],
         enabled_features: [
+          // Essential features
           'side_toolbar_in_fullscreen_mode',
-          'header_indicators', // Add indicators like TradingView
+          'header_indicators',
           'header_chart_type',
           'show_interval_dialog_on_key_press',
           'header_settings',
@@ -290,11 +290,38 @@ const EnhancedTradingViewWidgetComponent: ForwardRefRenderFunction<
           'header_compare',
           'header_undo_redo',
           'header_saveload',
+          
+          // Enhanced functionality
           'study_templates',
           'display_market_status',
           'use_localstorage_for_settings',
           'border_around_the_chart',
-          'replay_mode', // Add replay button
+          
+          // Pro features
+          'replay_mode',
+          'drawing_tools_on_chart',
+          'multiple_drawing_tools_on_chart',
+          'chart_crosshair_menu',
+          'chart_events',
+          'check_scale_sequence_on_new_bar',
+          'same_data_requery',
+          'side_toolbar_in_fullscreen_mode',
+          'show_chart_property_page',
+          'create_volume_indicator_by_default',
+          'right_bar_stays_on_scroll',
+          
+          // Additional features
+          'property_pages',
+          'legend_context_menu',
+          'go_to_date',
+          'adaptive_logo',
+          'caption_buttons_text_if_possible',
+          'line_extension_left',
+          'line_extension_right',
+          'compare_symbol',
+          'control_bar',
+          'source_selection_markers',
+          'keep_left_toolbar_visible_on_small_screens',
           ...enabled_features
         ],
         saved_data_meta_info: {
@@ -341,8 +368,28 @@ const EnhancedTradingViewWidgetComponent: ForwardRefRenderFunction<
       
       // Add onChartReady callback to the widget options
       widgetOptions.onChartReady = function() {
-        // Add the studies
-        if (studies && studies.length > 0) {
+        // If we have saved studies from state, restore those first
+        if (savedState?.studies && savedState.studies.length > 0) {
+          console.log(`Restoring ${savedState.studies.length} studies from saved state`);
+          savedState.studies.forEach((study: any) => {
+            try {
+              if (study.name) {
+                widget.chart().createStudy(
+                  study.name,
+                  study.forceOverlay || false,
+                  study.lock || false,
+                  study.inputs || [],
+                  study.overrides || {},
+                  { checkLimit: false, ...(study.options || {}) }
+                );
+              }
+            } catch (error) {
+              console.warn(`Failed to restore saved study ${study.name}:`, error);
+            }
+          });
+        } 
+        // Otherwise add default studies
+        else if (studies && studies.length > 0) {
           studies.forEach(study => {
             widget.chart().createStudy(study);
           });
@@ -703,45 +750,125 @@ const EnhancedTradingViewWidgetComponent: ForwardRefRenderFunction<
                 onClick={() => {
                   if (widgetRef.current) {
                     try {
+                      console.log(`Attempting to change interval to ${timeframe}...`);
+                      
+                      // PRO METHOD: Directly access the TradingView internal API
+                      // This method exactly replicates how TradingView Pro changes intervals
+                      if (widgetRef.current._innerAPI) {
+                        widgetRef.current._innerAPI().changeInterval(timeframe);
+                        console.log(`Changed interval using _innerAPI to ${timeframe}`);
+                        return;
+                      }
+                      
+                      // FALLBACK METHOD 1: Most reliable standard method
                       // Save chart configuration and studies before changing interval
                       const chartType = widgetRef.current.chart().chartType();
                       const currentSymbol = widgetRef.current.chart().symbol();
-                      const activeStudies = widgetRef.current.chart().getAllStudies();
+                      let activeStudies: any[] = [];
                       
-                      // First set the resolution properly using both methods to ensure compatibility
-                      widgetRef.current.chart().setResolution(timeframe, (error: any) => {
-                        if (error) {
-                          console.error('Error in resolution callback:', error);
-                        } else {
-                          console.log(`Successfully changed interval to ${timeframe}`);
+                      try {
+                        // Get all active studies with complete configuration
+                        activeStudies = widgetRef.current.chart().getAllStudies() || [];
+                        console.log(`Found ${activeStudies.length} active studies`);
+                      } catch (studyErr) {
+                        console.warn("Could not retrieve studies:", studyErr);
+                      }
+                      
+                      // Create a promise to track the resolution change
+                      const changeResolutionPromise = new Promise<void>((resolve, reject) => {
+                        try {
+                          // Properly set the resolution with a callback
+                          widgetRef.current.chart().setResolution(timeframe, (error: any) => {
+                            if (error) {
+                              console.error('Error in resolution callback:', error);
+                              reject(error);
+                            } else {
+                              console.log(`Successfully changed interval to ${timeframe}`);
+                              resolve();
+                            }
+                          });
+                        } catch (err) {
+                          reject(err);
                         }
                       });
                       
-                      // Then force a proper widget reset to ensure the interval change is applied
-                      widgetRef.current.setSymbol(currentSymbol, timeframe, () => {
-                        // Restore chart type after interval change
-                        if (chartType) {
-                          widgetRef.current.chart().setChartType(chartType);
-                        }
-                        
-                        // Re-add studies that were active before interval change
-                        if (activeStudies && activeStudies.length > 0) {
-                          activeStudies.forEach((study: any) => {
-                            try {
-                              if (study.name) {
-                                widgetRef.current.chart().createStudy(
-                                  study.name,
-                                  study.forceOverlay || false,
-                                  study.lock || false,
-                                  study.inputs || [],
-                                  study.overrides || {},
-                                  study.options || {}
-                                );
+                      changeResolutionPromise.then(() => {
+                        // After interval change, ensure widget is fully updated
+                        try {
+                          // Force a refresh with the same symbol but new interval
+                          widgetRef.current.setSymbol(currentSymbol, timeframe, () => {
+                            console.log(`Reset symbol to ${currentSymbol} with interval ${timeframe}`);
+                            
+                            // Restore chart type after interval change
+                            if (chartType) {
+                              try {
+                                widgetRef.current.chart().setChartType(chartType);
+                                console.log(`Restored chart type to ${chartType}`);
+                              } catch (chartErr) {
+                                console.warn("Could not restore chart type:", chartErr);
                               }
-                            } catch (studyErr) {
-                              console.warn(`Failed to restore study ${study.name}:`, studyErr);
+                            }
+                            
+                            // Re-add studies that were active before interval change
+                            if (activeStudies && activeStudies.length > 0) {
+                              activeStudies.forEach((study: any) => {
+                                try {
+                                  if (study.name) {
+                                    // Create each study with its exact original configuration
+                                    const studyId = widgetRef.current.chart().createStudy(
+                                      study.name,
+                                      study.forceOverlay || false,
+                                      study.lock || false,
+                                      study.inputs || [],
+                                      study.overrides || {},
+                                      { checkLimit: false, ...study.options }
+                                    );
+                                    console.log(`Restored study ${study.name} with ID ${studyId}`);
+                                  }
+                                } catch (studyErr) {
+                                  console.warn(`Failed to restore study ${study.name}:`, studyErr);
+                                }
+                              });
+                              
+                              // Final chart refresh to ensure everything is visible
+                              try {
+                                widgetRef.current.chart().refreshDWM(true);
+                                widgetRef.current.chart().executeActionById("refreshMarks");
+                              } catch (refreshErr) {
+                                console.warn("Could not perform final refresh:", refreshErr);
+                              }
                             }
                           });
+                        } catch (symbolErr) {
+                          console.error("Error resetting symbol:", symbolErr);
+                        }
+                      }).catch(err => {
+                        console.error("Resolution change process failed:", err);
+                        
+                        // FALLBACK METHOD 2: Last resort - reinitialize the widget
+                        try {
+                          // Save the current state we need to restore
+                          const savedState = {
+                            symbol: currentSymbol,
+                            interval: timeframe,
+                            chartType: chartType,
+                            studies: activeStudies
+                          };
+                          
+                          // Clean up the container
+                          if (container.current) {
+                            container.current.innerHTML = '';
+                            // Reinitialize with the new interval
+                            const localeToUse = i18n.language === 'he' ? 'he_IL' : 'en';
+                            initWidget(localeToUse, {
+                              symbol: currentSymbol,
+                              interval: timeframe,
+                              chartType: chartType,
+                              studies: activeStudies
+                            });
+                          }
+                        } catch (finalErr) {
+                          console.error("All interval change methods failed:", finalErr);
                         }
                       });
                     } catch (err) {
@@ -786,6 +913,42 @@ const EnhancedTradingViewWidgetComponent: ForwardRefRenderFunction<
             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mr-1"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline></svg>
             Indicators
             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="ml-1"><polyline points="6 9 12 15 18 9"></polyline></svg>
+          </button>
+          
+          {/* Drawing Tools Button */}
+          <button 
+            className="px-3 py-1 text-white text-sm rounded hover:bg-gray-700 ml-2 flex items-center"
+            onClick={() => {
+              if (widgetRef.current) {
+                try {
+                  // Open drawing tools menu using TradingView internal API
+                  widgetRef.current.chart().executeActionById("drawingToolbarAction");
+                } catch (error) {
+                  console.error("Error opening drawing tools:", error);
+                }
+              }
+            }}
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mr-1"><line x1="12" y1="19" x2="12" y2="5"></line><polyline points="5 12 12 5 19 12"></polyline></svg>
+            Draw
+          </button>
+          
+          {/* Replay Button */}
+          <button 
+            className="px-3 py-1 text-white text-sm rounded hover:bg-gray-700 ml-2 flex items-center"
+            onClick={() => {
+              if (widgetRef.current) {
+                try {
+                  // Toggle replay mode using TradingView internal API
+                  widgetRef.current.chart().executeActionById("replayMode");
+                } catch (error) {
+                  console.error("Error toggling replay mode:", error);
+                }
+              }
+            }}
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mr-1"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
+            Replay
           </button>
         </div>
         
