@@ -511,6 +511,10 @@ const EnhancedTradingViewWidgetComponent: ForwardRefRenderFunction<
     ]
   };
   
+  // Dynamic indicator management
+  const [showIndicatorsMenu, setShowIndicatorsMenu] = useState(false);
+  const [activeCategory, setActiveCategory] = useState('favorites');
+  const indicatorsMenuRef = useRef<HTMLDivElement>(null);
   
   // Handle outside click for indicators menu
   useEffect(() => {
@@ -530,6 +534,8 @@ const EnhancedTradingViewWidgetComponent: ForwardRefRenderFunction<
   }, [showIndicatorsMenu]);
   
   // Track selected indicators
+  const [selectedIndicators, setSelectedIndicators] = useState<string[]>([]);
+  const [studyIdsMap, setStudyIdsMap] = useState<Record<string, string>>({});
   
   // Handle indicator selection
   const handleIndicatorSelect = (indicator: string) => {

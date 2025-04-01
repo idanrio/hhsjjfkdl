@@ -196,6 +196,22 @@ export function FullTradingEnvironment({
   ]);
   const [showSettings, setShowSettings] = useState<boolean>(false);
   const [showIndicators, setShowIndicators] = useState<boolean>(false);
+  const [activeIndicators, setActiveIndicators] = useState<string[]>([]);
+  
+  // Available indicators for the UI
+  const availableIndicators = [
+    'Moving Average',
+    'Bollinger Bands',
+    'MACD',
+    'RSI',
+    'Stochastic',
+    'Average True Range',
+    'On Balance Volume',
+    'Volume',
+    'Ichimoku Cloud',
+    'Pivot Points',
+    'Fibonacci Retracement',
+  ];
   const [tvSettings, setTVSettings] = useState({
     showVolume: true,
     showGrid: true,
@@ -365,6 +381,27 @@ export function FullTradingEnvironment({
       setFavoriteSymbols(favoriteSymbols.filter(s => s !== symbol));
     } else {
       setFavoriteSymbols([...favoriteSymbols, symbol]);
+    }
+  };
+  
+  // Handle indicator operations
+  const handleAddIndicator = (indicator: string) => {
+    if (tradingViewRef.current) {
+      tradingViewRef.current.addIndicator(indicator);
+      
+      // Update active indicators list
+      if (!activeIndicators.includes(indicator)) {
+        setActiveIndicators(prev => [...prev, indicator]);
+      }
+    }
+  };
+  
+  const handleRemoveIndicator = (indicator: string) => {
+    if (tradingViewRef.current) {
+      tradingViewRef.current.removeIndicator(indicator);
+      
+      // Update active indicators list
+      setActiveIndicators(prev => prev.filter(ind => ind !== indicator));
     }
   };
   
@@ -571,7 +608,10 @@ export function FullTradingEnvironment({
                   </TabsList>
                   
                   <TabsContent value="popular" className="space-y-2">
-                    <div className="p-2 border rounded-md hover:bg-muted cursor-pointer">
+                    <div 
+                      className="p-2 border rounded-md hover:bg-muted cursor-pointer"
+                      onClick={() => handleAddIndicator('Moving Average')}
+                    >
                       <div className="flex justify-between items-center">
                         <span className="font-medium">Moving Average</span>
                         <Badge variant="outline">MA</Badge>
@@ -581,7 +621,10 @@ export function FullTradingEnvironment({
                       </p>
                     </div>
                     
-                    <div className="p-2 border rounded-md hover:bg-muted cursor-pointer">
+                    <div 
+                      className="p-2 border rounded-md hover:bg-muted cursor-pointer"
+                      onClick={() => handleAddIndicator('Bollinger Bands')}
+                    >
                       <div className="flex justify-between items-center">
                         <span className="font-medium">Bollinger Bands</span>
                         <Badge variant="outline">BB</Badge>
@@ -591,7 +634,10 @@ export function FullTradingEnvironment({
                       </p>
                     </div>
                     
-                    <div className="p-2 border rounded-md hover:bg-muted cursor-pointer">
+                    <div 
+                      className="p-2 border rounded-md hover:bg-muted cursor-pointer"
+                      onClick={() => handleAddIndicator('MACD')}
+                    >
                       <div className="flex justify-between items-center">
                         <span className="font-medium">MACD</span>
                         <Badge variant="outline">MACD</Badge>
@@ -603,7 +649,10 @@ export function FullTradingEnvironment({
                   </TabsContent>
                   
                   <TabsContent value="oscillators" className="space-y-2">
-                    <div className="p-2 border rounded-md hover:bg-muted cursor-pointer">
+                    <div 
+                      className="p-2 border rounded-md hover:bg-muted cursor-pointer"
+                      onClick={() => handleAddIndicator('RSI')}
+                    >
                       <div className="flex justify-between items-center">
                         <span className="font-medium">Relative Strength Index</span>
                         <Badge variant="outline">RSI</Badge>
@@ -613,7 +662,10 @@ export function FullTradingEnvironment({
                       </p>
                     </div>
                     
-                    <div className="p-2 border rounded-md hover:bg-muted cursor-pointer">
+                    <div 
+                      className="p-2 border rounded-md hover:bg-muted cursor-pointer"
+                      onClick={() => handleAddIndicator('Stochastic')}
+                    >
                       <div className="flex justify-between items-center">
                         <span className="font-medium">Stochastic</span>
                         <Badge variant="outline">Stoch</Badge>
@@ -625,7 +677,10 @@ export function FullTradingEnvironment({
                   </TabsContent>
                   
                   <TabsContent value="volume" className="space-y-2">
-                    <div className="p-2 border rounded-md hover:bg-muted cursor-pointer">
+                    <div 
+                      className="p-2 border rounded-md hover:bg-muted cursor-pointer"
+                      onClick={() => handleAddIndicator('On-Balance Volume')}
+                    >
                       <div className="flex justify-between items-center">
                         <span className="font-medium">On-Balance Volume</span>
                         <Badge variant="outline">OBV</Badge>
@@ -635,7 +690,10 @@ export function FullTradingEnvironment({
                       </p>
                     </div>
                     
-                    <div className="p-2 border rounded-md hover:bg-muted cursor-pointer">
+                    <div 
+                      className="p-2 border rounded-md hover:bg-muted cursor-pointer"
+                      onClick={() => handleAddIndicator('Money Flow Index')}
+                    >
                       <div className="flex justify-between items-center">
                         <span className="font-medium">Money Flow Index</span>
                         <Badge variant="outline">MFI</Badge>
@@ -651,30 +709,29 @@ export function FullTradingEnvironment({
                 
                 <div className="flex justify-between items-center mb-2">
                   <h4 className="text-sm font-medium">{t('Active Indicators')}</h4>
-                  <Badge variant="outline">3 {t('indicators selected')}</Badge>
+                  <Badge variant="outline">{activeIndicators.length} {t('indicators selected')}</Badge>
                 </div>
                 
                 <div className="space-y-2">
-                  <div className="p-2 border rounded-md bg-muted flex justify-between items-center">
-                    <span>Moving Average (20)</span>
-                    <Button variant="ghost" size="sm" className="h-6 w-6 p-0">
-                      <XCircle className="h-4 w-4" />
-                    </Button>
-                  </div>
+                  {activeIndicators.map((indicator) => (
+                    <div key={indicator} className="p-2 border rounded-md bg-muted flex justify-between items-center">
+                      <span>{indicator}</span>
+                      <Button 
+                        variant="ghost" 
+                        size="sm" 
+                        className="h-6 w-6 p-0"
+                        onClick={() => handleRemoveIndicator(indicator)}
+                      >
+                        <XCircle className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  ))}
                   
-                  <div className="p-2 border rounded-md bg-muted flex justify-between items-center">
-                    <span>Bollinger Bands (20, 2)</span>
-                    <Button variant="ghost" size="sm" className="h-6 w-6 p-0">
-                      <XCircle className="h-4 w-4" />
-                    </Button>
-                  </div>
-                  
-                  <div className="p-2 border rounded-md bg-muted flex justify-between items-center">
-                    <span>MACD (12, 26, 9)</span>
-                    <Button variant="ghost" size="sm" className="h-6 w-6 p-0">
-                      <XCircle className="h-4 w-4" />
-                    </Button>
-                  </div>
+                  {activeIndicators.length === 0 && (
+                    <div className="text-center py-3 text-muted-foreground">
+                      {t('No active indicators')}
+                    </div>
+                  )}
                 </div>
               </div>
               
