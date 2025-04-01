@@ -1,4 +1,4 @@
-import React, { useRef, useEffect, useState, forwardRef, useImperativeHandle, ForwardRefRenderFunction } from 'react';
+import React, { useRef, useEffect, useState, forwardRef, useImperativeHandle, Ref, ForwardRefRenderFunction } from 'react';
 import { useTranslation } from 'react-i18next';
 
 // Define TradingView study typings
@@ -16,7 +16,6 @@ export interface TradingViewRef {
   refreshWidget: () => void;
   widget: any;
   getCurrentPrice: () => number;
-  captureChart: () => Promise<string | null>;
 }
 
 // Advanced TradingView Widget options interface
@@ -298,7 +297,7 @@ const EnhancedTradingViewWidgetComponent: ForwardRefRenderFunction<
           'use_localstorage_for_settings',
           'border_around_the_chart',
           
-          // Pro features - Removed duplicates
+          // Pro features
           'replay_mode',
           'drawing_tools_on_chart',
           'multiple_drawing_tools_on_chart',
@@ -306,6 +305,7 @@ const EnhancedTradingViewWidgetComponent: ForwardRefRenderFunction<
           'chart_events',
           'check_scale_sequence_on_new_bar',
           'same_data_requery',
+          'side_toolbar_in_fullscreen_mode',
           'show_chart_property_page',
           'create_volume_indicator_by_default',
           'right_bar_stays_on_scroll',
@@ -449,51 +449,13 @@ const EnhancedTradingViewWidgetComponent: ForwardRefRenderFunction<
     }
   };
 
-  // Function to capture chart image
-  const captureChart = async (): Promise<string | null> => {
-    if (!widgetRef.current) return null;
-    
-    try {
-      // First approach: Try using TradingView's native capture function
-      const chart = widgetRef.current.chart();
-      if (typeof chart.takeScreenshot === 'function') {
-        return await chart.takeScreenshot();
-      }
-      
-      // Second approach: Use chart's export image functionality
-      if (typeof widgetRef.current.exportImage === 'function') {
-        return await widgetRef.current.exportImage();
-      }
-      
-      // Third approach: Fall back to html2canvas
-      const html2canvas = (await import('html2canvas')).default;
-      const chartElement = document.getElementById(uniqueId.current);
-      if (chartElement) {
-        const canvas = await html2canvas(chartElement, {
-          backgroundColor: theme === 'dark' ? '#131722' : '#ffffff',
-          scale: 2,
-          logging: false,
-          allowTaint: true,
-          useCORS: true
-        });
-        return canvas.toDataURL('image/png');
-      }
-      
-      return null;
-    } catch (error) {
-      console.error('Error capturing chart:', error);
-      return null;
-    }
-  };
-
-  // Expose functions and widget reference to parent
+  // Expose the refresh function and widget reference to parent
   useImperativeHandle(
     ref,
     () => ({
       refreshWidget,
       widget: widgetRef.current,
-      getCurrentPrice: () => currentPrice,
-      captureChart
+      getCurrentPrice: () => currentPrice
     }),
     [widgetRef.current, currentPrice]
   );

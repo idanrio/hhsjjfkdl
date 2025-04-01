@@ -306,12 +306,13 @@ export function AIWyckoffCoach({ tradingViewRef, symbol, timeframe, onAnalysisCo
   };
 
   return (
-    <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+    <>
       {/* Button to open the AI Coach dialog */}
       <DialogTrigger asChild>
         <Button 
           variant="outline" 
           className="flex items-center gap-2"
+          onClick={() => setIsDialogOpen(true)}
         >
           <Sparkles className="h-4 w-4" />
           {t("Wyckoff Coach")}
@@ -722,7 +723,7 @@ export function AIWyckoffCoach({ tradingViewRef, symbol, timeframe, onAnalysisCo
           </div>
         </DialogFooter>
       </DialogContent>
-    </Dialog>
+    </>
   );
 }
 

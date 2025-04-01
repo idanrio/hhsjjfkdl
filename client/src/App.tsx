@@ -2,7 +2,11 @@ import { Switch, Route } from "wouter";
 import { Toaster } from "@/components/ui/toaster";
 import NotFound from "@/pages/not-found";
 import Home from "@/pages/Home";
-import TradingDemo from "@/pages/trading/TradingDemo";
+import BacktestDashboard from "@/pages/backtest/Dashboard";
+import AdminDashboard from "@/pages/backtest/Admin";
+import TradeForm from "@/pages/backtest/TradeForm";
+import TradingEnvironment from "@/pages/backtest/TradingEnvironment";
+import PositionDemo from "@/components/PositionDemo";
 import { useEffect } from "react";
 import { useTranslation } from "react-i18next";
 
@@ -31,9 +35,13 @@ function AppInitializer() {
 function Router() {
   return (
     <Switch>
-      <Route path="/" component={TradingDemo} />
-      <Route path="/home" component={Home} />
-      <Route path="/trading/demo" component={TradingDemo} />
+      <Route path="/" component={Home} />
+      <Route path="/backtest/dashboard" component={BacktestDashboard} />
+      <Route path="/backtest/admin" component={AdminDashboard} />
+      <Route path="/backtest/new-trade" component={TradeForm} />
+      <Route path="/backtest/trades/:id" component={TradeForm} />
+      <Route path="/backtest/trading" component={TradingEnvironment} />
+      <Route path="/backtest/position-demo" component={PositionDemo} />
       <Route component={NotFound} />
     </Switch>
   );
