@@ -31,7 +31,8 @@ function AppInitializer() {
 function Router() {
   return (
     <Switch>
-      <Route path="/" component={Home} />
+      <Route path="/" component={TradingDemo} />
+      <Route path="/home" component={Home} />
       <Route path="/trading/demo" component={TradingDemo} />
       <Route component={NotFound} />
     </Switch>
