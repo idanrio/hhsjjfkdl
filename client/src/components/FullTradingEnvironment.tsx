@@ -2,7 +2,8 @@ import React, { useState, useRef, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import EnhancedTradingViewWidget, { TradingViewRef } from './EnhancedTradingViewWidget';
 import { ProTradingPanel } from './ProTradingPanel';
-import { Position } from '@/types/trading';
+import { AIWyckoffCoach } from './AIWyckoffCoach';
+import { Position, WyckoffAnalysisResult } from '@/types/trading';
 import {
   Select,
   SelectContent,
@@ -801,6 +802,19 @@ export function FullTradingEnvironment({
           <Button variant="ghost" size="sm">
             <Bell className="h-4 w-4" />
           </Button>
+          
+          {/* AI Wyckoff Coach Button */}
+          <Dialog>
+            <AIWyckoffCoach 
+              tradingViewRef={tradingViewRef} 
+              symbol={selectedSymbol}
+              timeframe={selectedTimeframe}
+              onAnalysisComplete={(analysis: WyckoffAnalysisResult) => {
+                console.log("Wyckoff analysis completed:", analysis);
+                // You could save analysis to state or perform other actions
+              }}
+            />
+          </Dialog>
           
           {/* Fullscreen Toggle */}
           <Button variant="ghost" size="sm" onClick={toggleFullScreen}>
