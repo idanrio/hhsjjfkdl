@@ -97,12 +97,17 @@ export function AIWyckoffCoach({ tradingViewRef, symbol, timeframe, onAnalysisCo
           const container = document.getElementById(tradingViewRef.current.widget._id);
           if (!container) throw new Error('Chart container not found');
           
-          // If html2canvas is not available, we need to dynamically import it
+          // Import and use html2canvas (which is already installed)
           const html2canvas = (await import('html2canvas')).default;
+          
+          // Apply proper settings for capturing TradingView charts
           const canvas = await html2canvas(container, {
             backgroundColor: '#131722', // TradingView dark theme background
-            scale: 2, // Increase quality
+            scale: 2, // Increase quality for better resolution
             logging: false,
+            useCORS: true, // Enable cross-origin image loading
+            allowTaint: true, // Allow cross-origin images to taint the canvas
+            imageTimeout: 0, // Wait indefinitely for images to load
           });
           
           setCapturedImage(canvas.toDataURL('image/png'));

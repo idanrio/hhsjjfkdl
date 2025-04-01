@@ -514,7 +514,7 @@ export function FullTradingEnvironment({
           {/* Timeframe Selector */}
           <Select value={selectedTimeframe} onValueChange={setSelectedTimeframe}>
             <SelectTrigger className="w-[70px]">
-              <SelectValue />
+              <SelectValue placeholder={timeframes.find(t => t.value === selectedTimeframe)?.label || selectedTimeframe} />
             </SelectTrigger>
             <SelectContent>
               {timeframes.map(timeframe => (
@@ -528,7 +528,7 @@ export function FullTradingEnvironment({
           {/* Chart Style Selector */}
           <Select value={selectedChartStyle} onValueChange={setSelectedChartStyle}>
             <SelectTrigger className="w-[90px]">
-              <SelectValue />
+              <SelectValue placeholder={chartStyles.find(s => s.value === selectedChartStyle)?.label || selectedChartStyle} />
             </SelectTrigger>
             <SelectContent>
               {chartStyles.map(style => (
