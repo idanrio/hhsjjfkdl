@@ -174,12 +174,23 @@ export function TradingCoach({ onAnalysisComplete }: TradingCoachProps) {
   const handleDownloadImage = () => {
     if (!enhancedImage) return;
     
+    // Generate timestamp for the filename
+    const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+    const phase = analysisResult?.wyckoffPhase?.toLowerCase().replace(/\s+/g, '-') || 'analysis';
+    
+    // Create meaningful filename with phase and timestamp
+    const filename = `wyckoff-${phase}-${timestamp}.png`;
+    
+    // Create temporary anchor element to trigger download
     const link = document.createElement('a');
     link.href = enhancedImage;
-    link.download = 'wyckoff-analysis.png';
+    link.download = filename;
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
+    
+    // Show success feedback (optional)
+    console.log(`Downloaded ${filename}`);
   };
   
   // Handle starting a new analysis

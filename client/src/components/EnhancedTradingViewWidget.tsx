@@ -403,13 +403,223 @@ const EnhancedTradingViewWidgetComponent: ForwardRefRenderFunction<
     [widgetRef.current, currentPrice]
   );
   
+  // Define available indicators grouped by categories
+  const availableIndicators = {
+    favorites: [
+      'Moving Average',
+      'RSI',
+      'MACD',
+      'Bollinger Bands',
+      'Volume',
+      'Average True Range'
+    ],
+    technicals: [
+      'Accumulation/Distribution',
+      'Average Directional Index',
+      'Commodity Channel Index',
+      'Chaikin Money Flow',
+      'On Balance Volume',
+      'Stochastic'
+    ],
+    financials: [
+      'Current Price',
+      'Previous Close',
+      'Performance',
+      'Volatility',
+      'Relative Volume',
+      'Earnings'
+    ],
+    community: [
+      'The Ultimate Indicator by ATK',
+      'Volume Profile',
+      'Wyckoff Waves',
+      'Support/Resistance',
+      'Supply Demand Zones',
+      'Market Cycle'
+    ]
+  };
+  
+  // Dynamic indicator management
+  const [showIndicatorsMenu, setShowIndicatorsMenu] = useState(false);
+  const [activeCategory, setActiveCategory] = useState('favorites');
+  const indicatorsMenuRef = useRef<HTMLDivElement>(null);
+  
+  // Handle outside click for indicators menu
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (indicatorsMenuRef.current && !indicatorsMenuRef.current.contains(event.target as Node)) {
+        setShowIndicatorsMenu(false);
+      }
+    };
+
+    if (showIndicatorsMenu) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+    
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [showIndicatorsMenu]);
+  
+  // Handle indicator selection
+  const handleIndicatorSelect = (indicator: string) => {
+    if (widgetRef.current) {
+      try {
+        widgetRef.current.chart().createStudy(indicator);
+        setShowIndicatorsMenu(false);
+      } catch (error) {
+        console.error(`Error adding indicator ${indicator}:`, error);
+      }
+    }
+  };
+  
+  // Create indicators menu overlay
+  const renderIndicatorsMenu = () => {
+    if (!showIndicatorsMenu) return null;
+    
+    return (
+      <div 
+        ref={indicatorsMenuRef}
+        className="absolute top-[40px] left-[180px] w-[450px] max-h-[500px] bg-[#1e1e1e] border border-gray-700 rounded-md shadow-lg z-50 text-white"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="flex flex-col h-full">
+          <div className="p-3 border-b border-gray-700">
+            <div className="relative flex items-center">
+              <input 
+                type="text"
+                placeholder="Search"
+                className="w-full bg-[#2a2a2a] border border-gray-700 rounded-md py-2 px-3 pr-8 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500"
+              />
+              <div className="absolute right-3 text-gray-400">
+                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+              </div>
+            </div>
+          </div>
+          
+          <div className="flex h-full">
+            <div className="w-1/3 border-r border-gray-700 p-1">
+              <button 
+                className={`w-full text-left p-2 my-1 rounded text-sm flex items-center hover:bg-gray-700 ${activeCategory === 'favorites' ? 'bg-gray-700' : ''}`}
+                onClick={() => setActiveCategory('favorites')}
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mr-2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>
+                Favorites
+              </button>
+              <button 
+                className={`w-full text-left p-2 my-1 rounded text-sm flex items-center hover:bg-gray-700 ${activeCategory === 'technicals' ? 'bg-gray-700' : ''}`}
+                onClick={() => setActiveCategory('technicals')}
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mr-2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline></svg>
+                Technicals
+              </button>
+              <button 
+                className={`w-full text-left p-2 my-1 rounded text-sm flex items-center hover:bg-gray-700 ${activeCategory === 'financials' ? 'bg-gray-700' : ''}`}
+                onClick={() => setActiveCategory('financials')}
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mr-2"><rect x="2" y="7" width="20" height="14" rx="2" ry="2"></rect><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"></path></svg>
+                Financials
+              </button>
+              <button 
+                className={`w-full text-left p-2 my-1 rounded text-sm flex items-center hover:bg-gray-700 ${activeCategory === 'community' ? 'bg-gray-700' : ''}`}
+                onClick={() => setActiveCategory('community')}
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mr-2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
+                Community
+              </button>
+            </div>
+            
+            <div className="w-2/3 overflow-y-auto p-2">
+              <div className="flex justify-between items-center mb-2 text-sm text-gray-400 px-2">
+                <span>SCRIPT NAME</span>
+                <span>AUTHOR</span>
+              </div>
+              {availableIndicators[activeCategory as keyof typeof availableIndicators].map((indicator, index) => (
+                <div 
+                  key={index} 
+                  className="flex justify-between items-center p-2 rounded hover:bg-gray-700 cursor-pointer"
+                  onClick={() => handleIndicatorSelect(indicator)}
+                >
+                  <div className="flex items-center">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="#f7cb45" stroke="#f7cb45" strokeWidth="0" className="mr-2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>
+                    {indicator}
+                  </div>
+                  <div className="text-sm text-blue-400">
+                    {activeCategory === 'community' ? 'tradingview' : ''}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  };
+  
+  // Create custom toolbar buttons
+  const renderCustomToolbar = () => {
+    return (
+      <div className="absolute top-0 left-0 w-full flex items-center h-[38px] z-10 bg-[#1e1e1e] border-b border-gray-700">
+        <div className="flex items-center ml-2">
+          <button 
+            className="px-3 py-1 text-white text-sm rounded hover:bg-gray-700 mr-1"
+            onClick={() => {
+              if (widgetRef.current) {
+                const currentInterval = interval;
+                const timeframes = ['1', '5', '15', '30', '60', '240', 'D', 'W', 'M'];
+                const currentIndex = timeframes.indexOf(currentInterval);
+                const nextIndex = (currentIndex + 1) % timeframes.length;
+                const nextInterval = timeframes[nextIndex];
+                
+                widgetRef.current.setInterval(nextInterval);
+              }
+            }}
+          >
+            {interval}
+          </button>
+          
+          <button 
+            className="px-3 py-1 text-white text-sm rounded hover:bg-gray-700 mr-1"
+            onClick={() => {
+              if (widgetRef.current) {
+                const chartTypes = ['1', '2', '3', '4']; // Candles, Bars, Line, Area
+                const currentStyle = widgetRef.current.chart().chartType() || '1';
+                const currentIndex = chartTypes.indexOf(currentStyle);
+                const nextIndex = (currentIndex + 1) % chartTypes.length;
+                const nextStyle = chartTypes[nextIndex];
+                
+                widgetRef.current.chart().setChartType(parseInt(nextStyle));
+              }
+            }}
+          >
+            Candles
+          </button>
+          
+          <button 
+            className="px-3 py-1 text-white text-sm rounded hover:bg-gray-700 flex items-center"
+            onClick={() => setShowIndicatorsMenu(!showIndicatorsMenu)}
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mr-1"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline></svg>
+            Indicators
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="ml-1"><polyline points="6 9 12 15 18 9"></polyline></svg>
+          </button>
+        </div>
+        
+        {renderIndicatorsMenu()}
+      </div>
+    );
+  };
+  
   return (
-    <div 
-      ref={container} 
-      style={{ width, height }}
-      id={uniqueId.current}
-      className="trading-view-container"
-    />
+    <div className="relative">
+      {renderCustomToolbar()}
+      <div 
+        ref={container} 
+        style={{ width, height }}
+        id={uniqueId.current}
+        className="trading-view-container"
+      />
+    </div>
   );
 };
 
