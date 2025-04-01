@@ -401,6 +401,46 @@ export function TradingCoach({ onAnalysisComplete }: TradingCoachProps) {
                       <div className="rounded-md border p-4">
                         <p className="mb-4">{analysisResult.feedback || t("No feedback available")}</p>
                         
+                        {analysisResult.priceTarget && (
+                          <>
+                            <Separator className="my-3" />
+                            <h4 className="font-medium mb-2">Price Targets</h4>
+                            <div className="bg-gray-50 dark:bg-slate-900 rounded-md p-3 mb-3">
+                              <div className="grid grid-cols-3 gap-3">
+                                <div className="text-center">
+                                  <div className="text-xs text-muted-foreground mb-1">Entry Price</div>
+                                  <div className={`font-bold ${analysisResult.priceTarget.direction === 'long' ? 'text-green-600' : analysisResult.priceTarget.direction === 'short' ? 'text-red-600' : 'text-blue-600'}`}>
+                                    {analysisResult.priceTarget.entryPrice || "N/A"}
+                                  </div>
+                                </div>
+                                <div className="text-center">
+                                  <div className="text-xs text-muted-foreground mb-1">Stop Loss</div>
+                                  <div className="font-bold text-red-600">
+                                    {analysisResult.priceTarget.stopLoss || "N/A"}
+                                  </div>
+                                </div>
+                                <div className="text-center">
+                                  <div className="text-xs text-muted-foreground mb-1">Take Profit</div>
+                                  <div className="font-bold text-green-600">
+                                    {analysisResult.priceTarget.takeProfit || "N/A"}
+                                  </div>
+                                </div>
+                              </div>
+                              {analysisResult.priceTarget.riskRewardRatio && (
+                                <div className="text-center mt-2 pt-2 border-t">
+                                  <span className="text-xs text-muted-foreground">Risk/Reward Ratio: </span>
+                                  <span className="font-medium">1:{analysisResult.priceTarget.riskRewardRatio.toFixed(1)}</span>
+                                </div>
+                              )}
+                              {analysisResult.priceTarget.rationale && (
+                                <div className="mt-2 pt-2 border-t text-sm">
+                                  <p className="italic">{analysisResult.priceTarget.rationale}</p>
+                                </div>
+                              )}
+                            </div>
+                          </>
+                        )}
+                      
                         {analysisResult.tradingRecommendations && analysisResult.tradingRecommendations.length > 0 && (
                           <>
                             <Separator className="my-3" />

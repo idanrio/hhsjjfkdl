@@ -330,15 +330,23 @@ export const aiService = {
 
             5. SKILLS APPLICATION: Reference the three skills from "The Three Skills of Top Trading":
                - Timing (identifying the trend and its changes)
-               - Risk Control (identifying low-risk entry points)
-               - Trade Management (setting proper stops and targets)
+               - Risk Control (identifying low-risk entry points and specific price targets)
+               - Trade Management (setting proper stops and targets with specific price levels)
             
             6. COMPARE USER ANALYSIS: If the user provided notes about their own analysis, comment on:
                - What they correctly identified according to Wyckoff principles
                - What they missed or misinterpreted
                - How they could improve their Wyckoff analysis
             
-            7. PROVIDE BOTH EDUCATIONAL AND PRACTICAL VALUE:
+            7. PROVIDE SPECIFIC PRICE TARGETS:
+               - Always identify exact entry price points based on Wyckoff principles
+               - Always provide clear stop-loss levels based on key market structure points
+               - Always provide take-profit targets with specific prices 
+               - Calculate and include the risk-reward ratio for the recommended trade
+               - Provide specific direction (long/short) based on your analysis
+               - Explain the rationale behind your price targets
+
+            8. PROVIDE BOTH EDUCATIONAL AND PRACTICAL VALUE:
                - Explain the reasoning behind your analysis in detail
                - Offer specific trading recommendations based on Wyckoff principles
                - Suggest what might happen next according to typical Wyckoff scenarios
@@ -362,6 +370,19 @@ export const aiService = {
                 "specific actionable trading recommendation 1",
                 "specific actionable trading recommendation 2"
               ],
+              "priceTarget": {
+                "entryPrice": number (exact entry price level),
+                "stopLoss": number (exact stop loss price level),
+                "takeProfit": number (exact take profit price level),
+                "direction": "long" or "short" or "neutral",
+                "rationale": "explanation of why these levels were chosen based on Wyckoff principles",
+                "riskRewardRatio": number (calculated risk-reward ratio)
+              },
+              "symbolInfo": {
+                "name": "symbol name if visible in chart",
+                "timeframe": "timeframe if visible in chart",
+                "currentPrice": number (current price if visible)
+              },
               "learningResources": [
                 {
                   "title": "resource title",
@@ -499,27 +520,33 @@ async function generateEnhancedImage(imageBase64: string, analysis: any): Promis
     
     // Generate detailed prompt for DALL-E
     const prompt = `
-    Create an enhanced version of this financial chart with Wyckoff methodology annotations. 
-    This chart is in a ${wyckoffPhase.toUpperCase()} phase.
+    Create an enhanced version of this financial chart with Wyckoff methodology annotations. This is a technical analysis of a financial chart showing a ${wyckoffPhase.toUpperCase()} phase.
     
-    ADD THESE ANNOTATIONS:
+    IMPORTANT: You must maintain the original chart's exact pattern and data as your base. Do not create a new chart. Start by adding clear Wyckoff analysis annotations on top of the existing chart.
+    
+    ADD THESE SPECIFIC WYCKOFF ANNOTATIONS:
     ${events.map((event: any, index: number) => 
-      `${index + 1}. Label "${event.type}" at ${event.location}`
+      `${index + 1}. Mark and label "${event.type}" at ${event.location} with a visible pointer`
     ).join("\n")}
     
-    ADDITIONAL ELEMENTS:
-    - Add horizontal lines for support and resistance levels
-    - Add clear label "${wyckoffPhase.toUpperCase()} PHASE" in a visible location
-    - Circle and annotate important price action points
-    - Add arrows showing expected price direction based on Wyckoff analysis
-    - Include a small legend explaining the annotations
-    - Mark any Springs, Upthrusts, Tests, Signs of Strength, or Signs of Weakness
+    REQUIRED TECHNICAL ELEMENTS (must include all of these):
+    - Draw horizontal lines for key support and resistance levels
+    - Add a visible title "${wyckoffPhase.toUpperCase()} PHASE" at the top of the chart
+    - Circle all important price action points and pivots
+    - Add clear arrows showing expected price direction based on Wyckoff analysis
+    - Add entry, stop-loss, and take-profit levels if mentioned in the analysis
+    - Include a small legend explaining your annotations
+    - Highlight all Springs, Upthrusts, Tests, Signs of Strength (SOS), or Signs of Weakness (SOW)
     
-    STYLING:
-    - Use contrasting colors for annotations (red for resistance/distribution, green for support/accumulation)
-    - Make all text annotations readable
-    - Use professional financial charting style
-    - Do not remove or alter any original chart data
+    VISUAL STYLE REQUIREMENTS:
+    - Use professional trading chart colors: red for resistance/distribution/selling, green for support/accumulation/buying
+    - Use bright, contrasting colors for annotations against the background
+    - Make all text annotations large and clearly readable
+    - Follow professional financial charting conventions
+    - Maintain the exact price levels, patterns and time periods from the original chart
+    - Add price levels along the y-axis for reference
+    
+    The final result must be a professional trading analysis chart that clearly communicates the Wyckoff methodology findings while preserving the original chart data exactly.
     `;
     
     try {

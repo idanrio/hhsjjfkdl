@@ -62,6 +62,19 @@ export interface WyckoffAnalysisResult {
   feedback?: string;
   tradingRecommendations?: string[];
   enhancedImage?: string;
+  priceTarget?: {
+    entryPrice?: number;
+    stopLoss?: number;
+    takeProfit?: number;
+    direction?: 'long' | 'short' | 'neutral';
+    rationale?: string;
+    riskRewardRatio?: number;
+  };
+  symbolInfo?: {
+    name?: string;
+    timeframe?: string;
+    currentPrice?: number;
+  };
   events?: {
     type: string;
     location: string;

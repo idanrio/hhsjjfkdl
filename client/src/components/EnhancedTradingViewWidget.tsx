@@ -461,14 +461,45 @@ const EnhancedTradingViewWidgetComponent: ForwardRefRenderFunction<
     };
   }, [showIndicatorsMenu]);
   
+  // Track selected indicators
+  const [selectedIndicators, setSelectedIndicators] = useState<string[]>([]);
+  
   // Handle indicator selection
   const handleIndicatorSelect = (indicator: string) => {
     if (widgetRef.current) {
       try {
-        widgetRef.current.chart().createStudy(indicator);
-        setShowIndicatorsMenu(false);
+        // Ensure the indicator isn't already added
+        if (!selectedIndicators.includes(indicator)) {
+          const studyId = widgetRef.current.chart().createStudy(indicator);
+          console.log(`Added indicator ${indicator} with ID: ${studyId}`);
+          
+          // Update selected indicators list
+          setSelectedIndicators(prev => [...prev, indicator]);
+        } else {
+          console.log(`Indicator ${indicator} already added`);
+        }
       } catch (error) {
         console.error(`Error adding indicator ${indicator}:`, error);
+      }
+    }
+  };
+  
+  // Apply all selected indicators
+  const applyAllIndicators = () => {
+    setShowIndicatorsMenu(false);
+    
+    if (widgetRef.current && selectedIndicators.length > 0) {
+      try {
+        // Force chart redraw to ensure indicators appear
+        const symbol = widgetRef.current.chart().symbol();
+        const resolution = widgetRef.current.chart().resolution();
+        
+        // Refresh the chart to ensure indicators are visible
+        widgetRef.current.chart().refreshDWM(true);
+        
+        console.log(`Applied ${selectedIndicators.length} indicators to chart`);
+      } catch (error) {
+        console.error('Error applying indicators:', error);
       }
     }
   };
@@ -497,58 +528,73 @@ const EnhancedTradingViewWidgetComponent: ForwardRefRenderFunction<
             </div>
           </div>
           
-          <div className="flex h-full">
-            <div className="w-1/3 border-r border-gray-700 p-1">
-              <button 
-                className={`w-full text-left p-2 my-1 rounded text-sm flex items-center hover:bg-gray-700 ${activeCategory === 'favorites' ? 'bg-gray-700' : ''}`}
-                onClick={() => setActiveCategory('favorites')}
-              >
-                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mr-2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>
-                Favorites
-              </button>
-              <button 
-                className={`w-full text-left p-2 my-1 rounded text-sm flex items-center hover:bg-gray-700 ${activeCategory === 'technicals' ? 'bg-gray-700' : ''}`}
-                onClick={() => setActiveCategory('technicals')}
-              >
-                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mr-2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline></svg>
-                Technicals
-              </button>
-              <button 
-                className={`w-full text-left p-2 my-1 rounded text-sm flex items-center hover:bg-gray-700 ${activeCategory === 'financials' ? 'bg-gray-700' : ''}`}
-                onClick={() => setActiveCategory('financials')}
-              >
-                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mr-2"><rect x="2" y="7" width="20" height="14" rx="2" ry="2"></rect><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"></path></svg>
-                Financials
-              </button>
-              <button 
-                className={`w-full text-left p-2 my-1 rounded text-sm flex items-center hover:bg-gray-700 ${activeCategory === 'community' ? 'bg-gray-700' : ''}`}
-                onClick={() => setActiveCategory('community')}
-              >
-                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mr-2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
-                Community
-              </button>
+          <div className="flex flex-col h-full">
+            <div className="flex flex-grow">
+              <div className="w-1/3 border-r border-gray-700 p-1">
+                <button 
+                  className={`w-full text-left p-2 my-1 rounded text-sm flex items-center hover:bg-gray-700 ${activeCategory === 'favorites' ? 'bg-gray-700' : ''}`}
+                  onClick={() => setActiveCategory('favorites')}
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mr-2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>
+                  Favorites
+                </button>
+                <button 
+                  className={`w-full text-left p-2 my-1 rounded text-sm flex items-center hover:bg-gray-700 ${activeCategory === 'technicals' ? 'bg-gray-700' : ''}`}
+                  onClick={() => setActiveCategory('technicals')}
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mr-2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline></svg>
+                  Technicals
+                </button>
+                <button 
+                  className={`w-full text-left p-2 my-1 rounded text-sm flex items-center hover:bg-gray-700 ${activeCategory === 'financials' ? 'bg-gray-700' : ''}`}
+                  onClick={() => setActiveCategory('financials')}
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mr-2"><rect x="2" y="7" width="20" height="14" rx="2" ry="2"></rect><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"></path></svg>
+                  Financials
+                </button>
+                <button 
+                  className={`w-full text-left p-2 my-1 rounded text-sm flex items-center hover:bg-gray-700 ${activeCategory === 'community' ? 'bg-gray-700' : ''}`}
+                  onClick={() => setActiveCategory('community')}
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mr-2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
+                  Community
+                </button>
+              </div>
+              
+              <div className="w-2/3 overflow-y-auto p-2">
+                <div className="flex justify-between items-center mb-2 text-sm text-gray-400 px-2">
+                  <span>SCRIPT NAME</span>
+                  <span>AUTHOR</span>
+                </div>
+                {availableIndicators[activeCategory as keyof typeof availableIndicators].map((indicator, index) => (
+                  <div 
+                    key={index} 
+                    className="flex justify-between items-center p-2 rounded hover:bg-gray-700 cursor-pointer"
+                    onClick={() => handleIndicatorSelect(indicator)}
+                  >
+                    <div className="flex items-center">
+                      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="#f7cb45" stroke="#f7cb45" strokeWidth="0" className="mr-2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>
+                      {indicator}
+                    </div>
+                    <div className="text-sm text-blue-400">
+                      {activeCategory === 'community' ? 'tradingview' : ''}
+                    </div>
+                  </div>
+                ))}
+              </div>
             </div>
             
-            <div className="w-2/3 overflow-y-auto p-2">
-              <div className="flex justify-between items-center mb-2 text-sm text-gray-400 px-2">
-                <span>SCRIPT NAME</span>
-                <span>AUTHOR</span>
+            {/* Indicators status bar and Apply button */}
+            <div className="border-t border-gray-700 p-3 flex justify-between items-center">
+              <div className="text-sm text-gray-400">
+                <span className="font-medium text-white">{selectedIndicators.length}</span> indicators selected
               </div>
-              {availableIndicators[activeCategory as keyof typeof availableIndicators].map((indicator, index) => (
-                <div 
-                  key={index} 
-                  className="flex justify-between items-center p-2 rounded hover:bg-gray-700 cursor-pointer"
-                  onClick={() => handleIndicatorSelect(indicator)}
-                >
-                  <div className="flex items-center">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="#f7cb45" stroke="#f7cb45" strokeWidth="0" className="mr-2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>
-                    {indicator}
-                  </div>
-                  <div className="text-sm text-blue-400">
-                    {activeCategory === 'community' ? 'tradingview' : ''}
-                  </div>
-                </div>
-              ))}
+              <button
+                className="px-4 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded text-sm font-medium"
+                onClick={applyAllIndicators}
+              >
+                Apply
+              </button>
             </div>
           </div>
         </div>
@@ -561,22 +607,34 @@ const EnhancedTradingViewWidgetComponent: ForwardRefRenderFunction<
     return (
       <div className="absolute top-0 left-0 w-full flex items-center h-[38px] z-10 bg-[#1e1e1e] border-b border-gray-700">
         <div className="flex items-center ml-2">
-          <button 
-            className="px-3 py-1 text-white text-sm rounded hover:bg-gray-700 mr-1"
-            onClick={() => {
-              if (widgetRef.current) {
-                const currentInterval = interval;
-                const timeframes = ['1', '5', '15', '30', '60', '240', 'D', 'W', 'M'];
-                const currentIndex = timeframes.indexOf(currentInterval);
-                const nextIndex = (currentIndex + 1) % timeframes.length;
-                const nextInterval = timeframes[nextIndex];
-                
-                widgetRef.current.setInterval(nextInterval);
-              }
-            }}
-          >
-            {interval}
-          </button>
+          <div className="flex items-center space-x-1 mr-2">
+            {['1', '5', '15', '30', '60', 'D', 'W', 'M'].map((timeframe) => (
+              <button
+                key={timeframe}
+                className={`px-2 py-1 text-xs rounded ${
+                  interval === timeframe ? 'bg-blue-600 text-white' : 'text-gray-300 hover:bg-gray-700'
+                }`}
+                onClick={() => {
+                  if (widgetRef.current) {
+                    try {
+                      widgetRef.current.chart().setResolution(timeframe);
+                    } catch (err) {
+                      console.error('Error setting interval:', err);
+                    }
+                  }
+                }}
+              >
+                {timeframe === '1' && '1m'}
+                {timeframe === '5' && '5m'}
+                {timeframe === '15' && '15m'}
+                {timeframe === '30' && '30m'}
+                {timeframe === '60' && '1h'}
+                {timeframe === 'D' && '1D'}
+                {timeframe === 'W' && '1W'}
+                {timeframe === 'M' && '1M'}
+              </button>
+            ))}
+          </div>
           
           <button 
             className="px-3 py-1 text-white text-sm rounded hover:bg-gray-700 mr-1"

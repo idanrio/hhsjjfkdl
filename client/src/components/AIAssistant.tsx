@@ -34,6 +34,12 @@ export function AIAssistant() {
         // Check if OpenAI API key is available through the server
         const isAvailable = await isOpenAIAvailable();
         setApiKeyAvailable(isAvailable);
+        
+        if (!isAvailable) {
+          setError('OpenAI API key is not available or has reached rate limits');
+        } else if (error && error.includes('OpenAI API key')) {
+          setError(null); // Clear error if key becomes available
+        }
       } catch (error) {
         console.error('Error checking API key availability:', error);
         setApiKeyAvailable(false);
@@ -41,7 +47,12 @@ export function AIAssistant() {
     };
     
     checkApiKeyStatus();
-  }, []);
+    
+    // Check status every 3 minutes
+    const intervalId = setInterval(checkApiKeyStatus, 3 * 60 * 1000);
+    
+    return () => clearInterval(intervalId);
+  }, [error]);
 
   // Sample trading questions to help guide users
   const sampleQuestions = [
