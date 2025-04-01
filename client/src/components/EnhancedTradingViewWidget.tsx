@@ -1,6 +1,16 @@
 import React, { useRef, useEffect, useState, forwardRef, useImperativeHandle, Ref, ForwardRefRenderFunction } from 'react';
 import { useTranslation } from 'react-i18next';
 
+// Define TradingView study typings
+interface TradingViewStudy {
+  name: string;
+  forceOverlay?: boolean;
+  lock?: boolean;
+  inputs?: any[];
+  overrides?: Record<string, any>;
+  options?: Record<string, any>;
+}
+
 // Define the type for the ref
 export interface TradingViewRef {
   refreshWidget: () => void;
@@ -470,8 +480,84 @@ const EnhancedTradingViewWidgetComponent: ForwardRefRenderFunction<
       try {
         // Ensure the indicator isn't already added
         if (!selectedIndicators.includes(indicator)) {
-          const studyId = widgetRef.current.chart().createStudy(indicator);
-          console.log(`Added indicator ${indicator} with ID: ${studyId}`);
+          // Use different methods to add indicators with proper error handling
+          // Use advanced options to ensure indicators are displayed correctly
+          const studyInputs: Record<string, any> = {};
+          const studyOverrides: Record<string, any> = {};
+          
+          // Special handling for common indicators
+          switch(indicator) {
+            case 'RSI':
+              studyOverrides['Plot.linewidth'] = 2;
+              studyOverrides['Plot.color'] = '#5D69B1';
+              break;
+            case 'MACD':
+              studyOverrides['Fast MA Length'] = 12;
+              studyOverrides['Slow MA Length'] = 26;
+              studyOverrides['Signal Length'] = 9;
+              break;
+            case 'Bollinger Bands':
+              studyOverrides['Plot.linewidth'] = 2;
+              studyOverrides['Upper.linewidth'] = 2;
+              studyOverrides['Lower.linewidth'] = 2;
+              break;
+            case 'Moving Average':
+              studyOverrides['Plot.linewidth'] = 2;
+              studyOverrides['Length'] = 20;
+              break;
+            case 'Volume':
+              studyOverrides['volume.precision'] = 0;
+              break;
+            case 'Accumulation/Distribution':
+              studyOverrides['Plot.linewidth'] = 2;
+              break;
+          }
+          
+          // Try multiple methods to ensure indicator is added
+          try {
+            // Method 1: Direct createStudy with proper options
+            const studyId = widgetRef.current.chart().createStudy(
+              indicator,
+              false, // forceOverlay
+              false, // lock
+              [], // inputs
+              studyOverrides, // overrides
+              { checkLimit: false } // options to bypass study limit
+            );
+            console.log(`Added indicator ${indicator} with ID: ${studyId}`);
+          } catch (err1) {
+            // Method 2: Alternative approach using chart() method
+            try {
+              const chart = widgetRef.current.chart();
+              chart.addCustomIndicator({
+                name: indicator,
+                metainfo: {
+                  _metainfoVersion: 51,
+                  id: indicator.replace(/\s+/g, '').toLowerCase(),
+                  description: indicator,
+                  shortDescription: indicator,
+                  isCustomIndicator: true,
+                },
+                constructor: function() {
+                  this.init = function() {
+                    this.exec = function() {
+                      // Try to add a standard indicator
+                      chart.createStudy(indicator);
+                      return [0];
+                    };
+                  };
+                }
+              });
+              console.log(`Added custom indicator ${indicator}`);
+            } catch (err2) {
+              // Method 3: Last resort - try with the widget API
+              try {
+                (widgetRef.current as any).addCustomIndicator(indicator);
+              } catch (err3) {
+                throw new Error(`All methods failed: ${err1}, ${err2}, ${err3}`);
+              }
+            }
+          }
           
           // Update selected indicators list
           setSelectedIndicators(prev => [...prev, indicator]);
@@ -617,7 +703,47 @@ const EnhancedTradingViewWidgetComponent: ForwardRefRenderFunction<
                 onClick={() => {
                   if (widgetRef.current) {
                     try {
-                      widgetRef.current.chart().setResolution(timeframe);
+                      // Save chart configuration and studies before changing interval
+                      const chartType = widgetRef.current.chart().chartType();
+                      const currentSymbol = widgetRef.current.chart().symbol();
+                      const activeStudies = widgetRef.current.chart().getAllStudies();
+                      
+                      // First set the resolution properly using both methods to ensure compatibility
+                      widgetRef.current.chart().setResolution(timeframe, (error: any) => {
+                        if (error) {
+                          console.error('Error in resolution callback:', error);
+                        } else {
+                          console.log(`Successfully changed interval to ${timeframe}`);
+                        }
+                      });
+                      
+                      // Then force a proper widget reset to ensure the interval change is applied
+                      widgetRef.current.setSymbol(currentSymbol, timeframe, () => {
+                        // Restore chart type after interval change
+                        if (chartType) {
+                          widgetRef.current.chart().setChartType(chartType);
+                        }
+                        
+                        // Re-add studies that were active before interval change
+                        if (activeStudies && activeStudies.length > 0) {
+                          activeStudies.forEach((study: any) => {
+                            try {
+                              if (study.name) {
+                                widgetRef.current.chart().createStudy(
+                                  study.name,
+                                  study.forceOverlay || false,
+                                  study.lock || false,
+                                  study.inputs || [],
+                                  study.overrides || {},
+                                  study.options || {}
+                                );
+                              }
+                            } catch (studyErr) {
+                              console.warn(`Failed to restore study ${study.name}:`, studyErr);
+                            }
+                          });
+                        }
+                      });
                     } catch (err) {
                       console.error('Error setting interval:', err);
                     }
