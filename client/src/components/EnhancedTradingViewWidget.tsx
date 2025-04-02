@@ -19,6 +19,8 @@ export interface TradingViewRef {
   addIndicator: (indicator: string) => void;
   removeIndicator: (indicator: string) => void;
   getSelectedIndicators: () => string[];
+  toggleReplayMode: () => boolean;
+  isInReplayMode: () => boolean;
 }
 
 // Advanced TradingView Widget options interface
@@ -178,6 +180,7 @@ const EnhancedTradingViewWidgetComponent: ForwardRefRenderFunction<
   // Dynamic indicator management
   const [showIndicatorsMenu, setShowIndicatorsMenu] = useState(false);
   const [activeCategory, setActiveCategory] = useState('favorites');
+  const [isReplayMode, setIsReplayMode] = useState(false);
   const indicatorsMenuRef = useRef<HTMLDivElement>(null);
   
   // Reference for the price update interval
@@ -461,6 +464,31 @@ const EnhancedTradingViewWidgetComponent: ForwardRefRenderFunction<
     }
   };
 
+  // Toggle replay mode from parent component
+  const toggleReplayMode = () => {
+    if (widgetRef.current) {
+      try {
+        // Similar implementation to the button click handler
+        setIsReplayMode(!isReplayMode);
+        const chart = widgetRef.current.chart();
+        
+        try {
+          // Try to use TradingView's built-in replay mode
+          if (chart.executeActionById) {
+            chart.executeActionById("replayMode");
+          } else if (chart.setChartProperty) {
+            chart.setChartProperty('replay', !isReplayMode);
+          }
+        } catch (error) {
+          console.warn("Couldn't toggle replay mode through API:", error);
+        }
+      } catch (error) {
+        console.error("Error toggling replay mode:", error);
+      }
+    }
+    return isReplayMode;
+  };
+
   // Expose the refresh function and widget reference to parent
   useImperativeHandle(
     ref,
@@ -470,9 +498,11 @@ const EnhancedTradingViewWidgetComponent: ForwardRefRenderFunction<
       getCurrentPrice: () => currentPrice,
       addIndicator: handleIndicatorSelect,
       removeIndicator: handleRemoveIndicator,
-      getSelectedIndicators: () => selectedIndicators
+      getSelectedIndicators: () => selectedIndicators,
+      toggleReplayMode,
+      isInReplayMode: () => isReplayMode
     }),
-    [widgetRef.current, currentPrice, selectedIndicators]
+    [widgetRef.current, currentPrice, selectedIndicators, isReplayMode]
   );
   
   // Define available indicators grouped by categories
@@ -990,12 +1020,106 @@ const EnhancedTradingViewWidgetComponent: ForwardRefRenderFunction<
           
           {/* Replay Button */}
           <button 
-            className="px-3 py-1 text-white text-sm rounded hover:bg-gray-700 ml-2 flex items-center"
+            className={`px-3 py-1 text-white text-sm rounded hover:bg-gray-700 ml-2 flex items-center ${isReplayMode ? 'bg-primary' : ''}`}
             onClick={() => {
               if (widgetRef.current) {
                 try {
-                  // Toggle replay mode using TradingView internal API
-                  widgetRef.current.chart().executeActionById("replayMode");
+                  // Toggle replay mode state
+                  setIsReplayMode(!isReplayMode);
+                  
+                  // Approach 1: Try using the built-in trading view command
+                  try {
+                    // This uses the direct chart API method
+                    const chart = widgetRef.current.chart();
+                    
+                    // Method 1: Use the Trading View's built-in replay function 
+                    if (chart.executeActionById) {
+                      chart.executeActionById("replayMode");
+                    } 
+                    // Method 2: Use chart properties to enable replay mode
+                    else if (chart.setChartProperty) {
+                      chart.setChartProperty('replay', !isReplayMode);
+                    }
+                    // Method 3: Use chart options to enable replay
+                    else if (chart.applyOverrides) {
+                      chart.applyOverrides({
+                        'replay.active': !isReplayMode,
+                        'replay.visible': !isReplayMode
+                      });
+                    }
+                    
+                    // If we get here, the internal method worked
+                    console.log("Replay mode toggled successfully");
+                    
+                    // At this point we should have activated TradingView's native replay mode
+                    // This allows users to drag a vertical line on the chart to view historical data
+                  } catch (error) {
+                    console.warn("Internal replay mode toggle failed, using custom implementation:", error);
+                    
+                    // Approach 2: Add a custom replay line using TradingView's drawing tools
+                    try {
+                      const chart = widgetRef.current.chart();
+                      
+                      if (!isReplayMode) {
+                        // Draw a vertical line at 75% of the visible chart
+                        const nowTime = new Date().getTime();
+                        const chartTimeRange = chart.getVisibleRange();
+                        const timeRangeSize = chartTimeRange.to - chartTimeRange.from;
+                        const replayLineTime = chartTimeRange.from + (timeRangeSize * 0.75);
+                        
+                        // Create a vertical line as a replay marker
+                        chart.createShape(
+                          { time: replayLineTime },
+                          { 
+                            shape: 'vertical_line', 
+                            lock: false, 
+                            disableSelection: false,
+                            disableSave: false,
+                            disableUndo: false,
+                            overrides: { 
+                              "linecolor": "#22a1e2", 
+                              "linewidth": 2,
+                              "showLabel": true,
+                              "text": "REPLAY MODE",
+                              "textcolor": "#22a1e2",
+                              "fontsize": 14
+                            }
+                          }
+                        );
+                        
+                        // Optionally, we could disable price updates and preserve the data state
+                        if (priceUpdateIntervalRef.current) {
+                          clearInterval(priceUpdateIntervalRef.current);
+                          priceUpdateIntervalRef.current = null;
+                        }
+                      } else {
+                        // Remove any replay lines
+                        const shapes = chart.getAllShapes();
+                        for (let i = 0; i < shapes.length; i++) {
+                          if (shapes[i].name === 'vertical_line') {
+                            chart.removeEntity(shapes[i].entityId);
+                          }
+                        }
+                        
+                        // Restart price updates
+                        if (onPriceUpdate && !priceUpdateIntervalRef.current) {
+                          priceUpdateIntervalRef.current = window.setInterval(() => {
+                            try {
+                              const lastPrice = chart.lastBar().close || chart.getLastPrice(chart.symbol());
+                              if (lastPrice && lastPrice !== currentPrice) {
+                                setCurrentPrice(lastPrice);
+                                onPriceUpdate(lastPrice);
+                              }
+                            } catch (e) {
+                              console.error("Error updating price:", e);
+                            }
+                          }, 1000);
+                        }
+                      }
+                    } catch (fallbackError) {
+                      console.error("All replay mode methods failed:", fallbackError);
+                    }
+                  }
                 } catch (error) {
                   console.error("Error toggling replay mode:", error);
                 }
@@ -1003,7 +1127,7 @@ const EnhancedTradingViewWidgetComponent: ForwardRefRenderFunction<
             }}
           >
             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mr-1"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
-            Replay
+            {isReplayMode ? 'Exit Replay' : 'Replay'}
           </button>
         </div>
         
