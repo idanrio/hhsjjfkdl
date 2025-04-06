@@ -1,12 +1,16 @@
-import { users, trades, tradingPairs, strategyTypes, 
+import { 
+  users, trades, tradingPairs, strategyTypes, 
+  paperTradingAccounts, positions, orders,
   type User, type InsertUser, 
   type Trade, type InsertTrade, 
   type TradingPair, type InsertTradingPair, 
-  type StrategyType, type InsertStrategyType 
+  type StrategyType, type InsertStrategyType,
+  type PaperTradingAccount, type InsertPaperTradingAccount,
+  type Position, type InsertPosition,
+  type Order, type InsertOrder
 } from "@shared/schema";
-
-// modify the interface with any CRUD methods
-// you might need
+import { eq, and, desc, asc, sql } from "drizzle-orm";
+import { db } from "./db";
 
 export interface IStorage {
   // User operations
@@ -31,188 +35,53 @@ export interface IStorage {
   getStrategyTypes(): Promise<StrategyType[]>;
   createStrategyType(strategy: InsertStrategyType): Promise<StrategyType>;
   deleteStrategyType(id: number): Promise<boolean>;
+  
+  // Paper trading account operations
+  getPaperTradingAccount(userId: number): Promise<PaperTradingAccount | undefined>;
+  createPaperTradingAccount(account: InsertPaperTradingAccount): Promise<PaperTradingAccount>;
+  updatePaperTradingAccount(userId: number, updates: Partial<PaperTradingAccount>): Promise<PaperTradingAccount | undefined>;
+  
+  // Position operations
+  getPositions(userId: number, status?: 'active' | 'closed'): Promise<Position[]>;
+  getPosition(id: number): Promise<Position | undefined>;
+  createPosition(position: InsertPosition): Promise<Position>;
+  updatePosition(id: number, updates: Partial<Position>): Promise<Position | undefined>;
+  closePosition(id: number, exitPrice: number): Promise<Position | undefined>;
+  
+  // Order operations
+  getOrders(userId: number, status?: string): Promise<Order[]>;
+  getOrder(id: number): Promise<Order | undefined>;
+  createOrder(order: InsertOrder): Promise<Order>;
+  updateOrder(id: number, updates: Partial<Order>): Promise<Order | undefined>;
+  cancelOrder(id: number): Promise<Order | undefined>;
+  fillOrder(id: number, filledPrice: number): Promise<Order | undefined>;
 }
 
-export class MemStorage implements IStorage {
-  private users: Map<number, User>;
-  private trades: Map<number, Trade>;
-  private tradingPairs: Map<number, TradingPair>;
-  private strategyTypes: Map<number, StrategyType>;
-  private userCurrentId: number;
-  private tradeCurrentId: number;
-  private pairCurrentId: number;
-  private strategyCurrentId: number;
-
-  constructor() {
-    this.users = new Map();
-    this.trades = new Map();
-    this.tradingPairs = new Map();
-    this.strategyTypes = new Map();
-    this.userCurrentId = 1;
-    this.tradeCurrentId = 1;
-    this.pairCurrentId = 1;
-    this.strategyCurrentId = 1;
-    
-    // Initialize with some default data
-    this.setupDefaultData();
-  }
-
-  private setupDefaultData() {
-    // Create default trading pairs
-    const defaultPairs = ['BTC/USD', 'ETH/USD', 'BNB/USD', 'XRP/USD', 'ADA/USD'];
-    defaultPairs.forEach(pair => {
-      this.createTradingPair({ pair });
-    });
-    
-    // Create default strategy types
-    const defaultStrategies = ['MACD Crossover', 'RSI Oversold/Overbought', 'Bollinger Bands', 'Moving Average', 'Support/Resistance'];
-    defaultStrategies.forEach(name => {
-      this.createStrategyType({ name });
-    });
-    
-    // Create admin user
-    const adminId = this.userCurrentId++;
-    const now = new Date();
-    const expiryDate = new Date();
-    expiryDate.setDate(now.getDate() + 365); // 1 year from now
-    
-    const adminUser: User = {
-      id: adminId,
-      username: 'admin',
-      password: 'admin123',
-      email: 'admin@capitulre.com',
-      isAdmin: true,
-      level: 3,
-      expiryDate,
-      bio: 'System administrator',
-      riskTolerance: 'High'
-    };
-    
-    this.users.set(adminId, adminUser);
-    
-    // Create demo user
-    const demoUser = this.createUser({
-      username: 'demo',
-      password: 'demo123',
-      email: 'demo@capitulre.com'
-    });
-    
-    // Create sample trades for demo user
-    const sampleTrades = [
-      {
-        userId: demoUser.id,
-        pair: 'BTC/USD',
-        amount: '0.5',
-        entryPrice: '50000',
-        exitPrice: '55000',
-        tradeType: 'long',
-        strategy: 'MACD Crossover',
-        notes: 'Strong bullish momentum on 4h timeframe',
-        status: 'completed'
-      },
-      {
-        userId: demoUser.id,
-        pair: 'ETH/USD',
-        amount: '5',
-        entryPrice: '3000',
-        exitPrice: '3200',
-        tradeType: 'long',
-        strategy: 'RSI Oversold/Overbought',
-        notes: 'RSI was at 30, indicating oversold conditions',
-        status: 'completed'
-      },
-      {
-        userId: demoUser.id,
-        pair: 'BNB/USD',
-        amount: '10',
-        entryPrice: '400',
-        tradeType: 'long',
-        strategy: 'Support/Resistance',
-        notes: 'Strong support level at $400',
-        status: 'active'
-      },
-      {
-        userId: demoUser.id,
-        pair: 'ADA/USD',
-        amount: '1000',
-        entryPrice: '1.20',
-        exitPrice: '1.10',
-        tradeType: 'short',
-        strategy: 'Bollinger Bands',
-        notes: 'Price at upper band, expected reversal',
-        status: 'completed'
-      },
-      {
-        userId: demoUser.id,
-        pair: 'XRP/USD',
-        amount: '2000',
-        entryPrice: '0.50',
-        exitPrice: '0.55',
-        tradeType: 'long',
-        strategy: 'Moving Average',
-        notes: '50 MA crossed above 200 MA',
-        status: 'completed'
-      }
-    ];
-    
-    // Add the sample trades
-    for (const tradeSample of sampleTrades) {
-      const now = new Date();
-      const oneWeekAgo = new Date(now);
-      oneWeekAgo.setDate(now.getDate() - 7);
-      
-      const id = this.tradeCurrentId++;
-      
-      const trade: Trade = {
-        id,
-        userId: tradeSample.userId,
-        date: oneWeekAgo,
-        endDate: tradeSample.status === 'completed' ? now : null,
-        pair: tradeSample.pair,
-        amount: tradeSample.amount,
-        entryPrice: tradeSample.entryPrice,
-        exitPrice: tradeSample.exitPrice || null,
-        strategy: tradeSample.strategy || null,
-        notes: tradeSample.notes || null,
-        entryScreenshot: null,
-        exitScreenshot: null,
-        status: tradeSample.status,
-        tradeType: tradeSample.tradeType
-      };
-      
-      this.trades.set(id, trade);
-    }
-  }
-
+export class DatabaseStorage implements IStorage {
   // User operations
   async getUser(id: number): Promise<User | undefined> {
-    return this.users.get(id);
+    const [user] = await db.select().from(users).where(eq(users.id, id));
+    return user;
   }
 
   async getUserByUsername(username: string): Promise<User | undefined> {
-    return Array.from(this.users.values()).find(
-      (user) => user.username === username,
-    );
+    const [user] = await db.select().from(users).where(eq(users.username, username));
+    return user;
   }
 
   async createUser(insertUser: InsertUser): Promise<User> {
-    const id = this.userCurrentId++;
-    const now = new Date();
-    const expiryDate = new Date();
-    expiryDate.setDate(now.getDate() + 30); // 30 days from now
+    const [user] = await db.insert(users).values(insertUser).returning();
     
-    const user: User = { 
-      ...insertUser, 
-      id,
-      isAdmin: false,
-      level: 1,
-      expiryDate,
-      bio: null,
-      riskTolerance: null,
-      email: insertUser.email || null
-    };
+    // Create paper trading account for new user with $150,000 starting balance
+    await this.createPaperTradingAccount({
+      userId: user.id,
+      balance: "150000",
+      equity: "150000",
+      availableMargin: "150000",
+      createdAt: new Date(),
+      updatedAt: new Date()
+    });
     
-    this.users.set(id, user);
     return user;
   }
   
@@ -221,65 +90,48 @@ export class MemStorage implements IStorage {
     if (!user) return;
     
     // Count user's trades
-    let tradeCount = 0;
-    const tradesArray = Array.from(this.trades.values());
-    for (const trade of tradesArray) {
-      if (trade.userId === userId) {
-        tradeCount++;
-      }
-    }
+    const userTrades = await this.getTrades(userId);
+    const tradeCount = userTrades.length;
     
     // Update user level (1 level per 10 trades, max level 10)
     const newLevel = Math.min(10, Math.floor(tradeCount / 10) + 1);
     
-    this.users.set(userId, {
-      ...user,
-      level: newLevel
-    });
+    await db.update(users)
+      .set({ level: newLevel })
+      .where(eq(users.id, userId));
   }
   
   // Trade operations
   async getTrades(userId: number): Promise<Trade[]> {
-    const userTrades: Trade[] = [];
-    
-    // Convert to array first to avoid iteration issues
-    const tradesArray = Array.from(this.trades.values());
-    for (const trade of tradesArray) {
-      if (trade.userId === userId) {
-        userTrades.push(trade);
-      }
-    }
-    
-    return userTrades;
+    return await db.select()
+      .from(trades)
+      .where(eq(trades.userId, userId))
+      .orderBy(desc(trades.date));
   }
   
   async getTrade(id: number): Promise<Trade | undefined> {
-    return this.trades.get(id);
+    const [trade] = await db.select().from(trades).where(eq(trades.id, id));
+    return trade;
   }
   
   async createTrade(insertTrade: InsertTrade): Promise<Trade> {
-    const id = this.tradeCurrentId++;
-    const now = new Date();
+    const status = insertTrade.exitPrice ? 'completed' : 'active';
+    const endDate = insertTrade.exitPrice ? new Date() : null;
     
-    // Convert numeric values to strings for storage
-    const trade: Trade = {
-      id,
-      userId: insertTrade.userId,
-      date: now,
-      endDate: null,
-      pair: insertTrade.pair,
-      amount: String(insertTrade.amount),
-      entryPrice: String(insertTrade.entryPrice),
-      exitPrice: insertTrade.exitPrice !== null ? String(insertTrade.exitPrice) : null,
-      strategy: insertTrade.strategy || null,
-      notes: insertTrade.notes || null,
-      entryScreenshot: null,
-      exitScreenshot: null,
-      status: insertTrade.exitPrice ? 'completed' : 'active',
-      tradeType: insertTrade.tradeType
+    // Convert numeric values to strings for database
+    const tradeData = {
+      ...insertTrade,
+      amount: insertTrade.amount.toString(),
+      entryPrice: insertTrade.entryPrice.toString(),
+      exitPrice: insertTrade.exitPrice?.toString(),
+      profitLoss: insertTrade.profitLoss?.toString(),
+      status,
+      endDate
     };
     
-    this.trades.set(id, trade);
+    const [trade] = await db.insert(trades)
+      .values(tradeData)
+      .returning();
     
     // Update user level after adding a trade
     await this.updateUserLevel(insertTrade.userId);
@@ -291,50 +143,47 @@ export class MemStorage implements IStorage {
     const existingTrade = await this.getTrade(id);
     if (!existingTrade) return undefined;
     
-    // Create a processed update object with proper type conversions
-    const processedUpdate: Partial<Trade> = {};
+    let status = existingTrade.status;
+    let endDate = existingTrade.endDate;
     
-    // Only include fields that exist in the update
-    if (tradeUpdate.pair !== undefined) {
-      processedUpdate.pair = tradeUpdate.pair;
+    // If exitPrice is provided, update status to completed
+    if (tradeUpdate.exitPrice !== undefined && tradeUpdate.exitPrice !== null) {
+      status = 'completed';
+      endDate = new Date();
     }
     
+    // Convert numeric values to strings for database
+    const tradeData: any = {
+      status,
+      endDate
+    };
+    
     if (tradeUpdate.amount !== undefined) {
-      processedUpdate.amount = String(tradeUpdate.amount);
+      tradeData.amount = tradeUpdate.amount.toString();
     }
     
     if (tradeUpdate.entryPrice !== undefined) {
-      processedUpdate.entryPrice = String(tradeUpdate.entryPrice);
+      tradeData.entryPrice = tradeUpdate.entryPrice.toString(); 
     }
     
     if (tradeUpdate.exitPrice !== undefined) {
-      processedUpdate.exitPrice = tradeUpdate.exitPrice !== null ? String(tradeUpdate.exitPrice) : null;
-      // If exitPrice is provided, update status to completed
-      processedUpdate.status = tradeUpdate.exitPrice !== null ? 'completed' : existingTrade.status;
-      // Also set endDate if completing the trade
-      if (tradeUpdate.exitPrice !== null) {
-        processedUpdate.endDate = new Date();
-      }
+      tradeData.exitPrice = tradeUpdate.exitPrice.toString();
     }
     
-    if (tradeUpdate.strategy !== undefined) {
-      processedUpdate.strategy = tradeUpdate.strategy;
+    if (tradeUpdate.profitLoss !== undefined) {
+      tradeData.profitLoss = tradeUpdate.profitLoss.toString();
     }
     
-    if (tradeUpdate.notes !== undefined) {
-      processedUpdate.notes = tradeUpdate.notes;
-    }
+    // Copy other non-numeric fields
+    if (tradeUpdate.pair !== undefined) tradeData.pair = tradeUpdate.pair;
+    if (tradeUpdate.strategy !== undefined) tradeData.strategy = tradeUpdate.strategy;
+    if (tradeUpdate.notes !== undefined) tradeData.notes = tradeUpdate.notes;
+    if (tradeUpdate.tradeType !== undefined) tradeData.tradeType = tradeUpdate.tradeType;
     
-    if (tradeUpdate.tradeType !== undefined) {
-      processedUpdate.tradeType = tradeUpdate.tradeType;
-    }
-    
-    const updatedTrade: Trade = {
-      ...existingTrade,
-      ...processedUpdate
-    };
-    
-    this.trades.set(id, updatedTrade);
+    const [updatedTrade] = await db.update(trades)
+      .set(tradeData)
+      .where(eq(trades.id, id))
+      .returning();
     
     return updatedTrade;
   }
@@ -343,57 +192,295 @@ export class MemStorage implements IStorage {
     const trade = await this.getTrade(id);
     if (!trade) return false;
     
-    const success = this.trades.delete(id);
+    await db.delete(trades).where(eq(trades.id, id));
     
-    if (success) {
-      // Update user level after deleting a trade
-      await this.updateUserLevel(trade.userId);
-    }
+    // Update user level after deleting a trade
+    await this.updateUserLevel(trade.userId);
     
-    return success;
+    return true;
   }
   
   // Trading pairs operations
   async getTradingPairs(): Promise<TradingPair[]> {
-    return Array.from(this.tradingPairs.values());
+    return await db.select().from(tradingPairs);
   }
   
   async createTradingPair(insertPair: InsertTradingPair): Promise<TradingPair> {
-    const id = this.pairCurrentId++;
+    const [pair] = await db.insert(tradingPairs)
+      .values(insertPair)
+      .returning();
     
-    const pair: TradingPair = {
-      id,
-      pair: insertPair.pair
-    };
-    
-    this.tradingPairs.set(id, pair);
     return pair;
   }
   
   async deleteTradingPair(id: number): Promise<boolean> {
-    return this.tradingPairs.delete(id);
+    await db.delete(tradingPairs).where(eq(tradingPairs.id, id));
+    return true;
   }
   
   // Strategy types operations
   async getStrategyTypes(): Promise<StrategyType[]> {
-    return Array.from(this.strategyTypes.values());
+    return await db.select().from(strategyTypes);
   }
   
   async createStrategyType(insertStrategy: InsertStrategyType): Promise<StrategyType> {
-    const id = this.strategyCurrentId++;
+    const [strategy] = await db.insert(strategyTypes)
+      .values(insertStrategy)
+      .returning();
     
-    const strategy: StrategyType = {
-      id,
-      name: insertStrategy.name
-    };
-    
-    this.strategyTypes.set(id, strategy);
     return strategy;
   }
   
   async deleteStrategyType(id: number): Promise<boolean> {
-    return this.strategyTypes.delete(id);
+    await db.delete(strategyTypes).where(eq(strategyTypes.id, id));
+    return true;
+  }
+  
+  // Paper trading account operations
+  async getPaperTradingAccount(userId: number): Promise<PaperTradingAccount | undefined> {
+    const [account] = await db.select()
+      .from(paperTradingAccounts)
+      .where(eq(paperTradingAccounts.userId, userId));
+    
+    return account;
+  }
+  
+  async createPaperTradingAccount(insertAccount: InsertPaperTradingAccount): Promise<PaperTradingAccount> {
+    const [account] = await db.insert(paperTradingAccounts)
+      .values({
+        ...insertAccount,
+        equity: insertAccount.balance,
+        availableMargin: insertAccount.balance,
+        usedMargin: "0",
+      })
+      .returning();
+    
+    return account;
+  }
+  
+  async updatePaperTradingAccount(userId: number, updates: Partial<PaperTradingAccount>): Promise<PaperTradingAccount | undefined> {
+    const account = await this.getPaperTradingAccount(userId);
+    if (!account) return undefined;
+    
+    const [updatedAccount] = await db.update(paperTradingAccounts)
+      .set({
+        ...updates,
+        updatedAt: new Date()
+      })
+      .where(eq(paperTradingAccounts.userId, userId))
+      .returning();
+    
+    return updatedAccount;
+  }
+  
+  // Position operations
+  async getPositions(userId: number, status?: 'active' | 'closed'): Promise<Position[]> {
+    let query = db.select()
+      .from(positions)
+      .where(eq(positions.userId, userId));
+    
+    if (status) {
+      query = query.where(eq(positions.status, status));
+    }
+    
+    return await query.orderBy(desc(positions.entryTime));
+  }
+  
+  async getPosition(id: number): Promise<Position | undefined> {
+    const [position] = await db.select()
+      .from(positions)
+      .where(eq(positions.id, id));
+    
+    return position;
+  }
+  
+  async createPosition(insertPosition: InsertPosition): Promise<Position> {
+    // Get the user's paper trading account
+    const account = await this.getPaperTradingAccount(insertPosition.userId);
+    if (!account) {
+      throw new Error("User does not have a paper trading account");
+    }
+    
+    // Calculate margin required for position
+    const positionValue = Number(insertPosition.amount) * Number(insertPosition.entryPrice);
+    const marginRequired = positionValue / Number(insertPosition.leverage);
+    
+    // Check if user has enough available margin
+    if (Number(account.availableMargin) < marginRequired) {
+      throw new Error("Insufficient margin available");
+    }
+    
+    // Create the position
+    const [position] = await db.insert(positions)
+      .values({
+        ...insertPosition,
+        accountId: account.id,
+        profitLoss: "0",
+        status: "active"
+      })
+      .returning();
+    
+    // Update account balance and margin
+    const usedMargin = Number(account.usedMargin) + marginRequired;
+    const availableMargin = Number(account.balance) - usedMargin;
+    
+    await this.updatePaperTradingAccount(insertPosition.userId, {
+      usedMargin: usedMargin.toString(),
+      availableMargin: availableMargin.toString(),
+      equity: account.balance, // Initially equity equals balance
+    });
+    
+    return position;
+  }
+  
+  async updatePosition(id: number, updates: Partial<Position>): Promise<Position | undefined> {
+    const position = await this.getPosition(id);
+    if (!position) return undefined;
+    
+    const [updatedPosition] = await db.update(positions)
+      .set(updates)
+      .where(eq(positions.id, id))
+      .returning();
+    
+    return updatedPosition;
+  }
+  
+  async closePosition(id: number, exitPrice: number): Promise<Position | undefined> {
+    const position = await this.getPosition(id);
+    if (!position) return undefined;
+    if (position.status === 'closed') return position;
+    
+    // Calculate profit/loss
+    let profitLoss = 0;
+    if (position.type === 'long') {
+      profitLoss = (exitPrice - Number(position.entryPrice)) * Number(position.amount) * Number(position.leverage);
+    } else { // short
+      profitLoss = (Number(position.entryPrice) - exitPrice) * Number(position.amount) * Number(position.leverage);
+    }
+    
+    // Update position
+    const [updatedPosition] = await db.update(positions)
+      .set({
+        status: 'closed',
+        exitPrice: exitPrice.toString(),
+        exitTime: new Date(),
+        profitLoss: profitLoss.toString()
+      })
+      .where(eq(positions.id, id))
+      .returning();
+    
+    // Update account balance and margin
+    const account = await this.getPaperTradingAccount(position.userId);
+    if (account) {
+      const positionValue = Number(position.amount) * Number(position.entryPrice);
+      const marginUsed = positionValue / Number(position.leverage);
+      
+      const newUsedMargin = Math.max(0, Number(account.usedMargin) - marginUsed);
+      const newBalance = Number(account.balance) + profitLoss;
+      const newEquity = newBalance;
+      const newAvailableMargin = newBalance - newUsedMargin;
+      
+      await this.updatePaperTradingAccount(position.userId, {
+        balance: newBalance.toString(),
+        equity: newEquity.toString(),
+        usedMargin: newUsedMargin.toString(),
+        availableMargin: newAvailableMargin.toString()
+      });
+    }
+    
+    return updatedPosition;
+  }
+  
+  // Order operations
+  async getOrders(userId: number, status?: string): Promise<Order[]> {
+    let query = db.select()
+      .from(orders)
+      .where(eq(orders.userId, userId));
+    
+    if (status) {
+      query = query.where(eq(orders.status, status));
+    }
+    
+    return await query.orderBy(desc(orders.createdAt));
+  }
+  
+  async getOrder(id: number): Promise<Order | undefined> {
+    const [order] = await db.select()
+      .from(orders)
+      .where(eq(orders.id, id));
+    
+    return order;
+  }
+  
+  async createOrder(insertOrder: InsertOrder): Promise<Order> {
+    const [order] = await db.insert(orders)
+      .values(insertOrder)
+      .returning();
+    
+    return order;
+  }
+  
+  async updateOrder(id: number, updates: Partial<Order>): Promise<Order | undefined> {
+    const order = await this.getOrder(id);
+    if (!order) return undefined;
+    
+    const [updatedOrder] = await db.update(orders)
+      .set(updates)
+      .where(eq(orders.id, id))
+      .returning();
+    
+    return updatedOrder;
+  }
+  
+  async cancelOrder(id: number): Promise<Order | undefined> {
+    const order = await this.getOrder(id);
+    if (!order) return undefined;
+    if (order.status !== 'pending') return order;
+    
+    const [updatedOrder] = await db.update(orders)
+      .set({
+        status: 'cancelled',
+        cancelledAt: new Date()
+      })
+      .where(eq(orders.id, id))
+      .returning();
+    
+    return updatedOrder;
+  }
+  
+  async fillOrder(id: number, filledPrice: number): Promise<Order | undefined> {
+    const order = await this.getOrder(id);
+    if (!order) return undefined;
+    if (order.status !== 'pending') return order;
+    
+    // Update order status
+    const [updatedOrder] = await db.update(orders)
+      .set({
+        status: 'filled',
+        filledAt: new Date(),
+        filledPrice: filledPrice.toString()
+      })
+      .where(eq(orders.id, id))
+      .returning();
+    
+    // Create a position from the filled order
+    if (updatedOrder) {
+      await this.createPosition({
+        userId: updatedOrder.userId,
+        accountId: updatedOrder.accountId,
+        symbol: updatedOrder.symbol,
+        type: updatedOrder.side,
+        entryPrice: filledPrice.toString(),
+        amount: updatedOrder.amount.toString(),
+        leverage: updatedOrder.leverage.toString(),
+        stopLoss: updatedOrder.stopLoss?.toString() || null,
+        takeProfit: updatedOrder.takeProfit?.toString() || null,
+        notes: updatedOrder.notes || null
+      });
+    }
+    
+    return updatedOrder;
   }
 }
 
-export const storage = new MemStorage();
+export const storage = new DatabaseStorage();
