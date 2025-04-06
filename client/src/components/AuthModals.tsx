@@ -10,6 +10,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { useToast } from '@/hooks/use-toast';
 import { apiRequest } from '@/lib/queryClient';
 import BacktestLogin from './BacktestLogin';
+import { DemoAccountCreatedModal } from './DemoAccountCreatedModal';
 
 interface AuthModalProps {
   initialView?: 'login' | 'signup';
@@ -19,6 +20,7 @@ const AuthModals: React.FC<AuthModalProps> = ({ initialView = 'login' }) => {
   const { t } = useTranslation();
   const { toast } = useToast();
   const [open, setOpen] = useState(false);
+  const [showDemoAccountModal, setShowDemoAccountModal] = useState(false);
   const [view, setView] = useState<'login' | 'signup' | 'thankyou' | 'backtest'>(initialView);
   const [username, setUsername] = useState('');
   const [email, setEmail] = useState('');
@@ -126,6 +128,9 @@ const AuthModals: React.FC<AuthModalProps> = ({ initialView = 'login' }) => {
       
       // Auto login after successful registration
       await handleLogin();
+      
+      // Show demo account popup after successful login
+      setShowDemoAccountModal(true);
     } catch (error) {
       console.error('Signup error:', error);
       toast({
@@ -170,6 +175,12 @@ const AuthModals: React.FC<AuthModalProps> = ({ initialView = 'login' }) => {
       >
         {initialView === 'login' ? t('navigation.login') : t('navigation.signup')}
       </Button>
+
+      {/* Demo Account Created Modal */}
+      <DemoAccountCreatedModal 
+        open={showDemoAccountModal} 
+        onOpenChange={setShowDemoAccountModal} 
+      />
 
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent className="sm:max-w-[425px]">
