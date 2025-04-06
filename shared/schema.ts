@@ -125,6 +125,10 @@ export const insertUserSchema = createInsertSchema(users).pick({
   username: true,
   password: true,
   email: true,
+  isAdmin: true,
+  level: true,
+  bio: true,
+  riskTolerance: true,
 });
 
 export const insertPaperTradingAccountSchema = createInsertSchema(paperTradingAccounts).pick({

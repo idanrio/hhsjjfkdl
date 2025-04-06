@@ -81,16 +81,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       const newUser = await storage.createUser(userInput.data);
       
-      // Create paper trading account with $150,000 initial balance
-      await storage.createPaperTradingAccount({
-        userId: newUser.id,
-        balance: "150000",
-        equity: "150000",
-        availableMargin: "150000",
-        usedMargin: "0",
-        createdAt: new Date(),
-        updatedAt: new Date()
-      });
+      try {
+        // First check if account already exists
+        const existingAccount = await storage.getPaperTradingAccount(newUser.id);
+        
+        // Only create paper trading account if it doesn't exist
+        if (!existingAccount) {
+          await storage.createPaperTradingAccount({
+            userId: newUser.id,
+            balance: "150000",
+            equity: "150000",
+            availableMargin: "150000",
+            usedMargin: "0",
+            createdAt: new Date(),
+            updatedAt: new Date()
+          });
+        }
+      } catch (error) {
+        console.error("Warning: Could not create paper trading account:", error);
+        // Continue registration even if paper trading account creation fails
+      }
       
       // Set user session
       if (req.session) {
