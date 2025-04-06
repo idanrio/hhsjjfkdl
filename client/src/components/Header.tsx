@@ -6,6 +6,8 @@ import AuthModals from './AuthModals';
 import LanguageSwitcher from './LanguageSwitcher';
 import CapitulreLogo from '../assets/logo';
 import { getQueryFn } from '@/lib/queryClient';
+import { ChevronDown, BarChart4, TrendingUp, LineChart } from 'lucide-react';
+import * as DropdownMenu from '@radix-ui/react-dropdown-menu';
 
 const Header: React.FC = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -58,9 +60,60 @@ const Header: React.FC = () => {
             </li>
             {isLoggedIn && (
               <li>
-                <Link href="/backtest/dashboard" className={`font-medium relative nav-link hover:text-primary transition-colors ${location.includes("/backtest") ? "text-brand-primary" : ""}`}>
-                  {t('navigation.backtest')}
-                </Link>
+                <DropdownMenu.Root>
+                  <DropdownMenu.Trigger asChild>
+                    <button className={`font-medium relative nav-link hover:text-primary transition-colors flex items-center ${location.includes("/backtest") ? "text-primary" : ""}`}>
+                      {t('navigation.backtest')} <ChevronDown className="h-4 w-4 ml-1" />
+                    </button>
+                  </DropdownMenu.Trigger>
+                  
+                  <DropdownMenu.Portal>
+                    <DropdownMenu.Content
+                      className="min-w-[220px] bg-black/95 border border-white/10 p-2 rounded-md shadow-lg"
+                      sideOffset={5}
+                    >
+                      <DropdownMenu.Item className="outline-none">
+                        <Link 
+                          href="/backtest/dashboard"
+                          className="flex items-center px-2 py-2 text-sm hover:bg-white/5 rounded transition-colors"
+                        >
+                          <BarChart4 className="h-4 w-4 mr-2" />
+                          {t('Dashboard')}
+                        </Link>
+                      </DropdownMenu.Item>
+                      
+                      <DropdownMenu.Item className="outline-none">
+                        <Link 
+                          href="/backtest/trading"
+                          className="flex items-center px-2 py-2 text-sm hover:bg-white/5 rounded transition-colors"
+                        >
+                          <TrendingUp className="h-4 w-4 mr-2" />
+                          {t('Trading Environment')}
+                        </Link>
+                      </DropdownMenu.Item>
+                      
+                      <DropdownMenu.Item className="outline-none">
+                        <Link 
+                          href="/backtest/paper-trading"
+                          className="flex items-center px-2 py-2 text-sm hover:bg-white/5 rounded transition-colors"
+                        >
+                          <LineChart className="h-4 w-4 mr-2" />
+                          {t('Paper Trading Pro')}
+                        </Link>
+                      </DropdownMenu.Item>
+                      
+                      <DropdownMenu.Item className="outline-none">
+                        <Link 
+                          href="/backtest/new-trade"
+                          className="flex items-center px-2 py-2 text-sm hover:bg-white/5 rounded transition-colors"
+                        >
+                          <BarChart4 className="h-4 w-4 mr-2" />
+                          {t('Add New Trade')}
+                        </Link>
+                      </DropdownMenu.Item>
+                    </DropdownMenu.Content>
+                  </DropdownMenu.Portal>
+                </DropdownMenu.Root>
               </li>
             )}
             {isAdmin && (
@@ -127,15 +180,53 @@ const Header: React.FC = () => {
               </a>
             </li>
             {isLoggedIn && (
-              <li>
-                <Link
-                  href="/backtest/dashboard"
-                  className={`block py-2 font-medium hover:text-primary transition-colors ${location.includes("/backtest") ? "text-brand-primary" : ""}`}
-                  onClick={() => setIsMenuOpen(false)}
-                >
-                  {t('navigation.backtest')}
-                </Link>
-              </li>
+              <>
+                <li>
+                  <div className="block py-2 font-medium hover:text-primary transition-colors">
+                    {t('navigation.backtest')}
+                  </div>
+                </li>
+                <li className="pl-4">
+                  <Link
+                    href="/backtest/dashboard"
+                    className="block py-1 text-sm hover:text-primary transition-colors flex items-center"
+                    onClick={() => setIsMenuOpen(false)}
+                  >
+                    <BarChart4 className="h-4 w-4 mr-2" />
+                    {t('Dashboard')}
+                  </Link>
+                </li>
+                <li className="pl-4">
+                  <Link
+                    href="/backtest/trading"
+                    className="block py-1 text-sm hover:text-primary transition-colors flex items-center"
+                    onClick={() => setIsMenuOpen(false)}
+                  >
+                    <TrendingUp className="h-4 w-4 mr-2" />
+                    {t('Trading Environment')}
+                  </Link>
+                </li>
+                <li className="pl-4">
+                  <Link
+                    href="/backtest/paper-trading"
+                    className="block py-1 text-sm hover:text-primary transition-colors flex items-center"
+                    onClick={() => setIsMenuOpen(false)}
+                  >
+                    <LineChart className="h-4 w-4 mr-2" />
+                    {t('Paper Trading Pro')}
+                  </Link>
+                </li>
+                <li className="pl-4">
+                  <Link
+                    href="/backtest/new-trade"
+                    className="block py-1 text-sm hover:text-primary transition-colors flex items-center"
+                    onClick={() => setIsMenuOpen(false)}
+                  >
+                    <BarChart4 className="h-4 w-4 mr-2" />
+                    {t('Add New Trade')}
+                  </Link>
+                </li>
+              </>
             )}
             {isAdmin && (
               <li>

@@ -81,6 +81,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       const newUser = await storage.createUser(userInput.data);
       
+      // Create paper trading account with $150,000 initial balance
+      await storage.createPaperTradingAccount({
+        userId: newUser.id,
+        balance: "150000",
+        equity: "150000",
+        availableMargin: "150000",
+        usedMargin: "0",
+        createdAt: new Date(),
+        updatedAt: new Date()
+      });
+      
       // Set user session
       if (req.session) {
         req.session.userId = newUser.id;
@@ -1004,12 +1015,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Positions routes
-  // TEMPORARY: Removing authentication for testing
-  app.get("/api/positions", async (req, res) => {
+  app.get("/api/positions", isAuthenticated, async (req, res) => {
     try {
-      const userId = 1; // Use a fixed userId for testing
       const status = req.query.status as 'active' | 'closed' | undefined;
-      const positions = await storage.getPositions(userId, status);
+      const positions = await storage.getPositions(req.session.userId!, status);
       res.json(positions);
     } catch (error) {
       console.error("Error getting positions:", error);
@@ -1041,20 +1050,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
-  app.post("/api/positions", async (req, res) => {
+  app.post("/api/positions", isAuthenticated, async (req, res) => {
     try {
-      // Use a fixed userId for testing
-      const userId = 1;
-      
       // Get the user's paper trading account
-      const account = await storage.getPaperTradingAccount(userId);
+      const account = await storage.getPaperTradingAccount(req.session.userId!);
       if (!account) {
         return res.status(404).json({ error: "Paper trading account not found" });
       }
       
       const positionData = {
         ...req.body,
-        userId: userId,
+        userId: req.session.userId!,
         accountId: account.id
       };
       
@@ -1103,7 +1109,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
-  app.post("/api/positions/:id/close", async (req, res) => {
+  app.post("/api/positions/:id/close", isAuthenticated, async (req, res) => {
     try {
       const id = parseInt(req.params.id);
       if (isNaN(id)) {
@@ -1115,8 +1121,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ error: "Position not found" });
       }
       
-      // TEMPORARY: Bypass user check for testing
-      // Check position user authorization in production
+      // Check if the position belongs to the user
+      if (position.userId !== req.session.userId) {
+        return res.status(403).json({ error: "Not authorized to close this position" });
+      }
       
       const { exitPrice } = req.body;
       if (!exitPrice || isNaN(parseFloat(exitPrice))) {
@@ -1167,20 +1175,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
-  app.post("/api/orders", async (req, res) => {
+  app.post("/api/orders", isAuthenticated, async (req, res) => {
     try {
-      // Use a fixed userId for testing
-      const userId = 1;
-      
       // Get the user's paper trading account
-      const account = await storage.getPaperTradingAccount(userId);
+      const account = await storage.getPaperTradingAccount(req.session.userId!);
       if (!account) {
         return res.status(404).json({ error: "Paper trading account not found" });
       }
       
       const orderData = {
         ...req.body,
-        userId: userId,
+        userId: req.session.userId!,
         accountId: account.id
       };
       
@@ -1245,6 +1250,216 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error cancelling order:", error);
       res.status(500).json({ error: "Failed to cancel order" });
+    }
+  });
+
+  // Paper Trading API Routes
+  
+  // Get paper trading account details
+  app.get('/api/paper-trading/account', isAuthenticated, async (req, res) => {
+    try {
+      const userId = req.session!.userId;
+      
+      // Get user's paper trading account
+      let account = await storage.getPaperTradingAccount(userId);
+      
+      // If no account exists, create one with $150,000 starting balance
+      if (!account) {
+        account = await storage.createPaperTradingAccount({
+          userId,
+          balance: 150000,
+          equity: 150000,
+          availableMargin: 150000,
+          usedMargin: 0,
+          pnl: 0,
+          createdAt: new Date()
+        });
+      }
+      
+      // Calculate current equity and available margin
+      const positions = await storage.getPositions(userId, 'active');
+      
+      let totalUnrealizedPnl = 0;
+      let usedMargin = 0;
+      
+      // In a real system, we would calculate the current value of all positions
+      // based on real-time market data. For simplicity, we're using static values.
+      positions.forEach(position => {
+        if (position.unrealizedPnl) {
+          totalUnrealizedPnl += position.unrealizedPnl;
+        }
+        
+        // Calculate used margin based on position size and leverage
+        usedMargin += position.amount / position.leverage;
+      });
+      
+      // Update account values
+      const updatedAccount = {
+        ...account,
+        equity: account.balance + totalUnrealizedPnl,
+        usedMargin,
+        availableMargin: account.balance - usedMargin
+      };
+      
+      // Save the updated account
+      await storage.updatePaperTradingAccount(userId, updatedAccount);
+      
+      res.json(updatedAccount);
+    } catch (error) {
+      console.error('Error fetching paper trading account:', error);
+      res.status(500).json({ error: 'Failed to fetch account details' });
+    }
+  });
+  
+  // Get positions with status filter
+  app.get('/api/paper-trading/positions', isAuthenticated, async (req, res) => {
+    try {
+      const userId = req.session!.userId;
+      const status = req.query.status as 'active' | 'closed' | undefined;
+      
+      const positions = await storage.getPositions(userId, status);
+      res.json(positions);
+    } catch (error) {
+      console.error('Error fetching positions:', error);
+      res.status(500).json({ error: 'Failed to fetch positions' });
+    }
+  });
+  
+  // Create a new position
+  app.post('/api/paper-trading/positions', isAuthenticated, async (req, res) => {
+    try {
+      const userId = req.session!.userId;
+      const positionData = req.body;
+      
+      // Validate position data using Zod schema
+      const validatedData = insertPositionSchema.parse({
+        ...positionData,
+        userId,
+        status: 'active',
+        entryDate: new Date(),
+        unrealizedPnl: 0
+      });
+      
+      // Get the user's account to check available funds
+      const account = await storage.getPaperTradingAccount(userId);
+      
+      if (!account) {
+        return res.status(400).json({ error: 'Paper trading account not found' });
+      }
+      
+      // Check if user has sufficient funds
+      if (account.availableMargin < positionData.amount / positionData.leverage) {
+        return res.status(400).json({ error: 'Insufficient funds for this position' });
+      }
+      
+      // For a market order, we would normally get the current price from an exchange API
+      // For simplicity, we're using the provided price or a mock value
+      let entryPrice = positionData.limitPrice || 0;
+      
+      // In a real implementation, we would fetch the current market price
+      // This is a simplified mock implementation
+      if (!entryPrice) {
+        // Mock price fetching based on symbol
+        if (positionData.symbol.includes('BTC')) {
+          entryPrice = 60000 + Math.random() * 1000;
+        } else if (positionData.symbol.includes('ETH')) {
+          entryPrice = 3000 + Math.random() * 100;
+        } else {
+          entryPrice = 100 + Math.random() * 10;
+        }
+      }
+      
+      // Create the position with the entry price
+      const newPosition = await storage.createPosition({
+        ...validatedData,
+        entryPrice,
+        exitPrice: null,
+        exitDate: null,
+        profitLoss: null
+      });
+      
+      // Update account used margin
+      await storage.updatePaperTradingAccount(userId, {
+        usedMargin: account.usedMargin + (positionData.amount / positionData.leverage),
+        availableMargin: account.availableMargin - (positionData.amount / positionData.leverage)
+      });
+      
+      res.status(201).json(newPosition);
+    } catch (error) {
+      console.error('Error creating position:', error);
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ error: error.errors });
+      }
+      res.status(500).json({ error: 'Failed to create position' });
+    }
+  });
+  
+  // Close a position
+  app.post('/api/paper-trading/positions/:id/close', isAuthenticated, async (req, res) => {
+    try {
+      const userId = req.session!.userId;
+      const positionId = parseInt(req.params.id);
+      
+      // Get the position to close
+      const position = await storage.getPosition(positionId);
+      
+      if (!position) {
+        return res.status(404).json({ error: 'Position not found' });
+      }
+      
+      // Ensure the position belongs to the user
+      if (position.userId !== userId) {
+        return res.status(403).json({ error: 'Unauthorized access to this position' });
+      }
+      
+      // Ensure the position is active
+      if (position.status !== 'active') {
+        return res.status(400).json({ error: 'Position is already closed' });
+      }
+      
+      // In a real implementation, we would fetch the current market price for the exit
+      // This is a simplified mock implementation
+      let exitPrice = 0;
+      if (position.symbol.includes('BTC')) {
+        exitPrice = 60000 + Math.random() * 1000;
+      } else if (position.symbol.includes('ETH')) {
+        exitPrice = 3000 + Math.random() * 100;
+      } else {
+        exitPrice = 100 + Math.random() * 10;
+      }
+      
+      // Calculate profit/loss
+      let profitLoss = 0;
+      if (position.type === 'long') {
+        // For long positions, profit when exit price > entry price
+        profitLoss = ((exitPrice - position.entryPrice) / position.entryPrice) * position.amount * position.leverage;
+      } else {
+        // For short positions, profit when exit price < entry price
+        profitLoss = ((position.entryPrice - exitPrice) / position.entryPrice) * position.amount * position.leverage;
+      }
+      
+      // Close the position
+      const closedPosition = await storage.closePosition(positionId, exitPrice);
+      
+      if (!closedPosition) {
+        return res.status(500).json({ error: 'Failed to close position' });
+      }
+      
+      // Update account balance and used margin
+      const account = await storage.getPaperTradingAccount(userId);
+      
+      if (account) {
+        await storage.updatePaperTradingAccount(userId, {
+          balance: account.balance + profitLoss,
+          usedMargin: Math.max(0, account.usedMargin - (position.amount / position.leverage)),
+          availableMargin: account.availableMargin + (position.amount / position.leverage) + profitLoss
+        });
+      }
+      
+      res.json(closedPosition);
+    } catch (error) {
+      console.error('Error closing position:', error);
+      res.status(500).json({ error: 'Failed to close position' });
     }
   });
 
