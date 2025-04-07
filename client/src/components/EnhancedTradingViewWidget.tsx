@@ -416,24 +416,7 @@ const EnhancedTradingViewWidgetComponent: ForwardRefRenderFunction<
             try {
               const chart = widget.chart();
               const symbolInfo = chart.symbol();
-              let lastPrice = 0;
-              try {
-                if (chart.lastBar && typeof chart.lastBar === 'function') {
-                  const bar = chart.lastBar();
-                  if (bar && bar.close) {
-                    lastPrice = bar.close;
-                  }
-                } else if (chart.getLastPrice && typeof chart.getLastPrice === 'function') {
-                  lastPrice = chart.getLastPrice(symbolInfo);
-                } else {
-                  // Fallback to current price if already set
-                  lastPrice = currentPrice;
-                }
-              } catch (e) {
-                console.warn("Error getting last bar:", e);
-                // Keep the current price if we have it
-                lastPrice = currentPrice;
-              }
+              const lastPrice = chart.lastBar().close || chart.getLastPrice(symbolInfo);
               
               if (lastPrice && lastPrice !== currentPrice) {
                 setCurrentPrice(lastPrice);
@@ -994,20 +977,14 @@ const EnhancedTradingViewWidgetComponent: ForwardRefRenderFunction<
           <button 
             className="px-3 py-1 text-white text-sm rounded hover:bg-gray-700 mr-1"
             onClick={() => {
-              // Avoid using chart() method directly due to potential errors
-              if (widgetRef.current && widgetRef.current.widget) {
-                try {
-                  // Safer implementation that doesn't rely on chart() method
-                  const chartTypes = [1, 2, 3, 4]; // Candles, Bars, Line, Area
-                  const nextType = 1; // Always default to candles for now
-                  
-                  // Use the widget API directly if available
-                  if (widgetRef.current.widget.activeChart) {
-                    widgetRef.current.widget.activeChart().setChartType(nextType);
-                  }
-                } catch (e) {
-                  console.error("Error changing chart type:", e);
-                }
+              if (widgetRef.current) {
+                const chartTypes = ['1', '2', '3', '4']; // Candles, Bars, Line, Area
+                const currentStyle = widgetRef.current.chart().chartType() || '1';
+                const currentIndex = chartTypes.indexOf(currentStyle);
+                const nextIndex = (currentIndex + 1) % chartTypes.length;
+                const nextStyle = chartTypes[nextIndex];
+                
+                widgetRef.current.chart().setChartType(parseInt(nextStyle));
               }
             }}
           >
@@ -1029,10 +1006,8 @@ const EnhancedTradingViewWidgetComponent: ForwardRefRenderFunction<
             onClick={() => {
               if (widgetRef.current) {
                 try {
-                  // Try safer method to open drawing tools
-                  if (widgetRef.current.widget && widgetRef.current.widget.activeChart) {
-                    widgetRef.current.widget.activeChart().executeActionById("drawingToolbarAction");
-                  }
+                  // Open drawing tools menu using TradingView internal API
+                  widgetRef.current.chart().executeActionById("drawingToolbarAction");
                 } catch (error) {
                   console.error("Error opening drawing tools:", error);
                 }
@@ -1130,23 +1105,7 @@ const EnhancedTradingViewWidgetComponent: ForwardRefRenderFunction<
                         if (onPriceUpdate && !priceUpdateIntervalRef.current) {
                           priceUpdateIntervalRef.current = window.setInterval(() => {
                             try {
-                              let lastPrice = 0;
-                              try {
-                                if (chart.lastBar && typeof chart.lastBar === 'function') {
-                                  const bar = chart.lastBar();
-                                  if (bar && bar.close) {
-                                    lastPrice = bar.close;
-                                  }
-                                } else if (chart.getLastPrice && typeof chart.getLastPrice === 'function') {
-                                  lastPrice = chart.getLastPrice(chart.symbol());
-                                } else {
-                                  // Fallback to current price if already set
-                                  lastPrice = currentPrice;
-                                }
-                              } catch (e) {
-                                console.warn("Error getting last bar in refreshUI:", e);
-                                lastPrice = currentPrice;
-                              }
+                              const lastPrice = chart.lastBar().close || chart.getLastPrice(chart.symbol());
                               if (lastPrice && lastPrice !== currentPrice) {
                                 setCurrentPrice(lastPrice);
                                 onPriceUpdate(lastPrice);

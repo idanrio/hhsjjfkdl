@@ -94,11 +94,11 @@ export function ProTradingViewPanel({
       const orderData = {
         symbol,
         type: orderSide.toLowerCase(),
-        amount: amount, // Already a number from useState
-        entryPrice: orderType === 'Market' ? currentPrice : price, // Already a number
-        leverage: leverage, // Already a number
-        stopLoss: stopLoss, // Already correctly handled as number or null
-        takeProfit: takeProfit, // Already correctly handled as number or null
+        amount: Number(amount),
+        entryPrice: orderType === 'Market' ? currentPrice : Number(price),
+        leverage: Number(leverage),
+        stopLoss: stopLoss ? Number(stopLoss) : null,
+        takeProfit: takeProfit ? Number(takeProfit) : null,
         orderType: orderType.toLowerCase().replace(' ', '_')
       };
 

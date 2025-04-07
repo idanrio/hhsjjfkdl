@@ -6,10 +6,74 @@ import { AIWyckoffCoach } from './AIWyckoffCoach';
 import { ChartImageUploader } from './ChartImageUploader';
 import { Position, WyckoffAnalysisResult } from '@/types/trading';
 import aiService from '@/services/aiService';
-import { Badge } from '@/components/ui/badge';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
-import { Maximize2, Minimize2, Bell } from 'lucide-react';
-import { Dialog } from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { Badge } from '@/components/ui/badge';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import {
+  Dialog,
+} from '@/components/ui/dialog';
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from '@/components/ui/popover';
+import {
+  Maximize2,
+  Minimize2,
+  ChevronDown,
+  Bell,
+} from 'lucide-react';
+
+// Available trading pairs
+const tradingPairs = [
+  // Cryptocurrencies
+  { value: 'BINANCE:BTCUSDT', label: 'Bitcoin (BTC/USDT)' },
+  { value: 'BINANCE:ETHUSDT', label: 'Ethereum (ETH/USDT)' },
+  { value: 'BINANCE:SOLUSDT', label: 'Solana (SOL/USDT)' },
+  { value: 'BINANCE:BNBUSDT', label: 'Binance Coin (BNB/USDT)' },
+  { value: 'BINANCE:ADAUSDT', label: 'Cardano (ADA/USDT)' },
+  
+  // Stocks - Major Tech
+  { value: 'NASDAQ:AAPL', label: 'Apple (AAPL)' },
+  { value: 'NASDAQ:MSFT', label: 'Microsoft (MSFT)' },
+  { value: 'NASDAQ:GOOGL', label: 'Google (GOOGL)' },
+  { value: 'NASDAQ:AMZN', label: 'Amazon (AMZN)' },
+  { value: 'NASDAQ:META', label: 'Meta (META)' },
+  
+  // Indices
+  { value: 'AMEX:SPY', label: 'S&P 500 (SPY)' },
+  { value: 'AMEX:QQQ', label: 'Nasdaq 100 (QQQ)' },
+  { value: 'INDEX:DJI', label: 'Dow Jones (DJI)' },
+];
+
+// Available timeframes
+const timeframes = [
+  { value: '1', label: '1m' },
+  { value: '5', label: '5m' },
+  { value: '15', label: '15m' },
+  { value: '30', label: '30m' },
+  { value: '60', label: '1h' },
+  { value: '240', label: '4h' },
+  { value: 'D', label: '1D' },
+  { value: 'W', label: '1W' },
+  { value: 'M', label: '1M' },
+];
+
+// Chart styles
+const chartStyles = [
+  { value: '1', label: 'Candles' },
+  { value: '2', label: 'Bars' },
+  { value: '3', label: 'Line' },
+  { value: '4', label: 'Area' },
+];
 
 interface FullTradingEnvironmentProps {
   initialPositions?: Position[];
@@ -33,10 +97,19 @@ export function FullTradingEnvironment({
   showPositionsPanel = true,
 }: FullTradingEnvironmentProps) {
   const { t, i18n } = useTranslation();
+  const [selectedSymbol, setSelectedSymbol] = useState<string>(tradingPairs[0].value);
+  const [searchQuery, setSearchQuery] = useState<string>('');
+  const [selectedTimeframe, setSelectedTimeframe] = useState<string>('D');
+  const [selectedChartStyle, setSelectedChartStyle] = useState<string>('1');
   const [currentPrice, setCurrentPrice] = useState<number>(0);
   const [positions, setPositions] = useState<Position[]>(initialPositions);
   const [isFullScreen, setIsFullScreen] = useState<boolean>(fullScreenMode);
-  const [defaultSymbol] = useState<string>('BINANCE:BTCUSDT');
+  const [showSymbolSearch, setShowSymbolSearch] = useState<boolean>(false);
+  const [favoriteSymbols, setFavoriteSymbols] = useState<string[]>([
+    'BINANCE:BTCUSDT', 
+    'NASDAQ:AAPL', 
+    'AMEX:SPY'
+  ]);
   
   const tradingViewRef = useRef<TradingViewRef>(null);
   
@@ -143,39 +216,182 @@ export function FullTradingEnvironment({
     }
   };
   
+  // Filter symbols based on search query
+  const filteredSymbols = searchQuery
+    ? tradingPairs.filter(pair => 
+        pair.label.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        pair.value.toLowerCase().includes(searchQuery.toLowerCase())
+      )
+    : tradingPairs;
+  
+  // Function to get the display name for a symbol
+  const getSymbolDisplayName = (symbolValue: string) => {
+    const found = tradingPairs.find(pair => pair.value === symbolValue);
+    return found ? found.label : symbolValue;
+  };
+  
+  // Settings that will be passed to the TradingView widget
+  const disabledFeatures = [
+    'header_symbol_search',
+    'header_indicators',
+    'header_compare',
+    'header_undo_redo',
+    'header_saveload',
+    'header_settings'
+  ];
+  
+  const enabledFeatures = [
+    'study_templates',
+    'use_localstorage_for_settings',
+    'side_toolbar_in_fullscreen_mode',
+    'show_trading_notifications_history',
+  ];
+  
+  // List of TradingView indicators to be loaded when the chart is initialized
+  const defaultStudies = [
+    'MASimple@tv-basicstudies',
+    'BB@tv-basicstudies',
+    'MACD@tv-basicstudies',
+  ];
+  
   return (
     <div 
       className={`full-trading-environment ${isFullScreen ? 'fixed inset-0 z-50 bg-background' : ''} ${className}`}
       style={{ height: isFullScreen ? '100vh' : '800px' }}
     >
-      {/* Simple Top Bar - Minimal UI */}
-      <div className="flex items-center justify-between bg-[#131722] text-white px-4 py-2 border-b border-[#2a2e39]">
-        <div className="text-lg font-semibold">
-          Trading Dashboard
+      {/* Top Toolbar */}
+      <div className="flex items-center justify-between border-b p-2">
+        <div className="flex items-center space-x-2">
+          {/* Symbol Selector */}
+          <Popover open={showSymbolSearch} onOpenChange={setShowSymbolSearch}>
+            <PopoverTrigger asChild>
+              <Button variant="outline" className="flex items-center space-x-1">
+                <span>{getSymbolDisplayName(selectedSymbol)}</span>
+                <ChevronDown className="h-4 w-4" />
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-80 p-0" align="start">
+              <div className="p-2 border-b">
+                <Input
+                  placeholder={t('Search symbols...')}
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="w-full"
+                  autoFocus
+                />
+              </div>
+              <ScrollArea className="h-[300px]">
+                <div className="p-2">
+                  <h4 className="text-sm font-medium mb-2">{t('Favorites')}</h4>
+                  {favoriteSymbols.length > 0 ? (
+                    <div className="space-y-1 mb-4">
+                      {favoriteSymbols.map(symbol => {
+                        const found = tradingPairs.find(pair => pair.value === symbol);
+                        if (!found) return null;
+                        
+                        return (
+                          <div 
+                            key={symbol} 
+                            className="flex items-center justify-between p-2 rounded-md hover:bg-accent cursor-pointer"
+                            onClick={() => {
+                              setSelectedSymbol(found.value);
+                              setShowSymbolSearch(false);
+                            }}
+                          >
+                            <span>{found.label}</span>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  ) : (
+                    <div className="text-sm text-muted-foreground mb-4">
+                      {t('No favorite symbols added yet')}
+                    </div>
+                  )}
+                  
+                  <h4 className="text-sm font-medium mb-2">{t('All Symbols')}</h4>
+                  <div className="space-y-1">
+                    {filteredSymbols.map(pair => (
+                      <div 
+                        key={pair.value} 
+                        className="flex items-center justify-between p-2 rounded-md hover:bg-accent cursor-pointer"
+                        onClick={() => {
+                          setSelectedSymbol(pair.value);
+                          setShowSymbolSearch(false);
+                        }}
+                      >
+                        <span>{pair.label}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </ScrollArea>
+            </PopoverContent>
+          </Popover>
+          
+          {/* Timeframe Selector */}
+          <Select value={selectedTimeframe} onValueChange={setSelectedTimeframe}>
+            <SelectTrigger className="w-[70px]">
+              <SelectValue placeholder={selectedTimeframe} />
+            </SelectTrigger>
+            <SelectContent>
+              {timeframes.map(tf => (
+                <SelectItem key={tf.value} value={tf.value}>
+                  {t(tf.label)}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          
+          {/* Chart Style Selector */}
+          <Select value={selectedChartStyle} onValueChange={setSelectedChartStyle}>
+            <SelectTrigger className="w-[100px]">
+              <SelectValue placeholder={chartStyles.find(s => s.value === selectedChartStyle)?.label || selectedChartStyle} />
+            </SelectTrigger>
+            <SelectContent>
+              {chartStyles.map(style => (
+                <SelectItem key={style.value} value={style.value}>
+                  {t(style.label)}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          
+          {/* Indicators Button removed - TradingView already provides indicators */}
+          
         </div>
         
-        <div className="flex items-center space-x-4">
+        <div className="flex items-center space-x-2">
           {/* Current Price Indicator */}
-          <Badge variant="outline" className="text-sm font-mono">
+          <Badge className="text-sm">
             {currentPrice.toFixed(2)}
           </Badge>
           
-          {/* Analysis Tools */}
+          {/* Alerts Button */}
+          <Button variant="ghost" size="sm">
+            <Bell className="h-4 w-4" />
+          </Button>
+          
+          {/* AI Wyckoff Coach Button */}
           <Dialog>
             <AIWyckoffCoach 
               tradingViewRef={tradingViewRef} 
-              symbol={defaultSymbol}
-              timeframe="D"
+              symbol={selectedSymbol}
+              timeframe={selectedTimeframe}
               onAnalysisComplete={(analysis: WyckoffAnalysisResult) => {
                 console.log("Wyckoff analysis completed:", analysis);
+                // You could save analysis to state or perform other actions
               }}
             />
           </Dialog>
 
+          {/* Chart Image Upload & Analysis */}
           <ChartImageUploader 
             onImageAnalysis={async (imageBase64, notes) => {
               try {
+                // Call the AI service to analyze the chart image
                 const result = await aiService.analyzeChartImage(imageBase64, notes);
+                console.log("Chart image analysis completed:", result);
                 return result;
               } catch (error) {
                 console.error("Error analyzing chart image:", error);
@@ -185,7 +401,7 @@ export function FullTradingEnvironment({
           />
           
           {/* Fullscreen Toggle */}
-          <Button variant="ghost" size="sm" onClick={toggleFullScreen} className="text-white">
+          <Button variant="ghost" size="sm" onClick={toggleFullScreen}>
             {isFullScreen ? <Minimize2 className="h-4 w-4" /> : <Maximize2 className="h-4 w-4" />}
           </Button>
         </div>
@@ -193,30 +409,25 @@ export function FullTradingEnvironment({
       
       {/* Main Content Area */}
       <div className="grid grid-cols-12 h-[calc(100%-48px)]">
-        {/* Chart Area - Let TradingView handle its own controls */}
-        <div className={`${showPositionsPanel ? 'col-span-9' : 'col-span-12'} h-full border-r border-[#2a2e39] relative`}>
+        {/* Chart Area */}
+        <div className={`${showPositionsPanel ? 'col-span-9' : 'col-span-12'} h-full border-r relative`}>
           <EnhancedTradingViewWidget
             ref={tradingViewRef}
-            symbol={defaultSymbol}
-            interval="D"
+            symbol={selectedSymbol}
+            interval={selectedTimeframe}
             theme="dark"
-            style="1"
+            style={selectedChartStyle}
             width="100%"
             height="100%"
             locale={i18n.language === 'he' ? 'he_IL' : 'en'}
-            toolbar_bg="#131722"
+            toolbar_bg="#1E1E1E"
             hide_side_toolbar={false}
-            allow_symbol_change={true}
+            allow_symbol_change={false}
             save_image={true}
-            autosize={true}
-            hide_top_toolbar={false}
-            disabled_features={[]}
-            enabled_features={[
-              'study_templates',
-              'use_localstorage_for_settings',
-              'side_toolbar_in_fullscreen_mode',
-              'show_trading_notifications_history',
-            ]}
+            studies={defaultStudies}
+            disabled_features={disabledFeatures}
+            enabled_features={enabledFeatures}
+            debug={false}
             onPriceUpdate={handlePriceUpdate}
           />
         </div>
@@ -226,7 +437,7 @@ export function FullTradingEnvironment({
           <div className="col-span-3 h-full overflow-auto">
             <ProTradingViewPanel
               currentPrice={currentPrice}
-              symbol="Bitcoin (BTC/USDT)"
+              symbol={getSymbolDisplayName(selectedSymbol)}
               onOrderSubmit={handleCreatePosition}
               accountBalance={150000}
             />
