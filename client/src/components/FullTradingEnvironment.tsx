@@ -16,21 +16,20 @@ import {
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
-import { ScrollArea } from '@/components/ui/scroll-area';
 import {
-  Dialog,
-} from '@/components/ui/dialog';
+  Maximize2,
+  Minimize2,
+  ChevronDown,
+  Check,
+  BarChart,
+  Image,
+  BrainCircuit,
+} from 'lucide-react';
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
 } from '@/components/ui/popover';
-import {
-  Maximize2,
-  Minimize2,
-  ChevronDown,
-  Bell,
-} from 'lucide-react';
 
 // Available trading pairs
 const tradingPairs = [
@@ -40,6 +39,11 @@ const tradingPairs = [
   { value: 'BINANCE:SOLUSDT', label: 'Solana (SOL/USDT)' },
   { value: 'BINANCE:BNBUSDT', label: 'Binance Coin (BNB/USDT)' },
   { value: 'BINANCE:ADAUSDT', label: 'Cardano (ADA/USDT)' },
+  { value: 'BINANCE:XRPUSDT', label: 'Ripple (XRP/USDT)' },
+  { value: 'BINANCE:DOGEUSDT', label: 'Dogecoin (DOGE/USDT)' },
+  { value: 'BINANCE:DOTUSDT', label: 'Polkadot (DOT/USDT)' },
+  { value: 'BINANCE:LINKUSDT', label: 'Chainlink (LINK/USDT)' },
+  { value: 'BINANCE:AVAXUSDT', label: 'Avalanche (AVAX/USDT)' },
   
   // Stocks - Major Tech
   { value: 'NASDAQ:AAPL', label: 'Apple (AAPL)' },
@@ -47,11 +51,18 @@ const tradingPairs = [
   { value: 'NASDAQ:GOOGL', label: 'Google (GOOGL)' },
   { value: 'NASDAQ:AMZN', label: 'Amazon (AMZN)' },
   { value: 'NASDAQ:META', label: 'Meta (META)' },
+  { value: 'NASDAQ:TSLA', label: 'Tesla (TSLA)' },
+  { value: 'NASDAQ:NVDA', label: 'NVIDIA (NVDA)' },
   
   // Indices
   { value: 'AMEX:SPY', label: 'S&P 500 (SPY)' },
   { value: 'AMEX:QQQ', label: 'Nasdaq 100 (QQQ)' },
   { value: 'INDEX:DJI', label: 'Dow Jones (DJI)' },
+  
+  // Forex Pairs
+  { value: 'FX:EURUSD', label: 'EUR/USD' },
+  { value: 'FX:GBPUSD', label: 'GBP/USD' },
+  { value: 'FX:USDJPY', label: 'USD/JPY' },
 ];
 
 // Available timeframes
@@ -216,6 +227,15 @@ export function FullTradingEnvironment({
     }
   };
   
+  // Toggle favorite symbols
+  const toggleFavorite = (symbol: string) => {
+    if (favoriteSymbols.includes(symbol)) {
+      setFavoriteSymbols(favoriteSymbols.filter(s => s !== symbol));
+    } else {
+      setFavoriteSymbols([...favoriteSymbols, symbol]);
+    }
+  };
+  
   // Filter symbols based on search query
   const filteredSymbols = searchQuery
     ? tradingPairs.filter(pair => 
@@ -232,26 +252,39 @@ export function FullTradingEnvironment({
   
   // Settings that will be passed to the TradingView widget
   const disabledFeatures = [
+    // We'll manage these ourselves
     'header_symbol_search',
     'header_indicators',
-    'header_compare',
-    'header_undo_redo',
-    'header_saveload',
-    'header_settings'
+    'header_compare'
   ];
   
   const enabledFeatures = [
+    // Essential TradingView Pro features
     'study_templates',
     'use_localstorage_for_settings',
     'side_toolbar_in_fullscreen_mode',
     'show_trading_notifications_history',
+    'header_settings',
+    'header_screenshot',
+    'create_volume_indicator_by_default',
+    'header_undo_redo',
+    'header_saveload',
+    'display_market_status',
+    'border_around_the_chart',
+    'chart_crosshair_menu',
+    'charts_auto_save',
+    'seconds_resolution',
+    'right_bar_stays_on_scroll',
+    'symbol_info',
+    'drawing_tools_on_chart',
+    'go_to_date',
   ];
   
   // List of TradingView indicators to be loaded when the chart is initialized
   const defaultStudies = [
     'MASimple@tv-basicstudies',
-    'BB@tv-basicstudies',
     'MACD@tv-basicstudies',
+    'RSI@tv-basicstudies',
   ];
   
   return (
@@ -260,29 +293,29 @@ export function FullTradingEnvironment({
       style={{ height: isFullScreen ? '100vh' : '800px' }}
     >
       {/* Top Toolbar */}
-      <div className="flex items-center justify-between border-b p-2">
-        <div className="flex items-center space-x-2">
+      <div className="flex items-center justify-between border-b border-[#2a2e39] bg-[#1E222D] p-2">
+        <div className="flex items-center space-x-3">
           {/* Symbol Selector */}
           <Popover open={showSymbolSearch} onOpenChange={setShowSymbolSearch}>
             <PopoverTrigger asChild>
-              <Button variant="outline" className="flex items-center space-x-1">
+              <Button variant="outline" className="flex items-center space-x-1 bg-[#131722] border-[#2a2e39] hover:bg-[#181B25] hover:border-[#363A45]">
                 <span>{getSymbolDisplayName(selectedSymbol)}</span>
                 <ChevronDown className="h-4 w-4" />
               </Button>
             </PopoverTrigger>
-            <PopoverContent className="w-80 p-0" align="start">
-              <div className="p-2 border-b">
+            <PopoverContent className="w-80 p-0 bg-[#1E222D] border-[#2a2e39]" align="start">
+              <div className="p-2 border-b border-[#2a2e39]">
                 <Input
                   placeholder={t('Search symbols...')}
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full"
+                  className="w-full bg-[#131722] border-[#2a2e39]"
                   autoFocus
                 />
               </div>
-              <ScrollArea className="h-[300px]">
+              <div className="max-h-[300px] overflow-auto">
                 <div className="p-2">
-                  <h4 className="text-sm font-medium mb-2">{t('Favorites')}</h4>
+                  <h4 className="text-sm font-medium mb-2 text-[#B2B5BE]">{t('Favorites')}</h4>
                   {favoriteSymbols.length > 0 ? (
                     <div className="space-y-1 mb-4">
                       {favoriteSymbols.map(symbol => {
@@ -292,51 +325,73 @@ export function FullTradingEnvironment({
                         return (
                           <div 
                             key={symbol} 
-                            className="flex items-center justify-between p-2 rounded-md hover:bg-accent cursor-pointer"
+                            className="flex items-center justify-between p-2 rounded-md hover:bg-[#131722] cursor-pointer"
                             onClick={() => {
                               setSelectedSymbol(found.value);
                               setShowSymbolSearch(false);
                             }}
                           >
-                            <span>{found.label}</span>
+                            <span className="text-white">{found.label}</span>
+                            <button
+                              className="text-yellow-400"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                toggleFavorite(symbol);
+                              }}
+                            >
+                              <Check className="h-4 w-4" />
+                            </button>
                           </div>
                         );
                       })}
                     </div>
                   ) : (
-                    <div className="text-sm text-muted-foreground mb-4">
+                    <div className="text-sm text-[#6A6E78] mb-4">
                       {t('No favorite symbols added yet')}
                     </div>
                   )}
                   
-                  <h4 className="text-sm font-medium mb-2">{t('All Symbols')}</h4>
+                  <h4 className="text-sm font-medium mb-2 text-[#B2B5BE]">{t('All Symbols')}</h4>
                   <div className="space-y-1">
                     {filteredSymbols.map(pair => (
                       <div 
                         key={pair.value} 
-                        className="flex items-center justify-between p-2 rounded-md hover:bg-accent cursor-pointer"
+                        className="flex items-center justify-between p-2 rounded-md hover:bg-[#131722] cursor-pointer"
                         onClick={() => {
                           setSelectedSymbol(pair.value);
                           setShowSymbolSearch(false);
                         }}
                       >
-                        <span>{pair.label}</span>
+                        <span className="text-white">{pair.label}</span>
+                        <button
+                          className={`${favoriteSymbols.includes(pair.value) ? 'text-yellow-400' : 'text-[#6A6E78]'}`}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            toggleFavorite(pair.value);
+                          }}
+                        >
+                          <Check className="h-4 w-4" />
+                        </button>
                       </div>
                     ))}
                   </div>
                 </div>
-              </ScrollArea>
+              </div>
             </PopoverContent>
           </Popover>
           
           {/* Timeframe Selector */}
           <Select value={selectedTimeframe} onValueChange={setSelectedTimeframe}>
-            <SelectTrigger className="w-[70px]">
-              <SelectValue placeholder={selectedTimeframe} />
+            <SelectTrigger className="w-[80px] bg-[#131722] border-[#2a2e39] hover:bg-[#181B25] hover:border-[#363A45]">
+              <SelectValue placeholder={timeframes.find(tf => tf.value === selectedTimeframe)?.label || selectedTimeframe} />
             </SelectTrigger>
-            <SelectContent>
+            <SelectContent className="bg-[#1E222D] border-[#2a2e39]">
               {timeframes.map(tf => (
-                <SelectItem key={tf.value} value={tf.value}>
+                <SelectItem 
+                  key={tf.value} 
+                  value={tf.value}
+                  className="hover:bg-[#131722]"
+                >
                   {t(tf.label)}
                 </SelectItem>
               ))}
@@ -345,53 +400,50 @@ export function FullTradingEnvironment({
           
           {/* Chart Style Selector */}
           <Select value={selectedChartStyle} onValueChange={setSelectedChartStyle}>
-            <SelectTrigger className="w-[100px]">
+            <SelectTrigger className="w-[100px] bg-[#131722] border-[#2a2e39] hover:bg-[#181B25] hover:border-[#363A45]">
               <SelectValue placeholder={chartStyles.find(s => s.value === selectedChartStyle)?.label || selectedChartStyle} />
             </SelectTrigger>
-            <SelectContent>
+            <SelectContent className="bg-[#1E222D] border-[#2a2e39]">
               {chartStyles.map(style => (
-                <SelectItem key={style.value} value={style.value}>
+                <SelectItem 
+                  key={style.value} 
+                  value={style.value}
+                  className="hover:bg-[#131722]"
+                >
                   {t(style.label)}
                 </SelectItem>
               ))}
             </SelectContent>
           </Select>
-          
-          {/* Indicators Button removed - TradingView already provides indicators */}
-          
         </div>
         
-        <div className="flex items-center space-x-2">
+        <div className="flex items-center space-x-3">
           {/* Current Price Indicator */}
-          <Badge className="text-sm">
+          <Badge variant="outline" className="text-sm bg-[#131722] border-[#2a2e39] text-white px-3 py-1">
             {currentPrice.toFixed(2)}
           </Badge>
           
-          {/* Alerts Button */}
-          <Button variant="ghost" size="sm">
-            <Bell className="h-4 w-4" />
+          {/* Chart Analysis Button */}
+          <Button variant="outline" size="sm" className="gap-1 bg-[#131722] border-[#2a2e39] hover:bg-[#181B25] hover:border-[#363A45]">
+            <BarChart className="h-4 w-4" />
+            <span>Analysis</span>
           </Button>
           
           {/* AI Wyckoff Coach Button */}
-          <Dialog>
-            <AIWyckoffCoach 
-              tradingViewRef={tradingViewRef} 
-              symbol={selectedSymbol}
-              timeframe={selectedTimeframe}
-              onAnalysisComplete={(analysis: WyckoffAnalysisResult) => {
-                console.log("Wyckoff analysis completed:", analysis);
-                // You could save analysis to state or perform other actions
-              }}
-            />
-          </Dialog>
+          <AIWyckoffCoach 
+            tradingViewRef={tradingViewRef} 
+            symbol={selectedSymbol}
+            timeframe={selectedTimeframe}
+            onAnalysisComplete={(analysis: WyckoffAnalysisResult) => {
+              console.log("Wyckoff analysis completed:", analysis);
+            }}
+          />
 
           {/* Chart Image Upload & Analysis */}
           <ChartImageUploader 
             onImageAnalysis={async (imageBase64, notes) => {
               try {
-                // Call the AI service to analyze the chart image
                 const result = await aiService.analyzeChartImage(imageBase64, notes);
-                console.log("Chart image analysis completed:", result);
                 return result;
               } catch (error) {
                 console.error("Error analyzing chart image:", error);
@@ -401,7 +453,12 @@ export function FullTradingEnvironment({
           />
           
           {/* Fullscreen Toggle */}
-          <Button variant="ghost" size="sm" onClick={toggleFullScreen}>
+          <Button 
+            variant="ghost" 
+            size="sm" 
+            onClick={toggleFullScreen}
+            className="bg-[#131722] border-[#2a2e39] hover:bg-[#181B25] hover:border-[#363A45]"
+          >
             {isFullScreen ? <Minimize2 className="h-4 w-4" /> : <Maximize2 className="h-4 w-4" />}
           </Button>
         </div>
@@ -410,7 +467,7 @@ export function FullTradingEnvironment({
       {/* Main Content Area */}
       <div className="grid grid-cols-12 h-[calc(100%-48px)]">
         {/* Chart Area */}
-        <div className={`${showPositionsPanel ? 'col-span-9' : 'col-span-12'} h-full border-r relative`}>
+        <div className={`${showPositionsPanel ? 'col-span-9' : 'col-span-12'} h-full relative`}>
           <EnhancedTradingViewWidget
             ref={tradingViewRef}
             symbol={selectedSymbol}
@@ -434,7 +491,7 @@ export function FullTradingEnvironment({
         
         {/* Trading Panel */}
         {showPositionsPanel && (
-          <div className="col-span-3 h-full overflow-auto">
+          <div className="col-span-3 h-full overflow-hidden">
             <ProTradingViewPanel
               currentPrice={currentPrice}
               symbol={getSymbolDisplayName(selectedSymbol)}

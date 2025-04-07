@@ -13,6 +13,7 @@ import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from '@/lib/queryClient';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Position } from '@shared/schema';
+import { ArrowUp, ArrowDown, X } from 'lucide-react';
 
 interface ProTradingViewPanelProps {
   symbol: string;
@@ -41,6 +42,7 @@ export function ProTradingViewPanel({
   const [usePercentage, setUsePercentage] = useState<boolean>(false);
   const queryClient = useQueryClient();
 
+  // Get active positions from the API
   const { data: activePositions = [] } = useQuery<Position[]>({
     queryKey: ['/api/positions', 'active'],
     queryFn: async () => {
@@ -49,6 +51,7 @@ export function ProTradingViewPanel({
     },
   });
 
+  // Get closed positions from the API
   const { data: closedPositions = [] } = useQuery<Position[]>({
     queryKey: ['/api/positions', 'closed'],
     queryFn: async () => {
@@ -57,12 +60,14 @@ export function ProTradingViewPanel({
     },
   });
 
+  // Update price when currentPrice changes
   useEffect(() => {
     if (currentPrice > 0) {
       setPrice(currentPrice);
     }
   }, [currentPrice]);
 
+  // Calculate effective position size when inputs change
   useEffect(() => {
     calculateEffectivePositionSize();
   }, [amount, leverage, price, amountType]);
@@ -75,11 +80,13 @@ export function ProTradingViewPanel({
     }
   };
 
+  // Handle amount percentage buttons
   const handleAmountPercentage = (percentage: number) => {
     const calculatedAmount = accountBalance * (percentage / 100);
     setAmount(Number(calculatedAmount.toFixed(2)));
   };
 
+  // Submit order to the API
   const handleSubmitOrder = async () => {
     if (amount <= 0) {
       toast({
@@ -135,9 +142,10 @@ export function ProTradingViewPanel({
     }
   };
 
+  // Close a position
   const handleClosePosition = async (positionId: number) => {
     try {
-      const response = await apiRequest('PUT', `/api/positions/${positionId}/close`, {
+      const response = await apiRequest('POST', `/api/positions/${positionId}/close`, {
         exitPrice: currentPrice
       });
 
@@ -163,6 +171,7 @@ export function ProTradingViewPanel({
     }
   };
 
+  // Format currency for display
   const formatCurrency = (value: number | string | null) => {
     if (value === null) return '$0.00';
     return new Intl.NumberFormat('en-US', { 
@@ -173,6 +182,7 @@ export function ProTradingViewPanel({
     }).format(Number(value));
   };
 
+  // Calculate position PnL
   const getPositionPnL = (position: Position) => {
     if (position.status === 'closed' && position.profitLoss) {
       return Number(position.profitLoss);
@@ -192,6 +202,7 @@ export function ProTradingViewPanel({
     return 0;
   };
 
+  // Calculate total account balance including unrealized PnL
   const calculateTotalBalance = () => {
     // Account balance plus unrealized PnL from active positions
     const unrealizedPnL = activePositions.reduce((total, position) => {
@@ -207,20 +218,27 @@ export function ProTradingViewPanel({
   );
 
   // Sort closed positions by newest first
-  const sortedClosedPositions = [...closedPositions].sort((a, b) => 
-    new Date(b.exitTime || b.entryTime).getTime() - new Date(a.exitTime || a.entryTime).getTime()
-  );
+  const sortedClosedPositions = [...closedPositions].sort((a, b) => {
+    const bTime = b.exitTime ? new Date(b.exitTime).getTime() : new Date(b.entryTime).getTime();
+    const aTime = a.exitTime ? new Date(a.exitTime).getTime() : new Date(a.entryTime).getTime();
+    return bTime - aTime;
+  });
 
   return (
-    <div className="w-[320px] bg-[#131722] text-white rounded-md border border-[#2a2e39] p-2 h-full overflow-y-auto">
-      <Tabs defaultValue="orders">
-        <TabsList className="w-full bg-[#1E222D] mb-4">
-          <TabsTrigger value="orders" className="flex-1">Orders</TabsTrigger>
-          <TabsTrigger value="positions" className="flex-1">Positions</TabsTrigger>
+    <div className="h-full flex flex-col bg-[#131722] text-white border-l border-[#2a2e39]">
+      <Tabs defaultValue="orders" className="flex-1 flex flex-col">
+        <TabsList className="w-full bg-[#1E222D] rounded-none border-b border-[#2a2e39]">
+          <TabsTrigger value="orders" className="flex-1 rounded-none data-[state=active]:bg-[#131722] data-[state=active]:border-b-2 data-[state=active]:border-[#2962FF]">Orders</TabsTrigger>
+          <TabsTrigger value="positions" className="flex-1 rounded-none data-[state=active]:bg-[#131722] data-[state=active]:border-b-2 data-[state=active]:border-[#2962FF]">Positions</TabsTrigger>
         </TabsList>
         
-        <TabsContent value="orders" className="space-y-4">
+        <TabsContent value="orders" className="flex-1 overflow-auto p-4 space-y-4">
           <div className="space-y-3">
+            <div className="flex justify-between">
+              <div className="text-sm text-[#B2B5BE]">Current Price: <span className="font-bold text-white">{formatCurrency(currentPrice)}</span></div>
+              <div className="text-sm text-[#B2B5BE]">Symbol: <span className="font-bold text-white">{symbol}</span></div>
+            </div>
+            
             <Select value={orderType} onValueChange={(value: any) => setOrderType(value)}>
               <SelectTrigger className="w-full bg-[#1E222D] border-[#363A45]">
                 <SelectValue placeholder="Order Type" />
@@ -238,12 +256,14 @@ export function ProTradingViewPanel({
                 onClick={() => setOrderSide('Long')}
                 className={`py-6 ${orderSide === 'Long' ? 'bg-green-600 hover:bg-green-700' : 'bg-[#1E222D] hover:bg-[#282D3D]'}`}
               >
+                <ArrowUp className="mr-2 h-5 w-5" />
                 Long
               </Button>
               <Button 
                 onClick={() => setOrderSide('Short')}
                 className={`py-6 ${orderSide === 'Short' ? 'bg-red-600 hover:bg-red-700' : 'bg-[#1E222D] hover:bg-[#282D3D]'}`}
               >
+                <ArrowDown className="mr-2 h-5 w-5" />
                 Short
               </Button>
             </div>
@@ -253,7 +273,7 @@ export function ProTradingViewPanel({
               <div className="flex items-center space-x-1">
                 <button 
                   onClick={() => setUsePercentage(!usePercentage)} 
-                  className={`px-2 py-1 text-xs rounded ${usePercentage ? 'bg-blue-600' : 'bg-[#1E222D]'}`}
+                  className={`px-2 py-1 text-xs rounded ${usePercentage ? 'bg-[#2962FF]' : 'bg-[#1E222D]'}`}
                 >
                   Use %
                 </button>
@@ -280,7 +300,7 @@ export function ProTradingViewPanel({
               
               {usePercentage && (
                 <div className="grid grid-cols-5 gap-1 mt-2">
-                  {[0.25, 0.5, 0.75, 1, 2].map((percent) => (
+                  {[1, 5, 10, 25, 50].map((percent) => (
                     <Button 
                       key={percent}
                       onClick={() => handleAmountPercentage(percent)}
@@ -293,13 +313,14 @@ export function ProTradingViewPanel({
                 </div>
               )}
               
-              <div className="grid grid-cols-5 gap-1 mt-2">
-                {[1, 5, 10, 20, 50].map((level) => (
+              <div className="grid grid-cols-5 gap-1 mt-3">
+                <div className="col-span-5 text-sm mb-1 font-medium">Leverage</div>
+                {[1, 5, 10, 25, 50].map((level) => (
                   <Button 
                     key={level}
                     onClick={() => setLeverage(level)}
                     variant="outline" 
-                    className={`h-8 text-xs ${leverage === level ? 'bg-blue-600 border-blue-600' : 'bg-[#1E222D] border-[#363A45]'} hover:bg-[#282D3D]`}
+                    className={`h-8 text-xs ${leverage === level ? 'bg-[#2962FF] border-[#2962FF]' : 'bg-[#1E222D] border-[#363A45]'} hover:bg-[#282D3D]`}
                   >
                     {level}x
                   </Button>
@@ -340,7 +361,7 @@ export function ProTradingViewPanel({
                     type="checkbox" 
                     className="mr-2" 
                     checked={takeProfit !== null}
-                    onChange={(e) => setTakeProfit(e.target.checked ? (currentPrice * 1.05) : null)}
+                    onChange={(e) => setTakeProfit(e.target.checked ? (currentPrice * (orderSide === 'Long' ? 1.05 : 0.95)) : null)}
                   />
                   Take Profit
                 </label>
@@ -349,7 +370,7 @@ export function ProTradingViewPanel({
                     type="checkbox" 
                     className="mr-2" 
                     checked={stopLoss !== null}
-                    onChange={(e) => setStopLoss(e.target.checked ? (currentPrice * 0.95) : null)}
+                    onChange={(e) => setStopLoss(e.target.checked ? (currentPrice * (orderSide === 'Long' ? 0.95 : 1.05)) : null)}
                   />
                   Stop Loss
                 </label>
@@ -379,15 +400,15 @@ export function ProTradingViewPanel({
             
             <div className="space-y-2 pt-2 border-t border-[#363A45]">
               <div className="grid grid-cols-2 text-xs">
-                <div className="text-gray-400">Order Value:</div>
+                <div className="text-[#B2B5BE]">Order Value:</div>
                 <div className="text-right">{formatCurrency(amount)}</div>
               </div>
               <div className="grid grid-cols-2 text-xs">
-                <div className="text-gray-400">Leverage:</div>
+                <div className="text-[#B2B5BE]">Leverage:</div>
                 <div className="text-right">{leverage}x</div>
               </div>
               <div className="grid grid-cols-2 text-xs">
-                <div className="text-gray-400">Effective Position Size:</div>
+                <div className="text-[#B2B5BE]">Position Size:</div>
                 <div className="text-right">{formatCurrency(effectivePositionSize)}</div>
               </div>
             </div>
@@ -401,112 +422,116 @@ export function ProTradingViewPanel({
           </div>
         </TabsContent>
         
-        <TabsContent value="positions">
-          <div className="space-y-4">
-            <div className="bg-[#1E222D] p-3 rounded">
-              <div className="grid grid-cols-2 mb-2">
-                <div className="text-sm text-gray-400">Account Balance</div>
-                <div className="text-right font-semibold">{formatCurrency(accountBalance)}</div>
-              </div>
-              <div className="grid grid-cols-2 mb-2">
-                <div className="text-sm text-gray-400">Equity</div>
-                <div className="text-right font-semibold">{formatCurrency(calculateTotalBalance())}</div>
-              </div>
+        <TabsContent value="positions" className="flex-1 overflow-auto p-4 space-y-4">
+          <div className="bg-[#1E222D] p-3 rounded">
+            <div className="grid grid-cols-2 mb-2">
+              <div className="text-sm text-[#B2B5BE]">Account Balance</div>
+              <div className="text-right font-semibold">{formatCurrency(accountBalance)}</div>
             </div>
-            
-            <div className="space-y-1">
-              <h3 className="text-sm font-medium text-gray-400">Active Positions</h3>
-              {sortedActivePositions.length === 0 ? (
-                <div className="text-center py-4 text-sm text-gray-400">No active positions</div>
-              ) : (
-                sortedActivePositions.map((position) => {
-                  const pnl = getPositionPnL(position);
-                  const pnlColor = pnl >= 0 ? 'text-green-500' : 'text-red-500';
-                  
-                  return (
-                    <div key={position.id} className="bg-[#1E222D] p-3 rounded">
-                      <div className="flex justify-between items-center mb-2">
-                        <div className="flex items-center">
-                          <span className={position.type === 'long' ? 'text-green-500' : 'text-red-500'}>
-                            {position.type === 'long' ? 'Long' : 'Short'}
-                          </span>
-                          <span className="ml-2">{position.symbol}</span>
-                        </div>
-                        <Button 
-                          variant="destructive" 
-                          size="sm"
-                          className="h-6 text-xs"
-                          onClick={() => handleClosePosition(position.id)}
-                        >
-                          Close
-                        </Button>
-                      </div>
-                      <div className="grid grid-cols-2 text-xs gap-y-1">
-                        <div className="text-gray-400">Size:</div>
-                        <div className="text-right">{formatCurrency(Number(position.amount) * Number(position.leverage))}</div>
-                        <div className="text-gray-400">Entry Price:</div>
-                        <div className="text-right">{formatCurrency(position.entryPrice)}</div>
-                        <div className="text-gray-400">Mark Price:</div>
-                        <div className="text-right">{formatCurrency(currentPrice)}</div>
-                        <div className="text-gray-400">Leverage:</div>
-                        <div className="text-right">{position.leverage}x</div>
-                        <div className="text-gray-400">PNL:</div>
-                        <div className={`text-right ${pnlColor}`}>
-                          {formatCurrency(pnl)} ({(pnl / (Number(position.amount) * Number(position.leverage)) * 100).toFixed(2)}%)
-                        </div>
-                      </div>
-                    </div>
-                  );
-                })
-              )}
+            <div className="grid grid-cols-2 mb-2">
+              <div className="text-sm text-[#B2B5BE]">Total Equity</div>
+              <div className="text-right font-semibold">{formatCurrency(calculateTotalBalance())}</div>
             </div>
-            
-            <div className="space-y-1">
-              <h3 className="text-sm font-medium text-gray-400">Closed Positions</h3>
-              {sortedClosedPositions.length === 0 ? (
-                <div className="text-center py-4 text-sm text-gray-400">No closed positions</div>
-              ) : (
-                sortedClosedPositions.slice(0, 5).map((position) => {
-                  const pnlValue = Number(position.profitLoss);
-                  const pnlColor = pnlValue >= 0 ? 'text-green-500' : 'text-red-500';
-                  
-                  return (
-                    <div key={position.id} className="bg-[#1E222D] p-3 rounded">
-                      <div className="flex justify-between items-center mb-2">
-                        <div className="flex items-center">
-                          <span className={position.type === 'long' ? 'text-green-500' : 'text-red-500'}>
-                            {position.type === 'long' ? 'Long' : 'Short'}
-                          </span>
-                          <span className="ml-2">{position.symbol}</span>
-                        </div>
-                        <span className="text-xs text-gray-400">
-                          {new Date(position.exitTime || position.entryTime).toLocaleString()}
+          </div>
+          
+          <div className="space-y-3">
+            <h3 className="text-sm font-medium text-[#B2B5BE]">Active Positions</h3>
+            {sortedActivePositions.length === 0 ? (
+              <div className="text-center py-4 text-sm text-[#B2B5BE] bg-[#1E222D] rounded p-3">No active positions</div>
+            ) : (
+              sortedActivePositions.map((position) => {
+                const pnl = getPositionPnL(position);
+                const pnlColor = pnl >= 0 ? 'text-green-500' : 'text-red-500';
+                
+                return (
+                  <div key={position.id} className="bg-[#1E222D] p-3 rounded">
+                    <div className="flex justify-between items-center mb-2">
+                      <div className="flex items-center">
+                        <span className={`font-semibold mr-1 ${position.type === 'long' ? 'text-green-500' : 'text-red-500'}`}>
+                          {position.type === 'long' ? 'LONG' : 'SHORT'}
                         </span>
+                        <span className="text-xs text-[#B2B5BE]">{position.symbol}</span>
                       </div>
-                      <div className="grid grid-cols-2 text-xs gap-y-1">
-                        <div className="text-gray-400">Size:</div>
-                        <div className="text-right">{formatCurrency(Number(position.amount) * Number(position.leverage))}</div>
-                        <div className="text-gray-400">Entry Price:</div>
-                        <div className="text-right">{formatCurrency(position.entryPrice)}</div>
-                        <div className="text-gray-400">Exit Price:</div>
-                        <div className="text-right">{formatCurrency(position.exitPrice)}</div>
-                        <div className="text-gray-400">PNL:</div>
-                        <div className={`text-right ${pnlColor}`}>
-                          {formatCurrency(position.profitLoss)}
-                        </div>
-                      </div>
+                      <Button 
+                        variant="destructive" 
+                        size="sm"
+                        className="h-7 px-2 py-0 bg-opacity-50"
+                        onClick={() => handleClosePosition(Number(position.id))}
+                      >
+                        <X className="h-3 w-3 mr-1" />
+                        Close
+                      </Button>
                     </div>
-                  );
-                })
-              )}
-              {sortedClosedPositions.length > 5 && (
-                <div className="text-center mt-2">
-                  <Button variant="link" size="sm" className="text-xs">
-                    View all {sortedClosedPositions.length} closed positions
-                  </Button>
-                </div>
-              )}
-            </div>
+                    <div className="grid grid-cols-2 text-xs gap-y-1">
+                      <div className="text-[#B2B5BE]">Entry Price:</div>
+                      <div className="text-right">{formatCurrency(position.entryPrice)}</div>
+                      
+                      <div className="text-[#B2B5BE]">Current Price:</div>
+                      <div className="text-right">{formatCurrency(currentPrice)}</div>
+                      
+                      <div className="text-[#B2B5BE]">Amount:</div>
+                      <div className="text-right">{formatCurrency(position.amount)}</div>
+                      
+                      <div className="text-[#B2B5BE]">Leverage:</div>
+                      <div className="text-right">{position.leverage}x</div>
+                      
+                      <div className="text-[#B2B5BE]">PnL:</div>
+                      <div className={`text-right font-semibold ${pnlColor}`}>{formatCurrency(pnl)}</div>
+                      
+                      {position.stopLoss && (
+                        <>
+                          <div className="text-[#B2B5BE]">Stop Loss:</div>
+                          <div className="text-right text-red-500">{formatCurrency(position.stopLoss)}</div>
+                        </>
+                      )}
+                      
+                      {position.takeProfit && (
+                        <>
+                          <div className="text-[#B2B5BE]">Take Profit:</div>
+                          <div className="text-right text-green-500">{formatCurrency(position.takeProfit)}</div>
+                        </>
+                      )}
+                    </div>
+                  </div>
+                );
+              })
+            )}
+            
+            <h3 className="text-sm font-medium text-[#B2B5BE] mt-4">Closed Positions</h3>
+            {sortedClosedPositions.length === 0 ? (
+              <div className="text-center py-4 text-sm text-[#B2B5BE] bg-[#1E222D] rounded p-3">No closed positions</div>
+            ) : (
+              sortedClosedPositions.slice(0, 5).map((position) => {
+                const pnl = position.profitLoss ? Number(position.profitLoss) : 0;
+                const pnlColor = pnl >= 0 ? 'text-green-500' : 'text-red-500';
+                
+                return (
+                  <div key={position.id} className="bg-[#1E222D] p-3 rounded opacity-80">
+                    <div className="flex justify-between items-center mb-2">
+                      <div className="flex items-center">
+                        <span className={`font-semibold mr-1 ${position.type === 'long' ? 'text-green-500' : 'text-red-500'}`}>
+                          {position.type === 'long' ? 'LONG' : 'SHORT'}
+                        </span>
+                        <span className="text-xs text-[#B2B5BE]">{position.symbol}</span>
+                      </div>
+                      <span className="text-xs text-[#B2B5BE]">
+                        {new Date(position.exitTime || position.entryTime).toLocaleString()}
+                      </span>
+                    </div>
+                    <div className="grid grid-cols-2 text-xs gap-y-1">
+                      <div className="text-[#B2B5BE]">Entry Price:</div>
+                      <div className="text-right">{formatCurrency(position.entryPrice)}</div>
+                      
+                      <div className="text-[#B2B5BE]">Exit Price:</div>
+                      <div className="text-right">{formatCurrency(position.exitPrice)}</div>
+                      
+                      <div className="text-[#B2B5BE]">PnL:</div>
+                      <div className={`text-right font-semibold ${pnlColor}`}>{formatCurrency(pnl)}</div>
+                    </div>
+                  </div>
+                );
+              })
+            )}
           </div>
         </TabsContent>
       </Tabs>

@@ -214,6 +214,201 @@ export const aiService = {
       throw new Error("Failed to analyze the chart. Please try again later.");
     }
   },
+  
+  /**
+   * Specialized Wyckoff analysis for charts
+   */
+  wyckoffAnalysis: async (chartData: any, symbol: string, timeframe: string) => {
+    try {
+      if (!openai) {
+        console.error("OpenAI client is not initialized");
+        return { analysis: "AI service unavailable", error: true };
+      }
+      
+      // Format the chart data for analysis
+      const formattedData = formatChartDataForAnalysis(chartData);
+      
+      // the newest OpenAI model is "gpt-4o" which was released May 13, 2024. do not change this unless explicitly requested by the user
+      const response = await openai.chat.completions.create({
+        model: "gpt-4o",
+        messages: [
+          {
+            role: "system",
+            content: `You are Richard Wyckoff, the legendary market analyst and educator. Analyze this chart using your methodology.
+            
+            Focus on:
+            1. Market phases (accumulation, markup, distribution, markdown)
+            2. Price and volume relationships
+            3. Springs, upthrusts and tests
+            4. Composite operator activity
+            5. Supply and demand analysis
+            
+            Provide a comprehensive analysis as Richard Wyckoff would, including:
+            - Current market phase
+            - Key Wyckoff events (buying/selling climax, springs, tests, upthrusts)
+            - Volume analysis and its confirmation of price
+            - Potential future price movements
+            - Specific trading recommendations based on Wyckoff methodology
+            
+            Format your response as JSON with these fields:
+            {
+              "marketPhase": "accumulation/markup/distribution/markdown",
+              "keyEvents": [{"type": "event type", "description": "what happened"}],
+              "volumeAnalysis": "detailed analysis of volume patterns",
+              "forecast": "likely future movement",
+              "tradingRecommendation": "specific action to take",
+              "confidenceScore": number from 0-1,
+              "detailedExplanation": "thorough Wyckoff analysis"
+            }`
+          },
+          {
+            role: "user",
+            content: `Please analyze this ${timeframe} chart for ${symbol} with your Wyckoff methodology:\n\n${formattedData}`
+          }
+        ],
+        response_format: { type: "json_object" },
+        max_tokens: 1500,
+      });
+
+      const content = response.choices[0].message.content || "{}";
+      return JSON.parse(content);
+    } catch (error) {
+      console.error("Error performing Wyckoff analysis:", error);
+      throw new Error("Failed to analyze chart with Wyckoff methodology. Please try again later.");
+    }
+  },
+  
+  /**
+   * Analyzes chart images with AI
+   */
+  analyzeChartImage: async (imageBase64: string, notes: string = "") => {
+    try {
+      if (!openai) {
+        console.error("OpenAI client is not initialized");
+        return { analysis: "AI service unavailable", error: true };
+      }
+      
+      // the newest OpenAI model is "gpt-4o" which was released May 13, 2024. do not change this unless explicitly requested by the user
+      const response = await openai.chat.completions.create({
+        model: "gpt-4o",
+        messages: [
+          {
+            role: "system",
+            content: `You are a Wyckoff methodology expert analyzing trading charts. 
+            Examine the provided chart image carefully and give detailed analysis using Wyckoff principles.
+            
+            Your analysis should include:
+            1. Identification of the market phase (accumulation, markup, distribution, markdown)
+            2. Key Wyckoff events visible on the chart (springs, upthrusts, tests, climax actions)
+            3. Volume analysis and what it suggests about future price movement
+            4. Point of force analysis (effort vs. result)
+            5. Trading recommendations based strictly on Wyckoff methodology
+            
+            Structure your response with these sections:
+            - Market Phase
+            - Key Wyckoff Events 
+            - Volume Analysis
+            - Supply/Demand Balance
+            - Trading Recommendation
+            - Detailed Explanation`
+          },
+          {
+            role: "user",
+            content: [
+              {
+                type: "text",
+                text: `Please analyze this trading chart using Wyckoff methodology. ${notes ? 'Additional notes: ' + notes : ''}`
+              },
+              {
+                type: "image_url",
+                image_url: {
+                  url: `data:image/jpeg;base64,${imageBase64}`
+                }
+              }
+            ]
+          }
+        ],
+        max_tokens: 1500,
+      });
+
+      return {
+        analysis: response.choices[0].message.content || "I couldn't analyze this chart. Please try again with a clearer image."
+      };
+    } catch (error) {
+      console.error("Error analyzing chart image:", error);
+      throw new Error("Failed to analyze the chart image. Please try again later.");
+    }
+  },
+  
+  /**
+   * Ask questions about trading with context
+   */
+  askQuestion: async (question: string, trades: any[] = []) => {
+    try {
+      if (!openai) {
+        console.error("OpenAI client is not initialized");
+        return { answer: "AI service unavailable", error: true };
+      }
+      
+      // Create context from trades if available
+      let tradeContext = "";
+      if (trades && trades.length > 0) {
+        tradeContext = `Based on your ${trades.length} recorded trades, `;
+        
+        // Calculate overall performance
+        const winningTrades = trades.filter(t => 
+          (t.exitPrice > t.entryPrice && t.type === 'long') || 
+          (t.exitPrice < t.entryPrice && t.type === 'short')
+        );
+        
+        const winRate = (winningTrades.length / trades.length) * 100;
+        tradeContext += `your current win rate is ${winRate.toFixed(1)}%. `;
+        
+        // Recent trading patterns
+        const recentTrades = trades.slice(-5);
+        if (recentTrades.length > 0) {
+          tradeContext += "Your recent trades show ";
+          const recentWins = recentTrades.filter(t => 
+            (t.exitPrice > t.entryPrice && t.type === 'long') || 
+            (t.exitPrice < t.entryPrice && t.type === 'short')
+          );
+          const recentWinRate = (recentWins.length / recentTrades.length) * 100;
+          tradeContext += `a ${recentWinRate.toFixed(1)}% win rate. `;
+        }
+      }
+      
+      // the newest OpenAI model is "gpt-4o" which was released May 13, 2024. do not change this unless explicitly requested by the user
+      const response = await openai.chat.completions.create({
+        model: "gpt-4o",
+        messages: [
+          {
+            role: "system",
+            content: `You are a professional trading coach specialized in Wyckoff methodology.
+            ${tradeContext}
+            
+            When answering the trader's question:
+            1. Draw from Wyckoff principles and modern trading psychology
+            2. Be honest but constructive in your feedback
+            3. Recommend specific, actionable steps for improvement
+            4. Support your advice with examples from Wyckoff methodology
+            5. Keep answers practical and helpful for real-world trading`
+          },
+          {
+            role: "user",
+            content: question
+          }
+        ],
+        max_tokens: 1000,
+      });
+
+      return {
+        answer: response.choices[0].message.content || "I couldn't generate an answer. Please try again."
+      };
+    } catch (error) {
+      console.error("Error processing trading question:", error);
+      throw new Error("Failed to process your question. Please try again later.");
+    }
+  },
 
   /**
    * Generates personalized trading advice based on user's history
