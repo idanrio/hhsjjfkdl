@@ -186,6 +186,14 @@ export function setupAuth(app: Express) {
         // Continue registration even if paper trading account creation fails
       }
 
+      // Send verification email immediately after registration
+      try {
+        await sendVerificationEmail(user, false);
+      } catch (error) {
+        console.error("Warning: Could not send verification email:", error);
+        // Continue registration even if email sending fails
+      }
+
       // Log user in automatically after registration
       req.login(user, (err) => {
         if (err) return next(err);
