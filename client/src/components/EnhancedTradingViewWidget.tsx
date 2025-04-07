@@ -416,7 +416,24 @@ const EnhancedTradingViewWidgetComponent: ForwardRefRenderFunction<
             try {
               const chart = widget.chart();
               const symbolInfo = chart.symbol();
-              const lastPrice = chart.lastBar().close || chart.getLastPrice(symbolInfo);
+              let lastPrice = 0;
+              try {
+                if (chart.lastBar && typeof chart.lastBar === 'function') {
+                  const bar = chart.lastBar();
+                  if (bar && bar.close) {
+                    lastPrice = bar.close;
+                  }
+                } else if (chart.getLastPrice && typeof chart.getLastPrice === 'function') {
+                  lastPrice = chart.getLastPrice(symbolInfo);
+                } else {
+                  // Fallback to current price if already set
+                  lastPrice = currentPrice;
+                }
+              } catch (e) {
+                console.warn("Error getting last bar:", e);
+                // Keep the current price if we have it
+                lastPrice = currentPrice;
+              }
               
               if (lastPrice && lastPrice !== currentPrice) {
                 setCurrentPrice(lastPrice);
@@ -1113,7 +1130,23 @@ const EnhancedTradingViewWidgetComponent: ForwardRefRenderFunction<
                         if (onPriceUpdate && !priceUpdateIntervalRef.current) {
                           priceUpdateIntervalRef.current = window.setInterval(() => {
                             try {
-                              const lastPrice = chart.lastBar().close || chart.getLastPrice(chart.symbol());
+                              let lastPrice = 0;
+                              try {
+                                if (chart.lastBar && typeof chart.lastBar === 'function') {
+                                  const bar = chart.lastBar();
+                                  if (bar && bar.close) {
+                                    lastPrice = bar.close;
+                                  }
+                                } else if (chart.getLastPrice && typeof chart.getLastPrice === 'function') {
+                                  lastPrice = chart.getLastPrice(chart.symbol());
+                                } else {
+                                  // Fallback to current price if already set
+                                  lastPrice = currentPrice;
+                                }
+                              } catch (e) {
+                                console.warn("Error getting last bar in refreshUI:", e);
+                                lastPrice = currentPrice;
+                              }
                               if (lastPrice && lastPrice !== currentPrice) {
                                 setCurrentPrice(lastPrice);
                                 onPriceUpdate(lastPrice);
