@@ -281,64 +281,7 @@ export const aiService = {
   /**
    * Analyzes chart images with AI
    */
-  analyzeChartImage: async (imageBase64: string, notes: string = "") => {
-    try {
-      if (!openai) {
-        console.error("OpenAI client is not initialized");
-        return { analysis: "AI service unavailable", error: true };
-      }
-      
-      // the newest OpenAI model is "gpt-4o" which was released May 13, 2024. do not change this unless explicitly requested by the user
-      const response = await openai.chat.completions.create({
-        model: "gpt-4o",
-        messages: [
-          {
-            role: "system",
-            content: `You are a Wyckoff methodology expert analyzing trading charts. 
-            Examine the provided chart image carefully and give detailed analysis using Wyckoff principles.
-            
-            Your analysis should include:
-            1. Identification of the market phase (accumulation, markup, distribution, markdown)
-            2. Key Wyckoff events visible on the chart (springs, upthrusts, tests, climax actions)
-            3. Volume analysis and what it suggests about future price movement
-            4. Point of force analysis (effort vs. result)
-            5. Trading recommendations based strictly on Wyckoff methodology
-            
-            Structure your response with these sections:
-            - Market Phase
-            - Key Wyckoff Events 
-            - Volume Analysis
-            - Supply/Demand Balance
-            - Trading Recommendation
-            - Detailed Explanation`
-          },
-          {
-            role: "user",
-            content: [
-              {
-                type: "text",
-                text: `Please analyze this trading chart using Wyckoff methodology. ${notes ? 'Additional notes: ' + notes : ''}`
-              },
-              {
-                type: "image_url",
-                image_url: {
-                  url: `data:image/jpeg;base64,${imageBase64}`
-                }
-              }
-            ]
-          }
-        ],
-        max_tokens: 1500,
-      });
-
-      return {
-        analysis: response.choices[0].message.content || "I couldn't analyze this chart. Please try again with a clearer image."
-      };
-    } catch (error) {
-      console.error("Error analyzing chart image:", error);
-      throw new Error("Failed to analyze the chart image. Please try again later.");
-    }
-  },
+// First implementation removed to fix the duplicate function issue
   
   /**
    * Ask questions about trading with context

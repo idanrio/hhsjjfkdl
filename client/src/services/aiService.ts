@@ -272,6 +272,7 @@ export const aiService = {
       });
       
       const analysisResult = await response.json();
+      console.log('Analysis result from server:', analysisResult);
       
       if (!analysisResult.success) {
         return {

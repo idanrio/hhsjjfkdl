@@ -589,15 +589,34 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const { imageBase64, notes } = req.body;
       
       if (!imageBase64) {
-        return res.status(400).json({ error: "Missing image data" });
+        console.error("Missing image data in request body");
+        return res.status(400).json({ 
+          success: false, 
+          error: "Missing image data" 
+        });
+      }
+      
+      console.log(`Starting Wyckoff analysis with image data length: ${imageBase64.length}, notes length: ${(notes || "").length}`);
+      
+      if (!process.env.OPENAI_API_KEY) {
+        console.error("OPENAI_API_KEY is not configured in the environment");
+        return res.status(500).json({
+          success: false,
+          error: "OpenAI API key is not configured. Please update your API key."
+        });
       }
       
       const analysis = await aiService.analyzeChartImage(imageBase64, notes || "");
+      console.log("Analysis completed with success:", analysis.success);
       
-      return res.status(200).json({ analysis });
+      // Return the analysis result directly, not wrapped in an object
+      return res.status(200).json(analysis);
     } catch (error) {
       console.error("AI chart image analysis error:", error);
-      return res.status(500).json({ error: "Failed to analyze chart image" });
+      return res.status(500).json({ 
+        success: false, 
+        error: "Failed to analyze chart image: " + (error instanceof Error ? error.message : String(error))
+      });
     }
   });
   
@@ -621,6 +640,79 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("AI question error:", error);
       return res.status(500).json({ error: "Failed to answer question" });
+    }
+  });
+  
+  // Configuration service routes
+  app.get("/api/config/services", async (_req: Request, res: Response) => {
+    try {
+      // Check if OpenAI API key is configured
+      // Check if OpenAI API key is configured and has valid format
+      const openaiKey = process.env.OPENAI_API_KEY || '';
+      const openaiAvailable = openaiKey.startsWith('sk-') && openaiKey.length > 20;
+      
+      // Check if Alpha Vantage API key is configured
+      const alphaVantageAvailable = process.env.VITE_ALPHA_VANTAGE_API_KEY ? true : false;
+      
+      // Check if CoinAPI key is configured
+      const coinApiAvailable = process.env.VITE_COINAPI_KEY ? true : false;
+      
+      return res.status(200).json({
+        openai: { 
+          available: openaiAvailable, 
+          service: 'OpenAI',
+          message: openaiAvailable ? 'Available' : 'API key not configured'
+        },
+        alphaVantage: { 
+          available: alphaVantageAvailable, 
+          service: 'Alpha Vantage',
+          message: alphaVantageAvailable ? 'Available' : 'API key not configured'
+        },
+        coinapi: { 
+          available: coinApiAvailable, 
+          service: 'CoinAPI',
+          message: coinApiAvailable ? 'Available' : 'API key not configured'
+        }
+      });
+    } catch (error) {
+      console.error("Config services error:", error);
+      return res.status(500).json({ error: "Internal server error" });
+    }
+  });
+  
+  app.post("/api/config/verify-key", isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      const { service } = req.body;
+      
+      if (!service) {
+        return res.status(400).json({ error: "Service name is required" });
+      }
+      
+      let valid = false;
+      let message = "API key not configured";
+      
+      // Check if the specified API key is configured
+      switch (service) {
+        case 'openai':
+          valid = !!process.env.OPENAI_API_KEY;
+          message = valid ? "API key is configured" : "OpenAI API key not configured";
+          break;
+        case 'alphaVantage':
+          valid = !!process.env.VITE_ALPHA_VANTAGE_API_KEY;
+          message = valid ? "API key is configured" : "Alpha Vantage API key not configured";
+          break;
+        case 'coinapi':
+          valid = !!process.env.VITE_COINAPI_KEY;
+          message = valid ? "API key is configured" : "CoinAPI key not configured";
+          break;
+        default:
+          return res.status(400).json({ error: "Invalid service name" });
+      }
+      
+      return res.status(200).json({ valid, message });
+    } catch (error) {
+      console.error("Verify API key error:", error);
+      return res.status(500).json({ error: "Internal server error" });
     }
   });
   

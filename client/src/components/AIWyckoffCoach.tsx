@@ -60,15 +60,29 @@ export function AIWyckoffCoach({ tradingViewRef, symbol, timeframe, onAnalysisCo
   // Check if OpenAI is available
   useEffect(() => {
     const checkOpenAI = async () => {
-      const available = await isOpenAIAvailable();
-      setIsOpenAIReady(available);
-      if (!available) {
-        setError('OpenAI API key is not configured. Please add your API key in settings.');
+      try {
+        const available = await isOpenAIAvailable();
+        setIsOpenAIReady(available);
+        if (!available) {
+          const errorMessage = 'OpenAI API key is not configured or invalid. Please add your API key in settings.';
+          console.warn(errorMessage);
+          setError(errorMessage);
+        } else {
+          console.log('OpenAI API is available and configured correctly.');
+          // Clear any previous API-related errors
+          if (error?.includes('API')) {
+            setError(null);
+          }
+        }
+      } catch (err) {
+        console.error('Error checking OpenAI API status:', err);
+        setIsOpenAIReady(false);
+        setError('Error connecting to OpenAI API. Please check your network connection and API key.');
       }
     };
     
     checkOpenAI();
-  }, []);
+  }, [error]);
 
   // Handle file upload for chart analysis
   const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -169,7 +183,7 @@ export function AIWyckoffCoach({ tradingViewRef, symbol, timeframe, onAnalysisCo
     }
     
     if (!isOpenAIReady) {
-      setError('OpenAI API is not available. Please check your API key.');
+      setError('OpenAI API is not available. Please check your API key in the server configuration.');
       return;
     }
     
@@ -180,11 +194,23 @@ export function AIWyckoffCoach({ tradingViewRef, symbol, timeframe, onAnalysisCo
       // Extract base64 image data
       const base64Image = capturedImage.split(',')[1];
       
+      console.log('Starting Wyckoff analysis with image data length:', base64Image.length);
+      
       // Call AI service for Wyckoff analysis
       const analysisResponse = await aiService.analyzeChartImage(base64Image, traderNotes);
       
+      console.log('Analysis response received:', analysisResponse);
+      
       if (!analysisResponse.success) {
-        throw new Error(analysisResponse.error || 'Analysis failed');
+        console.error('Analysis failed with error:', analysisResponse.error);
+        // Show more specific error messages to help diagnose the issue
+        if (analysisResponse.error?.includes('API key')) {
+          throw new Error('OpenAI API key is invalid or has expired. Please update your API key in the server settings.');
+        } else if (analysisResponse.error?.includes('timeout') || analysisResponse.error?.includes('network')) {
+          throw new Error('Network timeout while connecting to AI service. Please check your internet connection and try again.');
+        } else {
+          throw new Error(analysisResponse.error || 'Analysis failed. Please try again or contact support.');
+        }
       }
       
       const result: WyckoffAnalysisResult = {
@@ -214,7 +240,8 @@ export function AIWyckoffCoach({ tradingViewRef, symbol, timeframe, onAnalysisCo
       }
     } catch (err) {
       console.error('Error analyzing chart:', err);
-      setError('Failed to analyze the chart. Please try again.');
+      // Display the actual error message to help with troubleshooting
+      setError(err instanceof Error ? err.message : 'Failed to analyze the chart. Please try again.');
     } finally {
       setIsAnalyzing(false);
     }
