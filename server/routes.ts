@@ -8,6 +8,7 @@ import {
   insertTradingPairSchema, 
   insertStrategyTypeSchema, 
   insertPositionSchema,
+  Trade,
   insertOrderSchema,
   Position,
   PaperTradingAccount
@@ -609,7 +610,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       // Get user trades to provide context
-      let trades = [];
+      let trades: Trade[] = [];
       if (req.user?.id) {
         trades = await storage.getTrades(req.user.id);
       }

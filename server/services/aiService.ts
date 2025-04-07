@@ -1,6 +1,6 @@
 import OpenAI from "openai";
 import { storage } from "../storage";
-import { Trade } from "../../shared/schema";
+import { Trade } from "@shared/schema";
 
 // Initialize the OpenAI API client with better error handling
 const initializeOpenAI = () => {
@@ -343,7 +343,7 @@ export const aiService = {
   /**
    * Ask questions about trading with context
    */
-  askQuestion: async (question: string, trades: any[] = []) => {
+  askQuestion: async (question: string, trades: Trade[] = []) => {
     try {
       if (!openai) {
         console.error("OpenAI client is not initialized");
@@ -357,8 +357,8 @@ export const aiService = {
         
         // Calculate overall performance
         const winningTrades = trades.filter(t => 
-          (t.exitPrice > t.entryPrice && t.type === 'long') || 
-          (t.exitPrice < t.entryPrice && t.type === 'short')
+          (t.exitPrice && t.entryPrice && t.exitPrice > t.entryPrice && t.tradeType === 'long') || 
+          (t.exitPrice && t.entryPrice && t.exitPrice < t.entryPrice && t.tradeType === 'short')
         );
         
         const winRate = (winningTrades.length / trades.length) * 100;
@@ -369,8 +369,8 @@ export const aiService = {
         if (recentTrades.length > 0) {
           tradeContext += "Your recent trades show ";
           const recentWins = recentTrades.filter(t => 
-            (t.exitPrice > t.entryPrice && t.type === 'long') || 
-            (t.exitPrice < t.entryPrice && t.type === 'short')
+            (t.exitPrice && t.entryPrice && t.exitPrice > t.entryPrice && t.tradeType === 'long') || 
+            (t.exitPrice && t.entryPrice && t.exitPrice < t.entryPrice && t.tradeType === 'short')
           );
           const recentWinRate = (recentWins.length / recentTrades.length) * 100;
           tradeContext += `a ${recentWinRate.toFixed(1)}% win rate. `;
@@ -618,9 +618,17 @@ export const aiService = {
       // Generate enhanced image with annotations based on analysis
       const enhancedImageResult = await generateEnhancedImage(imageBase64, result);
       
+      // Combine the result with success flag and enhanced image, avoiding duplicate properties
       return {
         success: true,
-        ...result,
+        wyckoffPhase: result.wyckoffPhase,
+        confidence: result.confidence,
+        phaseDescription: result.phaseDescription,
+        feedback: result.feedback,
+        tradingRecommendations: result.tradingRecommendations,
+        events: result.events,
+        learningResources: result.learningResources,
+        priceTarget: result.priceTarget,
         enhancedImage: enhancedImageResult.enhancedImage
       };
     } catch (error) {
