@@ -10,6 +10,8 @@ import PaperTradingPro from "@/pages/backtest/PaperTradingPro";
 import PositionDemo from "@/components/PositionDemo";
 import { useEffect } from "react";
 import { useTranslation } from "react-i18next";
+import { AuthProvider } from "@/hooks/use-auth";
+import { EmailVerificationSection } from "@/components/EmailVerificationSection";
 
 // Initialize app with RTL support based on stored language preference
 function AppInitializer() {
@@ -54,7 +56,6 @@ function App() {
     <>
       <AppInitializer />
       <Router />
-      <Toaster />
     </>
   );
 }

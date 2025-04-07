@@ -4,6 +4,9 @@ import App from "./App";
 import "./index.css";
 import "./i18n"; // Import i18n configuration
 import { queryClient } from "./lib/queryClient";
+import { AuthProvider } from "./hooks/use-auth";
+import { Toaster } from "@/components/ui/toaster";
+import { EmailVerificationSection } from "@/components/EmailVerificationSection";
 
 // Ensure the document direction is set based on stored language preference
 const storedLanguage = localStorage.getItem('i18nextLng');
@@ -17,6 +20,10 @@ if (storedLanguage === 'he') {
 
 createRoot(document.getElementById("root")!).render(
   <QueryClientProvider client={queryClient}>
-    <App />
+    <AuthProvider>
+      <App />
+      <EmailVerificationSection />
+      <Toaster />
+    </AuthProvider>
   </QueryClientProvider>
 );

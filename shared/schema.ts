@@ -7,12 +7,13 @@ export const users = pgTable("users", {
   id: serial("id").primaryKey(),
   username: text("username").notNull().unique(),
   password: text("password").notNull(),
-  email: text("email"),
+  email: text("email").notNull(),
   isAdmin: boolean("is_admin").default(false),
   level: integer("level").default(1),
   expiryDate: timestamp("expiry_date").defaultNow(),
   bio: text("bio"),
   riskTolerance: text("risk_tolerance"),
+  isEmailVerified: boolean("is_email_verified").default(false),
 });
 
 // Paper trading account
@@ -121,6 +122,15 @@ export const strategyTypes = pgTable("strategy_types", {
   name: text("name").notNull(),
 });
 
+export const verificationCodes = pgTable("verification_codes", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").notNull().references(() => users.id),
+  code: text("code").notNull(),
+  expiresAt: timestamp("expires_at").notNull(),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  isUsed: boolean("is_used").default(false),
+});
+
 export const insertUserSchema = createInsertSchema(users).pick({
   username: true,
   password: true,
@@ -129,6 +139,7 @@ export const insertUserSchema = createInsertSchema(users).pick({
   level: true,
   bio: true,
   riskTolerance: true,
+  isEmailVerified: true,
 });
 
 export const insertPaperTradingAccountSchema = createInsertSchema(paperTradingAccounts).pick({
@@ -210,6 +221,12 @@ export const insertStrategyTypeSchema = createInsertSchema(strategyTypes).pick({
   name: true,
 });
 
+export const insertVerificationCodeSchema = createInsertSchema(verificationCodes).pick({
+  userId: true,
+  code: true,
+  expiresAt: true,
+});
+
 export type InsertUser = z.infer<typeof insertUserSchema>;
 export type User = typeof users.$inferSelect;
 
@@ -231,6 +248,9 @@ export type TradingPair = typeof tradingPairs.$inferSelect;
 export type InsertStrategyType = z.infer<typeof insertStrategyTypeSchema>;
 export type StrategyType = typeof strategyTypes.$inferSelect;
 
+export type InsertVerificationCode = z.infer<typeof insertVerificationCodeSchema>;
+export type VerificationCode = typeof verificationCodes.$inferSelect;
+
 // All relations are defined after the table definitions to avoid circular references
 export const usersRelations = relations(users, ({ one, many }) => ({
   paperAccount: one(paperTradingAccounts, {
@@ -240,6 +260,7 @@ export const usersRelations = relations(users, ({ one, many }) => ({
   trades: many(trades),
   orders: many(orders),
   positions: many(positions),
+  verificationCodes: many(verificationCodes),
 }));
 
 export const paperTradingAccountsRelations = relations(paperTradingAccounts, ({ one, many }) => ({
@@ -276,6 +297,13 @@ export const ordersRelations = relations(orders, ({ one }) => ({
 export const tradesRelations = relations(trades, ({ one }) => ({
   user: one(users, {
     fields: [trades.userId],
+    references: [users.id],
+  }),
+}));
+
+export const verificationCodesRelations = relations(verificationCodes, ({ one }) => ({
+  user: one(users, {
+    fields: [verificationCodes.userId],
     references: [users.id],
   }),
 }));

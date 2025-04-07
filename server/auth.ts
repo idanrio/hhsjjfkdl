@@ -1,14 +1,22 @@
 import passport from "passport";
 import { Strategy as LocalStrategy } from "passport-local";
-import { Express, Request } from "express";
+import { Express, Request, Response, NextFunction } from "express";
 import session from "express-session";
 import { scrypt, randomBytes, timingSafeEqual } from "crypto";
 import { promisify } from "util";
 import { storage } from "./storage";
-import { User as SchemaUser } from "@shared/schema";
+import { User as SchemaUser, users, verificationCodes } from "@shared/schema";
 import connectPg from "connect-pg-simple";
-import { pool } from "./db";
+import { pool, db } from "./db";
 import type { IncomingMessage } from 'http';
+import { eq, and, gt, desc } from "drizzle-orm";
+import { 
+  sendVerificationEmail, 
+  verifyCode, 
+  hasRecentVerificationCode, 
+  markAllCodesAsUsed,
+  maskEmail 
+} from "./services/emailService";
 
 // Define the shape of our user in Express session
 // This avoids the recursive type reference issues
@@ -21,6 +29,7 @@ interface AuthUser {
   bio: string | null;
   riskTolerance: string | null;
   expiryDate: Date | null;
+  isEmailVerified: boolean;
   password?: string; // Only included internally, never sent to client
 }
 
@@ -86,7 +95,8 @@ export function setupAuth(app: Express) {
             level: user.level || 1,
             bio: user.bio,
             riskTolerance: user.riskTolerance,
-            expiryDate: user.expiryDate, 
+            expiryDate: user.expiryDate,
+            isEmailVerified: user.isEmailVerified === true ? true : false,
             password: user.password // Keep password for now, will be removed before sending to client
           };
           return done(null, authUser);
@@ -116,6 +126,7 @@ export function setupAuth(app: Express) {
         bio: user.bio,
         riskTolerance: user.riskTolerance,
         expiryDate: user.expiryDate,
+        isEmailVerified: user.isEmailVerified === true ? true : false,
         password: user.password // Keep password for internal use
       };
       
@@ -148,7 +159,8 @@ export function setupAuth(app: Express) {
         level: schemaUser.level || 1,
         bio: schemaUser.bio,
         riskTolerance: schemaUser.riskTolerance,
-        expiryDate: schemaUser.expiryDate, 
+        expiryDate: schemaUser.expiryDate,
+        isEmailVerified: schemaUser.isEmailVerified === true ? true : false,
         password: schemaUser.password
       };
 
@@ -225,6 +237,156 @@ export function setupAuth(app: Express) {
     res.json(userWithoutPassword);
   });
 
+  // Email verification endpoints
+  app.get("/api/auth/verification-status", async (req, res) => {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ error: "Not authenticated" });
+    }
+
+    try {
+      // Check if user has a recent verification code
+      const hasRecentCode = await hasRecentVerificationCode(req.user.id);
+      if (hasRecentCode) {
+        // Calculate remaining time (approximate)
+        const threeMinutesAgo = new Date();
+        threeMinutesAgo.setMinutes(threeMinutesAgo.getMinutes() - 3);
+        
+        // Find the most recent code
+        const [recentCode] = await db
+          .select()
+          .from(verificationCodes)
+          .where(
+            and(
+              eq(verificationCodes.userId, req.user.id),
+              eq(verificationCodes.isUsed, false)
+            )
+          )
+          .orderBy(desc(verificationCodes.createdAt))
+          .limit(1);
+          
+        if (recentCode) {
+          const createdAt = new Date(recentCode.createdAt);
+          const expiresAt = new Date(recentCode.expiresAt);
+          const now = new Date();
+          
+          // Calculate remaining time in seconds
+          const remainingTime = Math.max(0, Math.floor((expiresAt.getTime() - now.getTime()) / 1000));
+          
+          return res.status(200).json({ 
+            codeSent: true,
+            remainingTime,
+            email: maskEmail(req.user.email as string)
+          });
+        }
+      }
+      
+      return res.status(200).json({ 
+        codeSent: false,
+        remainingTime: 0
+      });
+    } catch (error) {
+      console.error("Error checking verification status:", error);
+      return res.status(500).json({ error: "Internal server error" });
+    }
+  });
+  
+  app.post("/api/auth/send-verification", async (req, res) => {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ error: "Not authenticated" });
+    }
+
+    try {
+      const { email } = req.body;
+      
+      if (email && email !== req.user.email) {
+        // User is updating their email
+        // Update user email in database
+        await db
+          .update(users)
+          .set({ email, isEmailVerified: false })
+          .where(eq(users.id, req.user.id));
+          
+        // Update session user information
+        req.user.email = email;
+        req.user.isEmailVerified = false;
+      }
+      
+      // Check if user has a recent verification code
+      const hasRecentCode = await hasRecentVerificationCode(req.user.id);
+      if (hasRecentCode) {
+        return res.status(429).json({ 
+          error: "A verification code was recently sent. Please wait before requesting a new one.", 
+          retryAfter: 180 // 3 minutes in seconds
+        });
+      }
+
+      // Send verification email
+      const emailSent = await sendVerificationEmail(req.user);
+      if (!emailSent) {
+        return res.status(500).json({ 
+          success: false,
+          error: "Failed to send verification email" 
+        });
+      }
+
+      return res.status(200).json({ 
+        success: true,
+        message: "Verification email sent", 
+        email: maskEmail(req.user.email as string),
+        countdown: 180 // 3 minutes in seconds
+      });
+    } catch (error) {
+      console.error("Error sending verification email:", error);
+      return res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
+  app.post("/api/auth/verify-code", async (req, res) => {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ error: "Not authenticated" });
+    }
+
+    try {
+      const { code } = req.body;
+      
+      if (!code) {
+        return res.status(400).json({ error: "Verification code is required" });
+      }
+
+      const isValid = await verifyCode(req.user.id, code);
+      if (!isValid) {
+        return res.status(400).json({ 
+          success: false,
+          message: "Invalid or expired verification code" 
+        });
+      }
+
+      // Update user verification status
+      await db
+        .update(users)
+        .set({ isEmailVerified: true })
+        .where(eq(users.id, req.user.id));
+      
+      // Update session user
+      req.user.isEmailVerified = true;
+
+      // Mark all codes as used for cleanup
+      await markAllCodesAsUsed(req.user.id);
+
+      return res.status(200).json({ 
+        success: true,
+        message: "Email verified successfully",
+        user: {
+          ...req.user,
+          password: undefined // Remove password from response
+        } 
+      });
+    } catch (error) {
+      console.error("Error verifying email:", error);
+      return res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
   // Create initial admin account if needed
   createAdminAccount();
 }
@@ -247,7 +409,8 @@ async function createAdminAccount() {
       username: adminUsername,
       password: await hashPassword(adminPassword),
       email: adminEmail,
-      isAdmin: true
+      isAdmin: true,
+      isEmailVerified: true
     });
     
     // Transform to AuthUser for login
@@ -259,7 +422,8 @@ async function createAdminAccount() {
       level: adminSchemaUser.level || 1,
       bio: adminSchemaUser.bio,
       riskTolerance: adminSchemaUser.riskTolerance,
-      expiryDate: adminSchemaUser.expiryDate
+      expiryDate: adminSchemaUser.expiryDate,
+      isEmailVerified: true // Admin is verified by default
     };
 
     // Create paper trading account for admin
