@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import EnhancedTradingViewWidget, { TradingViewRef } from './EnhancedTradingViewWidget';
-import { ProTradingPanel } from './ProTradingPanel';
+import { ProTradingViewPanel } from './ProTradingViewPanel';
 import { AIWyckoffCoach } from './AIWyckoffCoach';
 import { ChartImageUploader } from './ChartImageUploader';
 import { Position, WyckoffAnalysisResult } from '@/types/trading';
@@ -13,81 +13,23 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import {
-  Card,
-  CardContent,
-} from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Separator } from '@/components/ui/separator';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import {
   Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-  DialogFooter,
 } from '@/components/ui/dialog';
-import {
-  Switch
-} from '@/components/ui/switch';
-import {
-  Tabs,
-  TabsContent,
-  TabsList,
-  TabsTrigger,
-} from '@/components/ui/tabs';
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
 } from '@/components/ui/popover';
 import {
-  Sheet,
-  SheetContent,
-  SheetDescription,
-  SheetHeader,
-  SheetTitle,
-  SheetTrigger,
-  SheetFooter,
-  SheetClose,
-} from '@/components/ui/sheet';
-import {
   Maximize2,
   Minimize2,
-  Search,
-  Star,
-  Clock,
-  BarChart3,
-  Settings,
-  List,
-  Eye,
-  Save,
-  RefreshCw,
-  ChevronsUp,
-  ChevronsDown,
-  MoreHorizontal,
   ChevronDown,
-  ChevronUp,
-  HelpCircle,
-  AlertTriangle,
-  TrendingUp,
-  TrendingDown,
-  ArrowDownToLine,
-  ArrowUpToLine,
-  ArrowUp,
-  ArrowDown,
-  Bookmark,
-  FileCog,
-  Calendar,
-  ArrowLeftRight,
-  PlayCircle,
-  Layers,
   Bell,
-  XCircle,
-  CheckCircle,
 } from 'lucide-react';
 
 // Available trading pairs
@@ -98,11 +40,6 @@ const tradingPairs = [
   { value: 'BINANCE:SOLUSDT', label: 'Solana (SOL/USDT)' },
   { value: 'BINANCE:BNBUSDT', label: 'Binance Coin (BNB/USDT)' },
   { value: 'BINANCE:ADAUSDT', label: 'Cardano (ADA/USDT)' },
-  { value: 'BINANCE:XRPUSDT', label: 'Ripple (XRP/USDT)' },
-  { value: 'BINANCE:DOGEUSDT', label: 'Dogecoin (DOGE/USDT)' },
-  { value: 'BINANCE:DOTUSDT', label: 'Polkadot (DOT/USDT)' },
-  { value: 'BINANCE:LINKUSDT', label: 'Chainlink (LINK/USDT)' },
-  { value: 'BINANCE:AVAXUSDT', label: 'Avalanche (AVAX/USDT)' },
   
   // Stocks - Major Tech
   { value: 'NASDAQ:AAPL', label: 'Apple (AAPL)' },
@@ -110,32 +47,11 @@ const tradingPairs = [
   { value: 'NASDAQ:GOOGL', label: 'Google (GOOGL)' },
   { value: 'NASDAQ:AMZN', label: 'Amazon (AMZN)' },
   { value: 'NASDAQ:META', label: 'Meta (META)' },
-  { value: 'NASDAQ:TSLA', label: 'Tesla (TSLA)' },
-  { value: 'NASDAQ:NVDA', label: 'NVIDIA (NVDA)' },
-  { value: 'NYSE:DIS', label: 'Disney (DIS)' },
-  { value: 'NYSE:BA', label: 'Boeing (BA)' },
-  { value: 'NYSE:JPM', label: 'JPMorgan Chase (JPM)' },
   
   // Indices
   { value: 'AMEX:SPY', label: 'S&P 500 (SPY)' },
   { value: 'AMEX:QQQ', label: 'Nasdaq 100 (QQQ)' },
   { value: 'INDEX:DJI', label: 'Dow Jones (DJI)' },
-  { value: 'INDEX:IXIC', label: 'Nasdaq Composite (IXIC)' },
-  { value: 'INDEX:RUT', label: 'Russell 2000 (RUT)' },
-  
-  // Forex Pairs
-  { value: 'FX:EURUSD', label: 'EUR/USD' },
-  { value: 'FX:GBPUSD', label: 'GBP/USD' },
-  { value: 'FX:USDJPY', label: 'USD/JPY' },
-  { value: 'FX:USDCHF', label: 'USD/CHF' },
-  { value: 'FX:AUDUSD', label: 'AUD/USD' },
-  { value: 'FX:NZDUSD', label: 'NZD/USD' },
-  
-  // Commodities
-  { value: 'COMEX:GC1!', label: 'Gold Futures (GC)' },
-  { value: 'NYMEX:CL1!', label: 'Crude Oil (CL)' },
-  { value: 'COMEX:SI1!', label: 'Silver Futures (SI)' },
-  { value: 'NYMEX:NG1!', label: 'Natural Gas (NG)' },
 ];
 
 // Available timeframes
@@ -194,34 +110,6 @@ export function FullTradingEnvironment({
     'NASDAQ:AAPL', 
     'AMEX:SPY'
   ]);
-  const [showSettings, setShowSettings] = useState<boolean>(false);
-  const [showIndicators, setShowIndicators] = useState<boolean>(false);
-  const [activeIndicators, setActiveIndicators] = useState<string[]>([]);
-  
-  // Available indicators for the UI
-  const availableIndicators = [
-    'Moving Average',
-    'Bollinger Bands',
-    'MACD',
-    'RSI',
-    'Stochastic',
-    'Average True Range',
-    'On Balance Volume',
-    'Volume',
-    'Ichimoku Cloud',
-    'Pivot Points',
-    'Fibonacci Retracement',
-  ];
-  const [tvSettings, setTVSettings] = useState({
-    showVolume: true,
-    showGrid: true,
-    showDateRanges: true,
-    autoScale: true,
-    showWatermark: false,
-    showBorders: true,
-    showLeftAxis: true,
-    showRightAxis: true,
-  });
   
   const tradingViewRef = useRef<TradingViewRef>(null);
   
@@ -328,83 +216,6 @@ export function FullTradingEnvironment({
     }
   };
   
-  // Handle closing a position
-  const handleClosePosition = (positionId: string) => {
-    const positionIndex = positions.findIndex(p => p.id === positionId);
-    
-    if (positionIndex !== -1) {
-      const position = positions[positionIndex];
-      
-      // Update position with close data
-      const updatedPosition: Position = {
-        ...position,
-        status: 'closed',
-        exitPrice: currentPrice,
-        exitTime: new Date().toISOString(),
-        profitLoss: position.type === 'long' 
-          ? (currentPrice - position.entryPrice) * position.amount * position.leverage
-          : (position.entryPrice - currentPrice) * position.amount * position.leverage
-      };
-      
-      // Update local state
-      const updatedPositions = [...positions];
-      updatedPositions[positionIndex] = updatedPosition;
-      setPositions(updatedPositions);
-      
-      // Notify parent if callback exists
-      if (onPositionClosed) {
-        onPositionClosed(updatedPosition);
-      }
-    }
-  };
-  
-  // Handle updating a position
-  const handleUpdatePosition = (updatedPosition: Position) => {
-    const positionIndex = positions.findIndex(p => p.id === updatedPosition.id);
-    
-    if (positionIndex !== -1) {
-      // Update local state
-      const updatedPositions = [...positions];
-      updatedPositions[positionIndex] = updatedPosition;
-      setPositions(updatedPositions);
-      
-      // Notify parent if callback exists
-      if (onPositionUpdated) {
-        onPositionUpdated(updatedPosition);
-      }
-    }
-  };
-  
-  // Toggle favorite symbols
-  const toggleFavorite = (symbol: string) => {
-    if (favoriteSymbols.includes(symbol)) {
-      setFavoriteSymbols(favoriteSymbols.filter(s => s !== symbol));
-    } else {
-      setFavoriteSymbols([...favoriteSymbols, symbol]);
-    }
-  };
-  
-  // Handle indicator operations
-  const handleAddIndicator = (indicator: string) => {
-    if (tradingViewRef.current) {
-      tradingViewRef.current.addIndicator(indicator);
-      
-      // Update active indicators list
-      if (!activeIndicators.includes(indicator)) {
-        setActiveIndicators(prev => [...prev, indicator]);
-      }
-    }
-  };
-  
-  const handleRemoveIndicator = (indicator: string) => {
-    if (tradingViewRef.current) {
-      tradingViewRef.current.removeIndicator(indicator);
-      
-      // Update active indicators list
-      setActiveIndicators(prev => prev.filter(ind => ind !== indicator));
-    }
-  };
-  
   // Filter symbols based on search query
   const filteredSymbols = searchQuery
     ? tradingPairs.filter(pair => 
@@ -426,15 +237,7 @@ export function FullTradingEnvironment({
     'header_compare',
     'header_undo_redo',
     'header_saveload',
-    'header_settings',
-    ...(tvSettings.showVolume ? [] : ['volume']),
-    ...(tvSettings.showGrid ? [] : ['grid']),
-    ...(tvSettings.showDateRanges ? [] : ['timeframes_toolbar']),
-    ...(tvSettings.autoScale ? [] : ['auto_scale_button']),
-    ...(tvSettings.showWatermark ? [] : ['symbol_watermark']),
-    ...(tvSettings.showBorders ? [] : ['border_around_the_chart']),
-    ...(tvSettings.showLeftAxis ? [] : ['left_toolbar']),
-    ...(tvSettings.showRightAxis ? [] : ['right_toolbar']),
+    'header_settings'
   ];
   
   const enabledFeatures = [
@@ -489,32 +292,21 @@ export function FullTradingEnvironment({
                         return (
                           <div 
                             key={symbol} 
-                            className="flex items-center justify-between p-2 rounded-md hover:bg-muted cursor-pointer"
+                            className="flex items-center justify-between p-2 rounded-md hover:bg-accent cursor-pointer"
                             onClick={() => {
-                              setSelectedSymbol(symbol);
+                              setSelectedSymbol(found.value);
                               setShowSymbolSearch(false);
                             }}
                           >
                             <span>{found.label}</span>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              className="h-6 w-6 p-0"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                toggleFavorite(symbol);
-                              }}
-                            >
-                              <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
-                            </Button>
                           </div>
                         );
                       })}
                     </div>
                   ) : (
-                    <p className="text-sm text-muted-foreground mb-4">
-                      {t('No favorite symbols. Click the star to add.')}
-                    </p>
+                    <div className="text-sm text-muted-foreground mb-4">
+                      {t('No favorite symbols added yet')}
+                    </div>
                   )}
                   
                   <h4 className="text-sm font-medium mb-2">{t('All Symbols')}</h4>
@@ -522,26 +314,13 @@ export function FullTradingEnvironment({
                     {filteredSymbols.map(pair => (
                       <div 
                         key={pair.value} 
-                        className="flex items-center justify-between p-2 rounded-md hover:bg-muted cursor-pointer"
+                        className="flex items-center justify-between p-2 rounded-md hover:bg-accent cursor-pointer"
                         onClick={() => {
                           setSelectedSymbol(pair.value);
                           setShowSymbolSearch(false);
                         }}
                       >
                         <span>{pair.label}</span>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="h-6 w-6 p-0"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            toggleFavorite(pair.value);
-                          }}
-                        >
-                          <Star 
-                            className={`h-4 w-4 ${favoriteSymbols.includes(pair.value) ? 'fill-yellow-400 text-yellow-400' : ''}`} 
-                          />
-                        </Button>
                       </div>
                     ))}
                   </div>
@@ -553,12 +332,12 @@ export function FullTradingEnvironment({
           {/* Timeframe Selector */}
           <Select value={selectedTimeframe} onValueChange={setSelectedTimeframe}>
             <SelectTrigger className="w-[70px]">
-              <SelectValue placeholder={timeframes.find(t => t.value === selectedTimeframe)?.label || selectedTimeframe} />
+              <SelectValue placeholder={selectedTimeframe} />
             </SelectTrigger>
             <SelectContent>
-              {timeframes.map(timeframe => (
-                <SelectItem key={timeframe.value} value={timeframe.value}>
-                  {timeframe.label}
+              {timeframes.map(tf => (
+                <SelectItem key={tf.value} value={tf.value}>
+                  {t(tf.label)}
                 </SelectItem>
               ))}
             </SelectContent>
@@ -566,7 +345,7 @@ export function FullTradingEnvironment({
           
           {/* Chart Style Selector */}
           <Select value={selectedChartStyle} onValueChange={setSelectedChartStyle}>
-            <SelectTrigger className="w-[90px]">
+            <SelectTrigger className="w-[100px]">
               <SelectValue placeholder={chartStyles.find(s => s.value === selectedChartStyle)?.label || selectedChartStyle} />
             </SelectTrigger>
             <SelectContent>
@@ -578,277 +357,8 @@ export function FullTradingEnvironment({
             </SelectContent>
           </Select>
           
-          {/* Indicators Button */}
-          <Sheet open={showIndicators} onOpenChange={setShowIndicators}>
-            <SheetTrigger asChild>
-              <Button variant="outline" size="sm">
-                <BarChart3 className="h-4 w-4 mr-1" />
-                {t('Indicators')}
-              </Button>
-            </SheetTrigger>
-            <SheetContent side="right" className="w-[350px] sm:w-[450px]">
-              <SheetHeader>
-                <SheetTitle>{t('Indicators & Studies')}</SheetTitle>
-                <SheetDescription>
-                  {t('Add technical indicators to your chart')}
-                </SheetDescription>
-              </SheetHeader>
-              
-              <div className="py-4">
-                <Input 
-                  placeholder={t('Search indicators...')}
-                  className="mb-4"
-                />
-                
-                <Tabs defaultValue="popular">
-                  <TabsList className="grid grid-cols-3 mb-4">
-                    <TabsTrigger value="popular">{t('Popular')}</TabsTrigger>
-                    <TabsTrigger value="oscillators">{t('Oscillators')}</TabsTrigger>
-                    <TabsTrigger value="volume">{t('Volume')}</TabsTrigger>
-                  </TabsList>
-                  
-                  <TabsContent value="popular" className="space-y-2">
-                    <div 
-                      className="p-2 border rounded-md hover:bg-muted cursor-pointer"
-                      onClick={() => handleAddIndicator('Moving Average')}
-                    >
-                      <div className="flex justify-between items-center">
-                        <span className="font-medium">Moving Average</span>
-                        <Badge variant="outline">MA</Badge>
-                      </div>
-                      <p className="text-xs text-muted-foreground mt-1">
-                        {t('Simple moving average of price')}
-                      </p>
-                    </div>
-                    
-                    <div 
-                      className="p-2 border rounded-md hover:bg-muted cursor-pointer"
-                      onClick={() => handleAddIndicator('Bollinger Bands')}
-                    >
-                      <div className="flex justify-between items-center">
-                        <span className="font-medium">Bollinger Bands</span>
-                        <Badge variant="outline">BB</Badge>
-                      </div>
-                      <p className="text-xs text-muted-foreground mt-1">
-                        {t('Volatility bands based on standard deviation')}
-                      </p>
-                    </div>
-                    
-                    <div 
-                      className="p-2 border rounded-md hover:bg-muted cursor-pointer"
-                      onClick={() => handleAddIndicator('MACD')}
-                    >
-                      <div className="flex justify-between items-center">
-                        <span className="font-medium">MACD</span>
-                        <Badge variant="outline">MACD</Badge>
-                      </div>
-                      <p className="text-xs text-muted-foreground mt-1">
-                        {t('Moving Average Convergence/Divergence')}
-                      </p>
-                    </div>
-                  </TabsContent>
-                  
-                  <TabsContent value="oscillators" className="space-y-2">
-                    <div 
-                      className="p-2 border rounded-md hover:bg-muted cursor-pointer"
-                      onClick={() => handleAddIndicator('RSI')}
-                    >
-                      <div className="flex justify-between items-center">
-                        <span className="font-medium">Relative Strength Index</span>
-                        <Badge variant="outline">RSI</Badge>
-                      </div>
-                      <p className="text-xs text-muted-foreground mt-1">
-                        {t('Momentum oscillator that measures speed of price changes')}
-                      </p>
-                    </div>
-                    
-                    <div 
-                      className="p-2 border rounded-md hover:bg-muted cursor-pointer"
-                      onClick={() => handleAddIndicator('Stochastic')}
-                    >
-                      <div className="flex justify-between items-center">
-                        <span className="font-medium">Stochastic</span>
-                        <Badge variant="outline">Stoch</Badge>
-                      </div>
-                      <p className="text-xs text-muted-foreground mt-1">
-                        {t('Compares closing price to price range over a period')}
-                      </p>
-                    </div>
-                  </TabsContent>
-                  
-                  <TabsContent value="volume" className="space-y-2">
-                    <div 
-                      className="p-2 border rounded-md hover:bg-muted cursor-pointer"
-                      onClick={() => handleAddIndicator('On-Balance Volume')}
-                    >
-                      <div className="flex justify-between items-center">
-                        <span className="font-medium">On-Balance Volume</span>
-                        <Badge variant="outline">OBV</Badge>
-                      </div>
-                      <p className="text-xs text-muted-foreground mt-1">
-                        {t('Cumulative volume indicator related to price changes')}
-                      </p>
-                    </div>
-                    
-                    <div 
-                      className="p-2 border rounded-md hover:bg-muted cursor-pointer"
-                      onClick={() => handleAddIndicator('Money Flow Index')}
-                    >
-                      <div className="flex justify-between items-center">
-                        <span className="font-medium">Money Flow Index</span>
-                        <Badge variant="outline">MFI</Badge>
-                      </div>
-                      <p className="text-xs text-muted-foreground mt-1">
-                        {t('Volume-weighted RSI that measures money flow')}
-                      </p>
-                    </div>
-                  </TabsContent>
-                </Tabs>
-                
-                <Separator className="my-4" />
-                
-                <div className="flex justify-between items-center mb-2">
-                  <h4 className="text-sm font-medium">{t('Active Indicators')}</h4>
-                  <Badge variant="outline">{activeIndicators.length} {t('indicators selected')}</Badge>
-                </div>
-                
-                <div className="space-y-2">
-                  {activeIndicators.map((indicator) => (
-                    <div key={indicator} className="p-2 border rounded-md bg-muted flex justify-between items-center">
-                      <span>{indicator}</span>
-                      <Button 
-                        variant="ghost" 
-                        size="sm" 
-                        className="h-6 w-6 p-0"
-                        onClick={() => handleRemoveIndicator(indicator)}
-                      >
-                        <XCircle className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  ))}
-                  
-                  {activeIndicators.length === 0 && (
-                    <div className="text-center py-3 text-muted-foreground">
-                      {t('No active indicators')}
-                    </div>
-                  )}
-                </div>
-              </div>
-              
-              <SheetFooter>
-                <Button className="w-full">
-                  {t('Apply')}
-                </Button>
-              </SheetFooter>
-            </SheetContent>
-          </Sheet>
+          {/* Indicators Button removed - TradingView already provides indicators */}
           
-          {/* Chart Settings */}
-          <Sheet open={showSettings} onOpenChange={setShowSettings}>
-            <SheetTrigger asChild>
-              <Button variant="ghost" size="sm">
-                <Settings className="h-4 w-4" />
-              </Button>
-            </SheetTrigger>
-            <SheetContent side="right">
-              <SheetHeader>
-                <SheetTitle>{t('Chart Settings')}</SheetTitle>
-                <SheetDescription>
-                  {t('Customize your trading chart appearance')}
-                </SheetDescription>
-              </SheetHeader>
-              
-              <div className="py-4 space-y-4">
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between">
-                    <label className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
-                      {t('Show Volume')}
-                    </label>
-                    <Switch 
-                      checked={tvSettings.showVolume}
-                      onCheckedChange={(checked: boolean) => setTVSettings({...tvSettings, showVolume: checked})}
-                    />
-                  </div>
-                  
-                  <div className="flex items-center justify-between">
-                    <label className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
-                      {t('Show Grid')}
-                    </label>
-                    <Switch 
-                      checked={tvSettings.showGrid}
-                      onCheckedChange={(checked: boolean) => setTVSettings({...tvSettings, showGrid: checked})}
-                    />
-                  </div>
-                  
-                  <div className="flex items-center justify-between">
-                    <label className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
-                      {t('Show Date Ranges')}
-                    </label>
-                    <Switch 
-                      checked={tvSettings.showDateRanges}
-                      onCheckedChange={(checked: boolean) => setTVSettings({...tvSettings, showDateRanges: checked})}
-                    />
-                  </div>
-                  
-                  <div className="flex items-center justify-between">
-                    <label className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
-                      {t('Auto Scale')}
-                    </label>
-                    <Switch 
-                      checked={tvSettings.autoScale}
-                      onCheckedChange={(checked: boolean) => setTVSettings({...tvSettings, autoScale: checked})}
-                    />
-                  </div>
-                  
-                  <div className="flex items-center justify-between">
-                    <label className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
-                      {t('Show Watermark')}
-                    </label>
-                    <Switch 
-                      checked={tvSettings.showWatermark}
-                      onCheckedChange={(checked: boolean) => setTVSettings({...tvSettings, showWatermark: checked})}
-                    />
-                  </div>
-                  
-                  <div className="flex items-center justify-between">
-                    <label className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
-                      {t('Show Borders')}
-                    </label>
-                    <Switch 
-                      checked={tvSettings.showBorders}
-                      onCheckedChange={(checked: boolean) => setTVSettings({...tvSettings, showBorders: checked})}
-                    />
-                  </div>
-                  
-                  <div className="flex items-center justify-between">
-                    <label className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
-                      {t('Show Left Axis')}
-                    </label>
-                    <Switch 
-                      checked={tvSettings.showLeftAxis}
-                      onCheckedChange={(checked: boolean) => setTVSettings({...tvSettings, showLeftAxis: checked})}
-                    />
-                  </div>
-                  
-                  <div className="flex items-center justify-between">
-                    <label className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
-                      {t('Show Right Axis')}
-                    </label>
-                    <Switch 
-                      checked={tvSettings.showRightAxis}
-                      onCheckedChange={(checked: boolean) => setTVSettings({...tvSettings, showRightAxis: checked})}
-                    />
-                  </div>
-                </div>
-              </div>
-              
-              <SheetFooter>
-                <SheetClose asChild>
-                  <Button type="submit">{t('Apply Settings')}</Button>
-                </SheetClose>
-              </SheetFooter>
-            </SheetContent>
-          </Sheet>
         </div>
         
         <div className="flex items-center space-x-2">
@@ -925,13 +435,11 @@ export function FullTradingEnvironment({
         {/* Trading Panel */}
         {showPositionsPanel && (
           <div className="col-span-3 h-full overflow-auto">
-            <ProTradingPanel
+            <ProTradingViewPanel
               currentPrice={currentPrice}
               symbol={getSymbolDisplayName(selectedSymbol)}
-              positions={positions}
-              onCreatePosition={handleCreatePosition}
-              onClosePosition={handleClosePosition}
-              onUpdatePosition={handleUpdatePosition}
+              onOrderSubmit={handleCreatePosition}
+              accountBalance={150000}
             />
           </div>
         )}
