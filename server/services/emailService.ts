@@ -1,17 +1,7 @@
-import nodemailer from 'nodemailer';
 import { InsertVerificationCode, verificationCodes } from '@shared/schema';
 import { db } from '../db';
 import { eq, and, gt } from 'drizzle-orm';
 import { Request, Response } from 'express';
-
-// Create reusable transporter using Gmail SMTP
-const transporter = nodemailer.createTransport({
-  service: 'gmail',
-  auth: {
-    user: 'capitularsells@gmail.com', // Your Gmail address
-    pass: process.env.GMAIL_APP_PASSWORD, // Application-specific password
-  },
-});
 
 // Helper to mask the email for privacy
 export function maskEmail(email: string | null): string {
@@ -41,58 +31,23 @@ export async function storeVerificationCode(userId: number, code: string): Promi
   });
 }
 
-// Send a verification email with code
-export async function sendVerificationEmail(user: Express.User, isLogin = false): Promise<boolean> {
+// Generate verification code without sending email
+export async function sendVerificationEmail(user: Express.User, isLogin = false): Promise<{ success: boolean, code?: string }> {
   try {
     // Generate a verification code
     const code = generateVerificationCode();
     
     // Store the code in the database
     await storeVerificationCode(user.id, code);
-
-    // Email subject based on action
-    const subject = isLogin 
-      ? 'Your Capitulre Login Verification Code' 
-      : 'Verify Your Email for Capitulre';
-
-    // Construct the message
-    const message = `
-      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #1c3d86; border-radius: 8px;">
-        <div style="text-align: center; margin-bottom: 20px;">
-          <img src="https://capitulre.com/logo.png" alt="Capitulre Logo" style="max-width: 150px;">
-        </div>
-        <h2 style="color: #1c3d86; text-align: center;">Verification Code</h2>
-        <p style="font-size: 16px; line-height: 1.5; color: #555;">Hello ${user.username},</p>
-        <p style="font-size: 16px; line-height: 1.5; color: #555;">Your verification code for ${isLogin ? 'logging into' : 'registering with'} Capitulre is:</p>
-        <div style="text-align: center; margin: 30px 0;">
-          <div style="font-size: 32px; font-weight: bold; letter-spacing: 5px; color: #22a1e2; background-color: #f8f8f8; padding: 15px; border-radius: 6px; display: inline-block;">
-            ${code}
-          </div>
-        </div>
-        <p style="font-size: 16px; line-height: 1.5; color: #555;">This code will expire in 3 minutes.</p>
-        <p style="font-size: 16px; line-height: 1.5; color: #555;">If you didn't request this code, please ignore this email.</p>
-        <div style="text-align: center; margin-top: 30px; padding-top: 20px; border-top: 1px solid #eee; color: #999; font-size: 14px;">
-          &copy; ${new Date().getFullYear()} Capitulre. All rights reserved.
-        </div>
-      </div>
-    `;
-
-    // Send the email
-    if (!user.email) {
-      throw new Error('User has no email address');
-    }
     
-    await transporter.sendMail({
-      from: '"Capitulre Security" <capitularsells@gmail.com>',
-      to: user.email,
-      subject,
-      html: message,
-    });
-
-    return true;
+    // Instead of sending email, return the code to be displayed in the UI
+    console.log(`Verification code for user ${user.username}: ${code}`);
+    
+    // Return the code so it can be displayed to the user directly
+    return { success: true, code };
   } catch (error) {
-    console.error('Error sending verification email:', error);
-    return false;
+    console.error('Error generating verification code:', error);
+    return { success: false };
   }
 }
 

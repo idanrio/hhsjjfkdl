@@ -186,12 +186,16 @@ export function setupAuth(app: Express) {
         // Continue registration even if paper trading account creation fails
       }
 
-      // Send verification email immediately after registration
+      // Generate verification code (no email sent)
+      let verificationCode = null;
       try {
-        await sendVerificationEmail(user, false);
+        const result = await sendVerificationEmail(user, false);
+        if (result.success) {
+          verificationCode = result.code;
+        }
       } catch (error) {
-        console.error("Warning: Could not send verification email:", error);
-        // Continue registration even if email sending fails
+        console.error("Warning: Could not generate verification code:", error);
+        // Continue registration even if verification generation fails
       }
 
       // Log user in automatically after registration
@@ -199,7 +203,10 @@ export function setupAuth(app: Express) {
         if (err) return next(err);
         // Don't send password back to client
         const { password, ...userWithoutPassword } = user;
-        res.status(201).json(userWithoutPassword);
+        res.status(201).json({
+          ...userWithoutPassword,
+          verificationCode // Include verification code in response
+        });
       });
     } catch (error) {
       console.error("Registration error:", error);
@@ -208,20 +215,38 @@ export function setupAuth(app: Express) {
   });
 
   app.post("/api/auth/login", (req, res, next) => {
-    passport.authenticate("local", (err: Error, user: AuthUser) => {
+    passport.authenticate("local", async (err: Error, user: AuthUser) => {
       if (err) {
         return next(err);
       }
       if (!user) {
         return res.status(401).json({ error: "Invalid username or password" });
       }
-      req.login(user, (err) => {
+      
+      req.login(user, async (err) => {
         if (err) {
           return next(err);
         }
+        
+        // If user is not verified, generate a verification code
+        let verificationCode = null;
+        if (!user.isEmailVerified && user.email) {
+          try {
+            const result = await sendVerificationEmail(user, true);
+            if (result.success) {
+              verificationCode = result.code;
+            }
+          } catch (error) {
+            console.error("Warning: Could not generate verification code:", error);
+          }
+        }
+        
         // Don't send password back to client
         const { password, ...userWithoutPassword } = user;
-        return res.status(200).json(userWithoutPassword);
+        return res.status(200).json({
+          ...userWithoutPassword,
+          verificationCode // Include verification code in response
+        });
       });
     })(req, res, next);
   });
@@ -283,7 +308,8 @@ export function setupAuth(app: Express) {
           return res.status(200).json({ 
             codeSent: true,
             remainingTime,
-            email: maskEmail(req.user.email as string)
+            email: maskEmail(req.user.email as string),
+            verificationCode: recentCode.code // Include the code in the response
           });
         }
       }
@@ -328,19 +354,20 @@ export function setupAuth(app: Express) {
         });
       }
 
-      // Send verification email
-      const emailSent = await sendVerificationEmail(req.user);
-      if (!emailSent) {
+      // Generate verification code (no email sent)
+      const result = await sendVerificationEmail(req.user);
+      if (!result.success) {
         return res.status(500).json({ 
           success: false,
-          error: "Failed to send verification email" 
+          error: "Failed to generate verification code" 
         });
       }
 
       return res.status(200).json({ 
         success: true,
-        message: "Verification email sent", 
+        message: "Verification code generated", 
         email: maskEmail(req.user.email as string),
+        verificationCode: result.code, // Send the code directly to the client
         countdown: 180 // 3 minutes in seconds
       });
     } catch (error) {

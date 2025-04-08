@@ -50,11 +50,21 @@ export function EmailVerification() {
       
       if (res.ok) {
         const data = await res.json();
-        const { codeSent, remainingTime, email } = data;
+        const { codeSent, remainingTime, email, verificationCode } = data;
         
         if (codeSent && remainingTime > 0) {
           setIsCodeSent(true);
           setCountdown(remainingTime);
+          
+          // If verification code is included, auto-populate the code input
+          if (verificationCode) {
+            setCode(verificationCode);
+            
+            toast({
+              title: "Verification Code",
+              description: `Your verification code is: ${verificationCode}`,
+            });
+          }
         }
       }
     } catch (error) {
@@ -75,15 +85,25 @@ export function EmailVerification() {
       });
       
       const data = await res.json();
-      const { success, message, countdown: newCountdown } = data;
+      const { success, message, countdown: newCountdown, verificationCode } = data;
       
       if (success) {
         setIsCodeSent(true);
         setCountdown(newCountdown || 180); // Default to 3 minutes if not provided
-        toast({
-          title: "Verification Code Sent",
-          description: message || "Please check your email for the verification code.",
-        });
+        
+        // If verification code is included in the response, auto-populate the code input
+        if (verificationCode) {
+          setCode(verificationCode);
+          toast({
+            title: "Verification Code",
+            description: `Your verification code is: ${verificationCode}`,
+          });
+        } else {
+          toast({
+            title: "Verification Code Sent",
+            description: message || "Please check your email for the verification code.",
+          });
+        }
       } else {
         toast({
           title: "Could Not Send Code",
@@ -155,9 +175,17 @@ export function EmailVerification() {
   return (
     <div className="space-y-4 p-4">
       <div className="text-sm text-muted-foreground mb-4">
-        We've sent a verification code to your email address. 
-        Please enter the 6-digit code below to verify your account.
+        <p>
+          Your verification code is displayed below. Please enter it to verify your account.
+        </p>
       </div>
+      
+      {code && (
+        <div className="bg-blue-50 border border-blue-200 rounded-md p-3 mb-4">
+          <p className="text-center font-bold text-xl text-blue-600 tracking-widest">{code}</p>
+          <p className="text-center text-xs text-blue-500 mt-1">Your verification code</p>
+        </div>
+      )}
       
       <div className="space-y-2">
         <Input
@@ -181,7 +209,7 @@ export function EmailVerification() {
         
         <div className="text-sm text-center mt-4">
           {countdown > 0 ? (
-            <span>Resend code in {formatCountdown()}</span>
+            <span>Generate new code in {formatCountdown()}</span>
           ) : (
             <Button 
               variant="link" 
@@ -189,7 +217,7 @@ export function EmailVerification() {
               disabled={isSending}
               className="p-0 h-auto"
             >
-              {isSending ? "Sending..." : "Resend verification code"}
+              {isSending ? "Generating..." : "Generate new verification code"}
             </Button>
           )}
         </div>
