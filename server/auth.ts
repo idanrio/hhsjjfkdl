@@ -49,10 +49,25 @@ async function hashPassword(password: string) {
 }
 
 async function comparePasswords(supplied: string, stored: string) {
+  if (!stored || !stored.includes('.')) {
+    console.error('Invalid password format, no salt found');
+    return false;
+  }
+  
   const [hashed, salt] = stored.split(".");
-  const hashedBuf = Buffer.from(hashed, "hex");
-  const suppliedBuf = (await scryptAsync(supplied, salt, 64)) as Buffer;
-  return timingSafeEqual(hashedBuf, suppliedBuf);
+  if (!hashed || !salt) {
+    console.error('Invalid password format, missing hash or salt');
+    return false;
+  }
+  
+  try {
+    const hashedBuf = Buffer.from(hashed, "hex");
+    const suppliedBuf = (await scryptAsync(supplied, salt, 64)) as Buffer;
+    return timingSafeEqual(hashedBuf, suppliedBuf);
+  } catch (error) {
+    console.error('Password comparison error:', error);
+    return false;
+  }
 }
 
 export function setupAuth(app: Express) {
@@ -429,8 +444,8 @@ export function setupAuth(app: Express) {
 async function createAdminAccount() {
   try {
     const adminEmail = 'idanfunnel@gmail.com';
-    const adminUsername = 'idanfunnel';
-    const adminPassword = 'idan0505742326';
+    const adminUsername = 'Idan Admin';
+    const adminPassword = 'Idan0505742326!#';
 
     // Check if admin already exists
     const existingAdmin = await storage.getUserByUsername(adminUsername);

@@ -174,16 +174,23 @@ export function EmailVerification() {
 
   return (
     <div className="space-y-4 p-4">
-      <div className="text-sm text-muted-foreground mb-4">
-        <p>
+      {/* Company logo */}
+      <div className="flex justify-center mb-2">
+        <div className="w-16 h-16 rounded-full bg-gradient-to-br from-[#1c3d86] to-[#22a1e2] flex items-center justify-center text-white font-bold text-lg">
+          Capitulre
+        </div>
+      </div>
+      
+      <div className="text-sm text-center mb-4">
+        <p className="text-[#1c3d86]">
           Your verification code is displayed below. Please enter it to verify your account.
         </p>
       </div>
       
       {code && (
-        <div className="bg-blue-50 border border-blue-200 rounded-md p-3 mb-4">
-          <p className="text-center font-bold text-xl text-blue-600 tracking-widest">{code}</p>
-          <p className="text-center text-xs text-blue-500 mt-1">Your verification code</p>
+        <div className="bg-gradient-to-r from-[#1c3d86]/10 to-[#22a1e2]/10 border border-[#22a1e2]/30 rounded-md p-3 mb-4">
+          <p className="text-center font-bold text-xl text-[#1c3d86] tracking-widest">{code}</p>
+          <p className="text-center text-xs text-[#22a1e2] mt-1">Your verification code</p>
         </div>
       )}
       
@@ -194,28 +201,28 @@ export function EmailVerification() {
           maxLength={6}
           value={code}
           onChange={(e) => setCode(e.target.value.replace(/\D/g, ''))}
-          className="text-center text-lg tracking-widest"
+          className="text-center text-lg tracking-widest border-[#22a1e2]/50 focus:border-[#22a1e2] focus:ring-[#22a1e2]"
         />
         
         <div className="flex gap-2">
           <Button 
             onClick={verifyCode} 
             disabled={!code || code.length !== 6 || isVerifying}
-            className="w-full"
+            className="w-full bg-[#1c3d86] hover:bg-[#22a1e2] transition-colors"
           >
-            {isVerifying ? "Verifying..." : "Verify Email"}
+            {isVerifying ? "Verifying..." : "Verify Account"}
           </Button>
         </div>
         
         <div className="text-sm text-center mt-4">
           {countdown > 0 ? (
-            <span>Generate new code in {formatCountdown()}</span>
+            <span className="text-gray-500">Generate new code in {formatCountdown()}</span>
           ) : (
             <Button 
               variant="link" 
               onClick={sendVerificationCode}
               disabled={isSending}
-              className="p-0 h-auto"
+              className="p-0 h-auto text-[#22a1e2] hover:text-[#1c3d86]"
             >
               {isSending ? "Generating..." : "Generate new verification code"}
             </Button>
