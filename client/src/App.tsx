@@ -2,6 +2,7 @@ import { Switch, Route } from "wouter";
 import { Toaster } from "@/components/ui/toaster";
 import NotFound from "@/pages/not-found";
 import Home from "@/pages/Home";
+import Trading from "@/pages/Trading";
 import BacktestDashboard from "@/pages/backtest/Dashboard";
 import AdminDashboard from "@/pages/backtest/Admin";
 import TradeForm from "@/pages/backtest/TradeForm";
@@ -37,6 +38,7 @@ function Router() {
   return (
     <Switch>
       <Route path="/" component={Home} />
+      <Route path="/trading" component={Trading} />
       <Route path="/backtest/dashboard" component={BacktestDashboard} />
       <Route path="/backtest/admin" component={AdminDashboard} />
       <Route path="/backtest/new-trade" component={TradeForm} />
