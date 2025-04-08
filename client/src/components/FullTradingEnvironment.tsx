@@ -4,6 +4,7 @@ import EnhancedTradingViewWidget, { TradingViewRef } from './EnhancedTradingView
 import { ProTradingViewPanel } from './ProTradingViewPanel';
 import { AIWyckoffCoach } from './AIWyckoffCoach';
 import { ChartImageUploader } from './ChartImageUploader';
+import { ProTradingViewReplay } from './ProTradingViewReplay';
 import { Position, WyckoffAnalysisResult } from '@/types/trading';
 import aiService from '@/services/aiService';
 import {
@@ -24,6 +25,7 @@ import {
   BarChart,
   Image,
   BrainCircuit,
+  History,
 } from 'lucide-react';
 import {
   Popover,
@@ -422,6 +424,20 @@ export function FullTradingEnvironment({
           <Badge variant="outline" className="text-sm bg-[#131722] border-[#2a2e39] text-white px-3 py-1">
             {currentPrice.toFixed(2)}
           </Badge>
+          
+          {/* Replay Mode Button */}
+          <ProTradingViewReplay 
+            tradingViewRef={tradingViewRef}
+            symbol={getSymbolDisplayName(selectedSymbol)}
+            onReplayStart={(startDate, endDate) => {
+              console.log('Replay started:', startDate, endDate);
+              // Additional replay initialization can be done here
+            }}
+            onReplayEnd={() => {
+              console.log('Replay ended');
+              // Clean up after replay
+            }}
+          />
           
           {/* Chart Analysis Button */}
           <Button variant="outline" size="sm" className="gap-1 bg-[#131722] border-[#2a2e39] hover:bg-[#181B25] hover:border-[#363A45]">
