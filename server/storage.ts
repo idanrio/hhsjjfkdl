@@ -1,13 +1,14 @@
 import { 
   users, trades, tradingPairs, strategyTypes, 
-  paperTradingAccounts, positions, orders,
+  paperTradingAccounts, positions, orders, verificationCodes,
   type User, type InsertUser, 
   type Trade, type InsertTrade, 
   type TradingPair, type InsertTradingPair, 
   type StrategyType, type InsertStrategyType,
   type PaperTradingAccount, type InsertPaperTradingAccount,
   type Position, type InsertPosition,
-  type Order, type InsertOrder
+  type Order, type InsertOrder,
+  type VerificationCode, type InsertVerificationCode
 } from "@shared/schema";
 import { eq, and, desc, asc, sql } from "drizzle-orm";
 import { db } from "./db";
@@ -55,6 +56,12 @@ export interface IStorage {
   updateOrder(id: number, updates: Partial<Order>): Promise<Order | undefined>;
   cancelOrder(id: number): Promise<Order | undefined>;
   fillOrder(id: number, filledPrice: number): Promise<Order | undefined>;
+  
+  // Verification code operations
+  createVerificationCode(code: InsertVerificationCode): Promise<VerificationCode>;
+  getVerificationCode(userId: number, code: string): Promise<VerificationCode | undefined>;
+  markVerificationCodeAsUsed(id: number): Promise<VerificationCode | undefined>;
+  hasRecentVerificationCode(userId: number): Promise<boolean>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -480,6 +487,61 @@ export class DatabaseStorage implements IStorage {
     }
     
     return updatedOrder;
+  }
+  
+  // Verification code operations
+  async createVerificationCode(insertCode: InsertVerificationCode): Promise<VerificationCode> {
+    const [code] = await db.insert(verificationCodes)
+      .values({
+        ...insertCode,
+        isUsed: false,
+        createdAt: new Date()
+      })
+      .returning();
+    
+    return code;
+  }
+  
+  async getVerificationCode(userId: number, code: string): Promise<VerificationCode | undefined> {
+    const [verificationCode] = await db.select()
+      .from(verificationCodes)
+      .where(
+        and(
+          eq(verificationCodes.userId, userId),
+          eq(verificationCodes.code, code),
+          eq(verificationCodes.isUsed, false)
+        )
+      );
+    
+    return verificationCode;
+  }
+  
+  async markVerificationCodeAsUsed(id: number): Promise<VerificationCode | undefined> {
+    const [verificationCode] = await db.update(verificationCodes)
+      .set({ isUsed: true })
+      .where(eq(verificationCodes.id, id))
+      .returning();
+    
+    return verificationCode;
+  }
+  
+  async hasRecentVerificationCode(userId: number): Promise<boolean> {
+    // Check if user has a code that was created in the last 3 minutes
+    const threeMinutesAgo = new Date();
+    threeMinutesAgo.setMinutes(threeMinutesAgo.getMinutes() - 3);
+    
+    const [code] = await db.select()
+      .from(verificationCodes)
+      .where(
+        and(
+          eq(verificationCodes.userId, userId),
+          eq(verificationCodes.isUsed, false),
+          sql`${verificationCodes.createdAt} > ${threeMinutesAgo}`
+        )
+      )
+      .limit(1);
+    
+    return !!code;
   }
 }
 

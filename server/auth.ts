@@ -12,10 +12,10 @@ import type { IncomingMessage } from 'http';
 import { eq, and, gt, desc } from "drizzle-orm";
 import { 
   sendVerificationEmail, 
+  sendWelcomeEmail, 
   verifyCode, 
-  hasRecentVerificationCode, 
-  markAllCodesAsUsed,
-  maskEmail 
+  maskEmail, 
+  markAllCodesAsUsed 
 } from "./services/emailService";
 
 // Define the shape of our user in Express session
@@ -293,7 +293,7 @@ export function setupAuth(app: Express) {
 
     try {
       // Check if user has a recent verification code
-      const hasRecentCode = await hasRecentVerificationCode(req.user.id);
+      const hasRecentCode = await storage.hasRecentVerificationCode(req.user.id);
       if (hasRecentCode) {
         // Calculate remaining time (approximate)
         const threeMinutesAgo = new Date();
@@ -361,7 +361,7 @@ export function setupAuth(app: Express) {
       }
       
       // Check if user has a recent verification code
-      const hasRecentCode = await hasRecentVerificationCode(req.user.id);
+      const hasRecentCode = await storage.hasRecentVerificationCode(req.user.id);
       if (hasRecentCode) {
         return res.status(429).json({ 
           error: "A verification code was recently sent. Please wait before requesting a new one.", 

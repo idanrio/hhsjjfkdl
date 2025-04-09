@@ -8,6 +8,7 @@ import AdminDashboard from "@/pages/backtest/Admin";
 import TradeForm from "@/pages/backtest/TradeForm";
 import TradingEnvironment from "@/pages/backtest/TradingEnvironment";
 import PaperTradingPro from "@/pages/backtest/PaperTradingPro";
+import ProPaperTrading from "@/pages/backtest/ProPaperTrading";
 import PositionDemo from "@/components/PositionDemo";
 import { useEffect } from "react";
 import { useTranslation } from "react-i18next";
@@ -45,6 +46,7 @@ function Router() {
       <Route path="/backtest/trades/:id" component={TradeForm} />
       <Route path="/backtest/trading" component={TradingEnvironment} />
       <Route path="/backtest/paper-trading" component={PaperTradingPro} />
+      <Route path="/backtest/pro-trading" component={ProPaperTrading} />
       <Route path="/backtest/position-demo" component={PositionDemo} />
       <Route component={NotFound} />
     </Switch>
