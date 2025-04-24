@@ -6,6 +6,12 @@ import "./i18n"; // Import i18n configuration
 import { queryClient } from "./lib/queryClient";
 import { AuthProvider } from "./hooks/use-auth";
 
+// Add global error handling
+window.addEventListener('unhandledrejection', (event) => {
+  console.error('Unhandled promise rejection:', event.reason);
+  event.preventDefault();
+});
+
 // Ensure the document direction is set based on stored language preference
 const storedLanguage = localStorage.getItem('i18nextLng');
 if (storedLanguage === 'he') {

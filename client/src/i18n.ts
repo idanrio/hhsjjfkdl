@@ -2,6 +2,30 @@ import i18n from 'i18next';
 import { initReactI18next } from 'react-i18next';
 import LanguageDetector from 'i18next-browser-languagedetector';
 
+const resources = {
+  en: {
+    translation: {
+      "Congratulations!": "Congratulations!",
+      "You've received": "You've received",
+      "FREE DEMO TRADING ACCOUNT": "FREE DEMO TRADING ACCOUNT",
+      "Start practicing with professional tools and real-time market data without any financial risk.": "Start practicing with professional tools and real-time market data without any financial risk.",
+      "Continue To Trading": "Continue To Trading"
+    }
+  }
+};
+
+i18n
+  .use(LanguageDetector)
+  .use(initReactI18next)
+  .init({
+    resources,
+    fallbackLng: 'en',
+    debug: true,
+    interpolation: {
+      escapeValue: false
+    }
+  });
+
 // English translations
 const enTranslations = {
   // Header
